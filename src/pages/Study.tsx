@@ -1,0 +1,335 @@
+
+import { useState, useEffect } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { RotateCcw, Heart, X, Check, Volume2, BookOpen, Star, AlertCircle, UserPlus } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+
+const Study = () => {
+  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const [currentCard, setCurrentCard] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [studyMode, setStudyMode] = useState('flashcard');
+  const [sessionStats, setSessionStats] = useState({
+    correct: 0,
+    difficult: 0,
+    timeSpent: 0
+  });
+
+  const isGuest = searchParams.get('guest') === 'true';
+  const guestCards = searchParams.get('cards');
+
+  // Default flashcards for registered users
+  const defaultFlashcards = [
+    {
+      id: 1,
+      question: "What is the capital of France?",
+      answer: "Paris",
+      difficulty: "Easy",
+      subject: "Geography",
+      type: "Q&A"
+    },
+    {
+      id: 2,
+      question: "What is the formula for photosynthesis?",
+      answer: "6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂",
+      difficulty: "Medium",
+      subject: "Biology",
+      type: "Q&A"
+    },
+    {
+      id: 3,
+      question: "Who wrote Romeo and Juliet?",
+      answer: "William Shakespeare",
+      difficulty: "Easy",
+      subject: "Literature",
+      type: "Q&A"
+    }
+  ];
+
+  // Parse guest cards or use default
+  const flashcards = isGuest && guestCards 
+    ? JSON.parse(decodeURIComponent(guestCards))
+    : defaultFlashcards;
+
+  const currentCardData = flashcards[currentCard];
+  const progress = ((currentCard + 1) / flashcards.length) * 100;
+
+  // Timer for session stats
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSessionStats(prev => ({ ...prev, timeSpent: prev.timeSpent + 1 }));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleCardFlip = () => {
+    setIsFlipped(!isFlipped);
+  };
+
+  const handleNextCard = (rating: 'again' | 'hard' | 'good' | 'easy') => {
+    console.log(`Card ${currentCard} rated as: ${rating}`);
+    
+    // Update stats
+    if (rating === 'good' || rating === 'easy') {
+      setSessionStats(prev => ({ ...prev, correct: prev.correct + 1 }));
+    } else if (rating === 'hard') {
+      setSessionStats(prev => ({ ...prev, difficult: prev.difficult + 1 }));
+    }
+
+    if (currentCard < flashcards.length - 1) {
+      setCurrentCard(currentCard + 1);
+      setIsFlipped(false);
+    } else {
+      // Study session complete
+      console.log('Study session completed!');
+    }
+  };
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'Easy': return 'bg-green-100 text-green-800';
+      case 'Medium': return 'bg-yellow-100 text-yellow-800';
+      case 'Hard': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        {/* Guest Warning Banner */}
+        {isGuest && (
+          <Alert className="mb-6 border-orange-200 bg-gradient-to-r from-orange-50 to-red-50">
+            <AlertCircle className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              <strong>Guest Session:</strong> These flashcards are for temporary use only—create a free account to save them and track your progress! 
+              <Link to="/register" className="ml-2 underline font-medium hover:text-orange-600">
+                Sign up now to unlock full features →
+              </Link>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <BookOpen className="h-6 w-6 text-blue-600" />
+            <h1 className="text-2xl font-bold text-gray-900">
+              {isGuest ? 'Demo Flashcards' : 'Biology Flashcards'}
+            </h1>
+            {isGuest && (
+              <Badge variant="outline" className="text-orange-600 border-orange-300">
+                Guest Mode
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center justify-center space-x-4 mb-4">
+            <Badge className={getDifficultyColor(currentCardData.difficulty)}>
+              {currentCardData.difficulty}
+            </Badge>
+            <Badge variant="outline">{currentCardData.subject}</Badge>
+            <Badge variant="outline">{currentCardData.type}</Badge>
+            <span className="text-sm text-gray-600">
+              Card {currentCard + 1} of {flashcards.length}
+            </span>
+          </div>
+          <Progress value={progress} className="max-w-md mx-auto" />
+        </div>
+
+        {/* Study Mode Selector */}
+        <div className="flex justify-center mb-8">
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <Button
+              variant={studyMode === 'flashcard' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setStudyMode('flashcard')}
+            >
+              Flashcards
+            </Button>
+            <Button
+              variant={studyMode === 'quiz' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setStudyMode('quiz')}
+            >
+              Quiz
+            </Button>
+            <Button
+              variant={studyMode === 'review' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setStudyMode('review')}
+            >
+              Review
+            </Button>
+          </div>
+        </div>
+
+        {/* Flashcard */}
+        <div className="max-w-2xl mx-auto mb-8">
+          <Card 
+            className="h-96 cursor-pointer transform-gpu transition-all duration-300 hover:scale-105"
+            onClick={handleCardFlip}
+          >
+            <CardContent className="h-full flex flex-col justify-center items-center p-8 text-center">
+              {!isFlipped ? (
+                <div className="space-y-4">
+                  <div className="text-sm text-gray-500 mb-4">Question</div>
+                  <h2 className="text-2xl font-semibold text-gray-900 leading-relaxed">
+                    {currentCardData.question}
+                  </h2>
+                  <div className="mt-8">
+                    <p className="text-sm text-gray-500">Click to reveal answer</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-sm text-gray-500 mb-4">Answer</div>
+                  <h2 className="text-xl font-medium text-gray-900 leading-relaxed">
+                    {currentCardData.answer}
+                  </h2>
+                  <div className="mt-8 flex items-center justify-center space-x-4">
+                    <Button variant="outline" size="sm">
+                      <Volume2 className="h-4 w-4 mr-2" />
+                      Play Audio
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Star className="h-4 w-4 mr-2" />
+                      {isGuest ? 'Sign up to Bookmark' : 'Bookmark'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Action Buttons */}
+        {isFlipped && (
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-4">
+              <p className="text-sm text-gray-600">How well did you know this?</p>
+            </div>
+            <div className="grid grid-cols-4 gap-3">
+              <Button
+                variant="outline"
+                className="flex flex-col items-center p-4 h-auto border-red-200 hover:bg-red-50"
+                onClick={() => handleNextCard('again')}
+              >
+                <X className="h-5 w-5 text-red-600 mb-1" />
+                <span className="text-xs">Again</span>
+                <span className="text-xs text-gray-500">{'<1m'}</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="flex flex-col items-center p-4 h-auto border-orange-200 hover:bg-orange-50"
+                onClick={() => handleNextCard('hard')}
+              >
+                <RotateCcw className="h-5 w-5 text-orange-600 mb-1" />
+                <span className="text-xs">Hard</span>
+                <span className="text-xs text-gray-500">6m</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="flex flex-col items-center p-4 h-auto border-blue-200 hover:bg-blue-50"
+                onClick={() => handleNextCard('good')}
+              >
+                <Check className="h-5 w-5 text-blue-600 mb-1" />
+                <span className="text-xs">Good</span>
+                <span className="text-xs text-gray-500">10m</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="flex flex-col items-center p-4 h-auto border-green-200 hover:bg-green-50"
+                onClick={() => handleNextCard('easy')}
+              >
+                <Heart className="h-5 w-5 text-green-600 mb-1" />
+                <span className="text-xs">Easy</span>
+                <span className="text-xs text-gray-500">4d</span>
+              </Button>
+            </div>
+            <div className="text-center mt-4">
+              <p className="text-xs text-gray-500">
+                Based on your response, this card will appear again at the shown interval
+                {isGuest && ' (Sign up to enable spaced repetition!)'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Study Controls */}
+        <div className="max-w-2xl mx-auto mt-8 flex justify-center space-x-4">
+          <Button variant="outline">
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Restart Session
+          </Button>
+          <Button variant="outline">
+            Settings
+          </Button>
+          {isGuest ? (
+            <Link to="/register">
+              <Button variant="outline" className="border-green-500 text-green-700 hover:bg-green-50">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Save Progress
+              </Button>
+            </Link>
+          ) : (
+            <Button variant="outline">
+              Export Progress
+            </Button>
+          )}
+        </div>
+
+        {/* Study Stats */}
+        <div className="max-w-2xl mx-auto mt-8">
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">
+                Session Stats
+                {isGuest && (
+                  <Badge variant="outline" className="ml-2 text-xs">
+                    Temporary
+                  </Badge>
+                )}
+              </h3>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-green-600">{sessionStats.correct}</div>
+                  <div className="text-sm text-gray-600">Correct</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-orange-600">{sessionStats.difficult}</div>
+                  <div className="text-sm text-gray-600">Difficult</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">{formatTime(sessionStats.timeSpent)}</div>
+                  <div className="text-sm text-gray-600">Time Spent</div>
+                </div>
+              </div>
+              {isGuest && (
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-gray-500">
+                    Create an account to save your study statistics and track long-term progress!
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Study;
