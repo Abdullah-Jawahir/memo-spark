@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -68,17 +67,17 @@ const Contact = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
       <Header currentLanguage="en" />
       
       <div className="max-w-7xl mx-auto px-6 py-16">
         {/* Hero Section */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
             We're Here to 
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Help You</span>
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Have questions, feedback, or ideas? We'd love to hear from you. 
             Your input helps us build better learning experiences for everyone.
           </p>
@@ -89,8 +88,8 @@ const Contact = () => {
           <div className="lg:col-span-2">
             <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle className="text-2xl text-gray-900">Send us a message</CardTitle>
-                <p className="text-gray-600">We'll get back to you within 24 hours</p>
+                <CardTitle className="text-2xl text-foreground">Send us a message</CardTitle>
+                <p className="text-muted-foreground">We'll get back to you within 24 hours</p>
               </CardHeader>
               <CardContent>
                 {!isSubmitted ? (
@@ -161,11 +160,11 @@ const Contact = () => {
                 ) : (
                   <div className="text-center py-12">
                     <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                    <h3 className="text-2xl font-semibold text-gray-900 mb-2">Message Sent!</h3>
-                    <p className="text-gray-600 mb-4">
+                    <h3 className="text-2xl font-semibold text-foreground mb-2">Message Sent!</h3>
+                    <p className="text-muted-foreground mb-4">
                       Thank you for reaching out. We'll get back to you within 24 hours.
                     </p>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-muted-foreground">
                       This form will reset in a few seconds...
                     </div>
                   </div>
@@ -185,14 +184,14 @@ const Contact = () => {
                   <a
                     key={index}
                     href={method.action}
-                    className="flex items-start space-x-3 p-4 rounded-lg hover:bg-gray-50 transition-colors group"
+                    className="flex items-start space-x-3 p-4 rounded-lg hover:bg-muted transition-colors group"
                   >
                     <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg group-hover:scale-110 transition-transform">
                       <method.icon className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">{method.title}</h4>
-                      <p className="text-sm text-gray-600 mb-1">{method.description}</p>
+                      <h4 className="font-semibold text-foreground">{method.title}</h4>
+                      <p className="text-sm text-muted-foreground mb-1">{method.description}</p>
                       <p className="text-sm font-medium text-blue-600">{method.value}</p>
                     </div>
                   </a>
@@ -202,18 +201,18 @@ const Contact = () => {
 
             <Card>
               <CardContent className="p-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Quick Response Times</h3>
+                <h3 className="font-semibold text-foreground mb-3">Quick Response Times</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">General Inquiries</span>
+                    <span className="text-muted-foreground">General Inquiries</span>
                     <span className="font-medium">&lt; 24 hours</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Technical Support</span>
+                    <span className="text-muted-foreground">Technical Support</span>
                     <span className="font-medium">&lt; 4 hours</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Urgent Issues</span>
+                    <span className="text-muted-foreground">Urgent Issues</span>
                     <span className="font-medium">&lt; 1 hour</span>
                   </div>
                 </div>

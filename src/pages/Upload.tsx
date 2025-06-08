@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,12 +72,12 @@ const Upload = () => {
   const isGuest = !user;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
       <div className="max-w-4xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Upload Your Study Materials</h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <h1 className="text-3xl font-bold text-foreground mb-4">Upload Your Study Materials</h1>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
             Transform your documents into interactive flashcards automatically. 
             Our AI will analyze your content and create personalized learning cards.
           </p>
@@ -86,7 +85,7 @@ const Upload = () => {
 
         {/* Guest User Banner */}
         {isGuest && (
-          <Alert className="mb-6 border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50">
+          <Alert className="mb-6 border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
             <Info className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-800">
               <strong>Try out MemoSpark instantly—no sign-up needed!</strong> Upload a document and generate flashcards to experience our AI-powered learning platform. 
@@ -121,8 +120,8 @@ const Upload = () => {
               {!isUploading && !uploadComplete && (
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer">
                   <UploadIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Drop files here or click to browse</h3>
-                  <p className="text-gray-600 mb-4">Support for PDF, images, and text files up to 10MB</p>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Drop files here or click to browse</h3>
+                  <p className="text-muted-foreground mb-4">Support for PDF, images, and text files up to 10MB</p>
                   <Button onClick={handleFileUpload} className="bg-gradient-to-r from-blue-600 to-purple-600">
                     Choose Files
                   </Button>
@@ -132,8 +131,8 @@ const Upload = () => {
               {isUploading && (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Processing your document...</h3>
-                  <p className="text-gray-600 mb-4">Analyzing content and generating flashcards</p>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Processing your document...</h3>
+                  <p className="text-muted-foreground mb-4">Analyzing content and generating flashcards</p>
                   <Progress value={uploadProgress} className="max-w-xs mx-auto" />
                   <p className="text-sm text-gray-500 mt-2">{uploadProgress}% complete</p>
                 </div>
@@ -142,8 +141,8 @@ const Upload = () => {
               {uploadComplete && (
                 <div className="text-center py-8">
                   <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Upload Complete!</h3>
-                  <p className="text-gray-600 mb-4">Generated {generatedCards.length} flashcards from your document</p>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Upload Complete!</h3>
+                  <p className="text-muted-foreground mb-4">Generated {generatedCards.length} flashcards from your document</p>
                   
                   {isGuest && (
                     <Alert className="mb-4 border-orange-200 bg-orange-50">
@@ -186,11 +185,11 @@ const Upload = () => {
               <CardContent>
                 <div className="space-y-4">
                   {supportedFormats.map((format, index) => (
-                    <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div key={index} className="flex items-start space-x-3 p-3 bg-card rounded-lg">
                       <format.icon className="h-5 w-5 text-blue-600 mt-0.5" />
                       <div>
-                        <h4 className="font-medium text-gray-900">{format.name}</h4>
-                        <p className="text-sm text-gray-600">{format.description}</p>
+                        <h4 className="font-medium text-foreground">{format.name}</h4>
+                        <p className="text-sm text-muted-foreground">{format.description}</p>
                       </div>
                     </div>
                   ))}
@@ -247,7 +246,7 @@ const Upload = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="text-sm text-gray-600 space-y-2">
+                <ul className="text-sm text-muted-foreground space-y-2">
                   <li>• Clear, well-structured documents work best</li>
                   <li>• Include headings and subheadings for better organization</li>
                   <li>• High-quality images improve OCR accuracy</li>

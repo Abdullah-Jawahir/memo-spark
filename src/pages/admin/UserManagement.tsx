@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,22 +39,22 @@ const UserManagement = () => {
     switch (role) {
       case 'Admin': return 'bg-red-100 text-red-800';
       case 'Educator': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-card text-card-foreground';
     }
   };
 
   const getStatusColor = (status: string) => {
-    return status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+    return status === 'Active' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100' : 'bg-card text-card-foreground';
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">User Management</h1>
-            <p className="text-gray-600">Manage and monitor platform users</p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">User Management</h1>
+            <p className="text-muted-foreground">Manage and monitor platform users</p>
           </div>
           <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
             Add New User
@@ -100,10 +99,10 @@ const UserManagement = () => {
               </TableHeader>
               <TableBody>
                 {filteredUsers.map((user) => (
-                  <TableRow key={user.id} className="hover:bg-gray-50">
+                  <TableRow key={user.id} className="hover:bg-muted">
                     <TableCell>
                       <div>
-                        <div className="font-medium text-gray-900">{user.name}</div>
+                        <div className="font-medium text-foreground">{user.name}</div>
                         <div className="text-sm text-gray-500">{user.email}</div>
                       </div>
                     </TableCell>

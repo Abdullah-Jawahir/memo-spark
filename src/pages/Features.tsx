@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -68,17 +67,17 @@ const Features = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
       <Header currentLanguage="en" />
       
       <div className="max-w-7xl mx-auto px-6 py-16">
         {/* Hero Section */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
             Powerful Features for
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Smart Learning</span>
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
             Discover how MemoSpark revolutionizes the way you create, study, and share flashcards with cutting-edge AI and multilingual support.
           </p>
           <Link to="/register">
@@ -98,8 +97,8 @@ const Features = () => {
                     <feature.icon className="h-6 w-6 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3>
-                    <p className="text-gray-600 mb-4">{feature.description}</p>
+                    <h3 className="text-xl font-semibold text-foreground mb-3">{feature.title}</h3>
+                    <p className="text-muted-foreground mb-4">{feature.description}</p>
                     <ul className="space-y-2">
                       {feature.benefits.map((benefit, benefitIndex) => (
                         <li key={benefitIndex} className="flex items-center text-sm text-gray-500">
@@ -121,12 +120,12 @@ const Features = () => {
           <p className="text-xl mb-8 opacity-90">Join thousands of students already using MemoSpark to study smarter, not harder.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/register">
-              <Button className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3">
+              <Button className="bg-card text-blue-600 hover:bg-muted px-8 py-3">
                 Get Started Free
               </Button>
             </Link>
             <Link to="/pricing">
-              <Button variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-3">
+              <Button variant="outline" className="border-card text-card-foreground hover:bg-muted/10 px-8 py-3">
                 View Pricing
               </Button>
             </Link>

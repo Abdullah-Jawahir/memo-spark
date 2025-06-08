@@ -98,4 +98,8 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  html.dark {
+    @apply bg-background text-foreground;
+  }
 }

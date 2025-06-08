@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -26,7 +25,7 @@ const LanguageToggle = ({ currentLanguage, onLanguageChange }: LanguageTogglePro
     <div className="fixed top-20 right-6 z-40">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="bg-white/80 backdrop-blur-sm border border-gray-200 hover:bg-white">
+          <Button variant="outline" className="bg-card/80 backdrop-blur-sm border border-border hover:bg-muted">
             <span className="mr-2">{currentLang.flag}</span>
             {currentLang.name}
           </Button>

@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,18 +25,18 @@ const AdminDashboard = () => {
 
   return (
     <ProtectedRoute requiredRole="admin">
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
         <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <div>
               <div className="flex items-center gap-4 mb-2">
-                <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+                <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
                 <Badge variant="secondary" className="bg-red-100 text-red-800">
                   Administrator
                 </Badge>
               </div>
-              <p className="text-gray-600">Welcome back, {profile?.full_name || 'Admin'}! Monitor and manage MemoSpark.</p>
+              <p className="text-muted-foreground">Welcome back, {profile?.full_name || 'Admin'}! Monitor and manage MemoSpark.</p>
             </div>
             <div className="flex items-center gap-4">
               <Link to="/admin/users">
@@ -60,8 +59,8 @@ const AdminDashboard = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600 mb-1">{stat.label}</p>
-                      <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">{stat.label}</p>
+                      <p className="text-2xl font-bold text-foreground">{stat.value}</p>
                     </div>
                     <div className={`p-3 rounded-full bg-red-100 ${stat.color}`}>
                       <stat.icon className="h-6 w-6" />
@@ -84,10 +83,10 @@ const AdminDashboard = () => {
               <CardContent>
                 <div className="space-y-4">
                   {recentActivity.map((activity, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={index} className="flex items-center justify-between p-3 bg-card rounded-lg">
                       <div>
-                        <p className="font-medium text-gray-900">{activity.action}</p>
-                        <p className="text-sm text-gray-600">{activity.user}</p>
+                        <p className="font-medium text-foreground">{activity.action}</p>
+                        <p className="text-sm text-muted-foreground">{activity.user}</p>
                       </div>
                       <span className="text-xs text-gray-500">{activity.time}</span>
                     </div>
@@ -138,15 +137,15 @@ const AdminDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center">
                   <div className="text-3xl font-bold text-blue-600 mb-2">1,247</div>
-                  <p className="text-gray-600">Total Registered Users</p>
+                  <p className="text-muted-foreground">Total Registered Users</p>
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold text-green-600 mb-2">892</div>
-                  <p className="text-gray-600">Active Study Decks</p>
+                  <p className="text-muted-foreground">Active Study Decks</p>
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold text-purple-600 mb-2">15,634</div>
-                  <p className="text-gray-600">Total Study Sessions</p>
+                  <p className="text-muted-foreground">Total Study Sessions</p>
                 </div>
               </div>
             </CardContent>

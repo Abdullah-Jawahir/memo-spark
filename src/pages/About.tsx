@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Heart, Users, Globe, Shield, Lightbulb, Target } from 'lucide-react';
@@ -68,17 +67,17 @@ const About = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
       <Header currentLanguage="en" />
       
       <div className="max-w-7xl mx-auto px-6 py-16">
         {/* Hero Section */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
             Our Mission: 
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Democratize Learning</span>
           </h1>
-          <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+          <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
             MemoSpark was born from a simple belief: every student deserves access to powerful, 
             personalized learning tools that adapt to their unique needs and cultural context. 
             We're building the future of education, one flashcard at a time.
@@ -89,8 +88,8 @@ const About = () => {
         <div className="mb-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">Why MemoSpark Exists</h2>
-              <div className="space-y-4 text-gray-600">
+              <h2 className="text-3xl font-bold text-foreground mb-6">Why MemoSpark Exists</h2>
+              <div className="space-y-4 text-muted-foreground">
                 <p>
                   In classrooms around the world, we noticed students struggling with traditional study methods 
                   that didn't adapt to their learning pace or cultural background. Many talented learners were 
@@ -109,18 +108,18 @@ const About = () => {
             </div>
             <div className="bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl p-8 text-center">
               <div className="text-6xl font-bold text-blue-600 mb-2">50K+</div>
-              <div className="text-gray-700 font-medium mb-4">Students Empowered</div>
+              <div className="text-muted-foreground font-medium mb-4">Students Empowered</div>
               <div className="text-4xl font-bold text-purple-600 mb-2">1M+</div>
-              <div className="text-gray-700 font-medium mb-4">Flashcards Created</div>
+              <div className="text-muted-foreground font-medium mb-4">Flashcards Created</div>
               <div className="text-4xl font-bold text-green-600 mb-2">25+</div>
-              <div className="text-gray-700 font-medium">Countries Reached</div>
+              <div className="text-muted-foreground font-medium">Countries Reached</div>
             </div>
           </div>
         </div>
 
         {/* Values Section */}
         <div className="mb-20">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Our Core Values</h2>
+          <h2 className="text-3xl font-bold text-center text-foreground mb-12">Our Core Values</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {values.map((value, index) => (
               <Card key={index} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
@@ -128,8 +127,8 @@ const About = () => {
                   <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full w-fit mx-auto mb-4 group-hover:scale-110 transition-transform">
                     <value.icon className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{value.title}</h3>
-                  <p className="text-gray-600">{value.description}</p>
+                  <h3 className="text-xl font-semibold text-foreground mb-3">{value.title}</h3>
+                  <p className="text-muted-foreground">{value.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -138,7 +137,7 @@ const About = () => {
 
         {/* Team Section */}
         <div className="mb-20">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Meet Our Team</h2>
+          <h2 className="text-3xl font-bold text-center text-foreground mb-12">Meet Our Team</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {team.map((member, index) => (
               <Card key={index} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
@@ -146,9 +145,8 @@ const About = () => {
                   <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl mx-auto mb-4 group-hover:scale-110 transition-transform">
                     {member.avatar}
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">{member.name}</h3>
-                  <p className="text-blue-600 font-medium mb-3">{member.role}</p>
-                  <p className="text-gray-600 text-sm">{member.bio}</p>
+                  <h3 className="text-lg font-semibold text-foreground mb-1">{member.name}</h3>
+                  <p className="text-muted-foreground text-sm">{member.bio}</p>
                 </CardContent>
               </Card>
             ))}
@@ -164,12 +162,12 @@ const About = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/register">
-              <Button className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3">
+              <Button className="bg-card text-blue-600 hover:bg-muted px-8 py-3">
                 Start Learning Today
               </Button>
             </Link>
             <Link to="/contact">
-              <Button variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-3">
+              <Button variant="outline" className="border-card text-card-foreground hover:bg-muted/10 px-8 py-3">
                 Get In Touch
               </Button>
             </Link>

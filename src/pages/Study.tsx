@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -97,7 +96,7 @@ const Study = () => {
       case 'Easy': return 'bg-green-100 text-green-800';
       case 'Medium': return 'bg-yellow-100 text-yellow-800';
       case 'Hard': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-card text-card-foreground';
     }
   };
 
@@ -108,7 +107,7 @@ const Study = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
       <div className="max-w-4xl mx-auto px-6 py-8">
         {/* Guest Warning Banner */}
         {isGuest && (
@@ -127,7 +126,7 @@ const Study = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <BookOpen className="h-6 w-6 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-foreground">
               {isGuest ? 'Demo Flashcards' : 'Biology Flashcards'}
             </h1>
             {isGuest && (
@@ -142,7 +141,7 @@ const Study = () => {
             </Badge>
             <Badge variant="outline">{currentCardData.subject}</Badge>
             <Badge variant="outline">{currentCardData.type}</Badge>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-muted-foreground">
               Card {currentCard + 1} of {flashcards.length}
             </span>
           </div>
@@ -151,7 +150,7 @@ const Study = () => {
 
         {/* Study Mode Selector */}
         <div className="flex justify-center mb-8">
-          <div className="flex bg-gray-100 rounded-lg p-1">
+          <div className="flex bg-card rounded-lg p-1">
             <Button
               variant={studyMode === 'flashcard' ? 'default' : 'ghost'}
               size="sm"
@@ -185,18 +184,18 @@ const Study = () => {
             <CardContent className="h-full flex flex-col justify-center items-center p-8 text-center">
               {!isFlipped ? (
                 <div className="space-y-4">
-                  <div className="text-sm text-gray-500 mb-4">Question</div>
-                  <h2 className="text-2xl font-semibold text-gray-900 leading-relaxed">
+                  <div className="text-sm text-muted-foreground mb-4">Question</div>
+                  <h2 className="text-2xl font-semibold text-foreground leading-relaxed">
                     {currentCardData.question}
                   </h2>
                   <div className="mt-8">
-                    <p className="text-sm text-gray-500">Click to reveal answer</p>
+                    <p className="text-sm text-muted-foreground">Click to reveal answer</p>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="text-sm text-gray-500 mb-4">Answer</div>
-                  <h2 className="text-xl font-medium text-gray-900 leading-relaxed">
+                  <div className="text-sm text-muted-foreground mb-4">Answer</div>
+                  <h2 className="text-xl font-medium text-foreground leading-relaxed">
                     {currentCardData.answer}
                   </h2>
                   <div className="mt-8 flex items-center justify-center space-x-4">
@@ -219,7 +218,7 @@ const Study = () => {
         {isFlipped && (
           <div className="max-w-2xl mx-auto">
             <div className="text-center mb-4">
-              <p className="text-sm text-gray-600">How well did you know this?</p>
+              <p className="text-sm text-muted-foreground">How well did you know this?</p>
             </div>
             <div className="grid grid-cols-4 gap-3">
               <Button
@@ -229,7 +228,7 @@ const Study = () => {
               >
                 <X className="h-5 w-5 text-red-600 mb-1" />
                 <span className="text-xs">Again</span>
-                <span className="text-xs text-gray-500">{'<1m'}</span>
+                <span className="text-xs text-muted-foreground">{'<1m'}</span>
               </Button>
               <Button
                 variant="outline"
@@ -238,7 +237,7 @@ const Study = () => {
               >
                 <RotateCcw className="h-5 w-5 text-orange-600 mb-1" />
                 <span className="text-xs">Hard</span>
-                <span className="text-xs text-gray-500">6m</span>
+                <span className="text-xs text-muted-foreground">6m</span>
               </Button>
               <Button
                 variant="outline"
@@ -247,7 +246,7 @@ const Study = () => {
               >
                 <Check className="h-5 w-5 text-blue-600 mb-1" />
                 <span className="text-xs">Good</span>
-                <span className="text-xs text-gray-500">10m</span>
+                <span className="text-xs text-muted-foreground">10m</span>
               </Button>
               <Button
                 variant="outline"
@@ -256,11 +255,11 @@ const Study = () => {
               >
                 <Heart className="h-5 w-5 text-green-600 mb-1" />
                 <span className="text-xs">Easy</span>
-                <span className="text-xs text-gray-500">4d</span>
+                <span className="text-xs text-muted-foreground">4d</span>
               </Button>
             </div>
             <div className="text-center mt-4">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Based on your response, this card will appear again at the shown interval
                 {isGuest && ' (Sign up to enable spaced repetition!)'}
               </p>
@@ -295,7 +294,7 @@ const Study = () => {
         <div className="max-w-2xl mx-auto mt-8">
           <Card>
             <CardContent className="p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">
+              <h3 className="font-semibold text-foreground mb-4">
                 Session Stats
                 {isGuest && (
                   <Badge variant="outline" className="ml-2 text-xs">
@@ -306,20 +305,20 @@ const Study = () => {
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <div className="text-2xl font-bold text-green-600">{sessionStats.correct}</div>
-                  <div className="text-sm text-gray-600">Correct</div>
+                  <div className="text-sm text-muted-foreground">Correct</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-orange-600">{sessionStats.difficult}</div>
-                  <div className="text-sm text-gray-600">Difficult</div>
+                  <div className="text-sm text-muted-foreground">Difficult</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-blue-600">{formatTime(sessionStats.timeSpent)}</div>
-                  <div className="text-sm text-gray-600">Time Spent</div>
+                  <div className="text-sm text-muted-foreground">Time Spent</div>
                 </div>
               </div>
               {isGuest && (
                 <div className="mt-4 text-center">
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     Create an account to save your study statistics and track long-term progress!
                   </p>
                 </div>

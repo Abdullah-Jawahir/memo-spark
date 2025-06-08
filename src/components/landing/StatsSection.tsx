@@ -1,4 +1,3 @@
-
 import { Badge } from '@/components/ui/badge';
 
 const StatsSection = () => {
@@ -10,13 +9,13 @@ const StatsSection = () => {
   ];
 
   return (
-    <section className="py-20 px-6 bg-white">
+    <section className="py-20 px-6 bg-card">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <Badge variant="secondary" className="mb-4">
             Trusted by thousands
           </Badge>
-          <h2 className="text-4xl font-bold text-gray-900 mb-6">
+          <h2 className="text-4xl font-bold text-foreground mb-6">
             Proven results across communities
           </h2>
         </div>
@@ -27,7 +26,7 @@ const StatsSection = () => {
               <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
                 {stat.number}
               </div>
-              <div className="text-gray-600 font-medium">{stat.label}</div>
+              <div className="text-muted-foreground font-medium">{stat.label}</div>
             </div>
           ))}
         </div>
