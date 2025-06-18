@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Menu, X, User, LogOut, Sun, Moon } from 'lucide-react';
+import { BookOpen, Menu, X, User, LogOut, Sun, Moon, Monitor } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 
 interface HeaderProps {
   currentLanguage: string;
@@ -13,7 +14,7 @@ interface HeaderProps {
 const Header = ({ currentLanguage }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -47,14 +48,27 @@ const Header = ({ currentLanguage }: HeaderProps) => {
           </nav>
 
           <div className="flex items-center space-x-4">
-            {/* Theme Toggle Button */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5 text-gray-700" />}
-            </button>
+            {/* Theme Switcher Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-2 rounded-full focus:outline-none" aria-label="Change theme">
+                  {theme === 'light' ? <Sun className="h-5 w-5 text-gray-900" /> : theme === 'dark' ? <Moon className="h-5 w-5 text-gray-300" /> : <Monitor className="h-5 w-5 text-gray-400" />}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+                  <DropdownMenuRadioItem value="light">
+                    <span className="flex items-center gap-2"><Sun className="h-4 w-4" /> Light</span>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="dark">
+                    <span className="flex items-center gap-2"><Moon className="h-4 w-4" /> Dark</span>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="system">
+                    <span className="flex items-center gap-2"><Monitor className="h-4 w-4" /> System</span>
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {/* Mobile Menu Button */}
             <button 
               className="md:hidden"
@@ -106,14 +120,27 @@ const Header = ({ currentLanguage }: HeaderProps) => {
         {isMenuOpen && (
           <div className="md:hidden mt-4 pb-4 border-t border-gray-200">
             <nav className="flex flex-col space-y-4 mt-4">
-              {/* Theme Toggle Button for Mobile */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-full self-end hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors mb-2"
-                aria-label="Toggle theme"
-              >
-                {theme === 'dark' ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5 text-gray-700" />}
-              </button>
+              {/* Theme Switcher Dropdown for Mobile */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="p-2 rounded-full self-end hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors mb-2" aria-label="Change theme">
+                    {theme === 'dark' ? <Sun className="h-5 w-5 text-yellow-400" /> : theme === 'light' ? <Moon className="h-5 w-5 text-gray-700" /> : <Monitor className="h-5 w-5 text-gray-700" />}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+                    <DropdownMenuRadioItem value="light">
+                      <span className="flex items-center gap-2"><Sun className="h-4 w-4" /> Light</span>
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="dark">
+                      <span className="flex items-center gap-2"><Moon className="h-4 w-4" /> Dark</span>
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="system">
+                      <span className="flex items-center gap-2"><Monitor className="h-4 w-4" /> System</span>
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Link 
                 to="/features" 
                 className="text-gray-600 hover:text-blue-600 transition-colors font-medium"

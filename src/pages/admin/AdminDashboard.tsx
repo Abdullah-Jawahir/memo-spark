@@ -5,6 +5,7 @@ import { Users, BookOpen, TrendingUp, Settings, LogOut, UserPlus } from 'lucide-
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Link } from 'react-router-dom';
+import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
 
 const AdminDashboard = () => {
   const { profile, signOut } = useAuth();
@@ -26,6 +27,7 @@ const AdminDashboard = () => {
   return (
     <ProtectedRoute requiredRole="admin">
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
+        <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
         <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
