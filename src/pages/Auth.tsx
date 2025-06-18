@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import SignInForm from '@/components/auth/SignInForm';
 import SignUpForm from '@/components/auth/SignUpForm';
 import DemoAccountsPanel from '@/components/auth/DemoAccountsPanel';
+import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
 
 const Auth = () => {
   const { user, profile, signIn, signUp, resetPassword } = useAuth();
@@ -56,6 +57,7 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800 flex items-center justify-center p-6">
+      <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link to="/" className="flex items-center justify-center space-x-2 mb-8 group">
