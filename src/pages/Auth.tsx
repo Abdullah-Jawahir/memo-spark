@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import SignInForm from '@/components/auth/SignInForm';
 import SignUpForm from '@/components/auth/SignUpForm';
 import DemoAccountsPanel from '@/components/auth/DemoAccountsPanel';
+import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
 
 const Auth = () => {
   const { user, profile, signIn, signUp, resetPassword } = useAuth();
@@ -56,7 +56,8 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800 flex items-center justify-center p-6">
+      <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link to="/" className="flex items-center justify-center space-x-2 mb-8 group">
@@ -68,10 +69,10 @@ const Auth = () => {
           </span>
         </Link>
 
-        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm animate-fade-in">
+        <Card className="border border-border shadow-2xl bg-card/90 dark:bg-gray-900/95 dark:border-blue-700 dark:shadow-blue-900/40 backdrop-blur-md animate-fade-in">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-gray-900">Welcome to MemoSpark</CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardTitle className="text-2xl font-bold text-foreground">Welcome to MemoSpark</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Sign in to your account or create a new one
             </CardDescription>
           </CardHeader>
@@ -104,7 +105,7 @@ const Auth = () => {
               isLoading={isLoading}
             />
 
-            <div className="text-center text-sm text-gray-600 mt-4">
+            <div className="text-center text-sm text-muted-foreground mt-4">
               <Link to="/" className="text-blue-600 hover:underline">
                 ← Back to home
               </Link>

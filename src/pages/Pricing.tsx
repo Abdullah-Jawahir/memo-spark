@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -179,7 +178,7 @@ const Pricing = () => {
             <h2 className="text-3xl font-bold mb-4">Ready to Start Learning Smarter?</h2>
             <p className="text-xl mb-8 opacity-90">Join thousands of students and educators using MemoSpark every day.</p>
             <Link to="/register">
-              <Button className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 text-lg">
+              <Button className="bg-card text-blue-600 hover:bg-muted px-8 py-3 text-lg">
                 Get Started Free Today
               </Button>
             </Link>

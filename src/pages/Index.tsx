@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -43,7 +42,7 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
       <Header currentLanguage={currentLanguage} />
       
       <main>
@@ -56,10 +55,10 @@ const Index = () => {
               <Badge variant="secondary" className="mb-4">
                 Features
               </Badge>
-              <h2 className="text-4xl font-bold text-gray-900 mb-6">
+              <h2 className="text-4xl font-bold text-foreground mb-6">
                 Everything you need to learn smarter
               </h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
                 MemoSpark combines cutting-edge AI with proven learning techniques to create the most effective study experience.
               </p>
             </div>
@@ -75,22 +74,22 @@ const Index = () => {
         <StatsSection />
 
         {/* CTA Section */}
-        <section className="py-20 px-6 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600">
-          <div className="max-w-4xl mx-auto text-center text-white">
+        <section className="py-20 px-6 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 dark:from-blue-900 dark:via-purple-900 dark:to-indigo-900">
+          <div className="max-w-4xl mx-auto text-center text-white dark:text-foreground">
             <h2 className="text-4xl font-bold mb-6">
               Ready to transform your learning?
             </h2>
-            <p className="text-xl mb-8 opacity-90">
+            <p className="text-xl mb-8 opacity-90 text-white dark:text-muted-foreground">
               Join thousands of students already using MemoSpark to achieve their academic goals.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/register">
-                <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 text-lg font-semibold">
+                <Button size="lg" className="bg-card text-blue-600 hover:bg-muted px-8 py-3 text-lg font-semibold">
                   Start Free Trial
                 </Button>
               </Link>
               <Link to="/demo">
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 text-lg font-semibold">
+                <Button size="lg" variant="outline" className="border-card text-card-foreground hover:bg-muted hover:text-primary px-8 py-3 text-lg font-semibold">
                   Watch Demo
                 </Button>
               </Link>
