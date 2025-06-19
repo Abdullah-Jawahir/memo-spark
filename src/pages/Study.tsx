@@ -569,55 +569,76 @@ const Study = () => {
         </div>
 
         {/* Action Buttons */}
-        {tab === 'flashcards' && isFlipped && flashcards.length > 0 && (
+        {tab === 'flashcards' && isFlipped && flashcards.length > 0 && !isGuestUser && (
           <div className="max-w-2xl mx-auto">
             <div className="text-center mb-4">
               <p className="text-sm text-muted-foreground">How well did you know this?</p>
             </div>
             <div className="grid grid-cols-4 gap-3">
-              <Button
-                variant="outline"
-                className="flex flex-col items-center p-4 h-auto border-red-200 hover:bg-red-50"
-                onClick={() => handleNextCard('again')}
-              >
-                <X className="h-5 w-5 text-red-600 mb-1" />
-                <span className="text-xs">Again</span>
-                <span className="text-xs text-muted-foreground">{'<1m'}</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex flex-col items-center p-4 h-auto border-orange-200 hover:bg-orange-50"
-                onClick={() => handleNextCard('hard')}
-              >
-                <RotateCcw className="h-5 w-5 text-orange-600 mb-1" />
-                <span className="text-xs">Hard</span>
-                <span className="text-xs text-muted-foreground">6m</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex flex-col items-center p-4 h-auto border-blue-200 hover:bg-blue-50"
-                onClick={() => handleNextCard('good')}
-              >
-                <Check className="h-5 w-5 text-blue-600 mb-1" />
-                <span className="text-xs">Good</span>
-                <span className="text-xs text-muted-foreground">10m</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex flex-col items-center p-4 h-auto border-green-200 hover:bg-green-50"
-                onClick={() => handleNextCard('easy')}
-              >
-                <Heart className="h-5 w-5 text-green-600 mb-1" />
-                <span className="text-xs">Easy</span>
-                <span className="text-xs text-muted-foreground">4d</span>
-              </Button>
+              {['again', 'hard', 'good', 'easy'].map((rating, idx) => {
+                const icons = [X, RotateCcw, Check, Heart];
+                const colors = [
+                  'h-5 w-5 text-red-600 mb-1',
+                  'h-5 w-5 text-orange-600 mb-1',
+                  'h-5 w-5 text-blue-600 mb-1',
+                  'h-5 w-5 text-green-600 mb-1',
+                ];
+                const labels = ['Again', 'Hard', 'Good', 'Easy'];
+                const intervals = ['<1m', '6m', '10m', '4d'];
+                const Icon = icons[idx];
+                return (
+                  <Button
+                    key={rating}
+                    variant="outline"
+                    className={`flex flex-col items-center p-4 h-auto border-${['red','orange','blue','green'][idx]}-200 hover:bg-${['red','orange','blue','green'][idx]}-50`}
+                    onClick={async () => {
+                      // Save review to backend for auth users
+                      const card = flashcards[currentCard];
+                      if (card && card.id) {
+                        try {
+                          await fetch('/api/flashcard-reviews', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({
+                              study_material_id: card.id,
+                              rating,
+                              reviewed_at: new Date().toISOString(),
+                            }),
+                          });
+                        } catch (e) {
+                          // Optionally handle error
+                        }
+                      }
+                      handleNextCard(rating as 'again' | 'hard' | 'good' | 'easy');
+                    }}
+                  >
+                    <Icon className={colors[idx]} />
+                    <span className="text-xs">{labels[idx]}</span>
+                    <span className="text-xs text-muted-foreground">{intervals[idx]}</span>
+                  </Button>
+                );
+              })}
             </div>
             <div className="text-center mt-4">
               <p className="text-xs text-muted-foreground">
                 Based on your response, this card will appear again at the shown interval
-                {isGuestUser && ' (Sign up to enable spaced repetition!)'}
               </p>
             </div>
+          </div>
+        )}
+        {tab === 'flashcards' && isFlipped && flashcards.length > 0 && isGuestUser && (
+          <div className="max-w-2xl mx-auto text-center mt-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Sign up to track your progress and unlock spaced repetition!
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => handleNextCard('good')}
+              className="mt-2"
+            >
+              Next
+            </Button>
           </div>
         )}
 
