@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RotateCcw, Heart, X, Check, Volume2, BookOpen, Star, AlertCircle, UserPlus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface Flashcard {
   id: number;
@@ -18,6 +19,15 @@ interface Flashcard {
   type: string;
 }
 
+interface Quiz {
+  type: string;
+  answer: string;
+  options: string[];
+  question: string;
+  difficulty: string;
+  correct_answer_option: string;
+}
+
 interface GeneratedCard {
   type: string;
   question: string;
@@ -25,88 +35,52 @@ interface GeneratedCard {
   difficulty: string;
 }
 
+interface GeneratedContent {
+  flashcards?: GeneratedCard[];
+  quizzes?: Quiz[];
+  [key: string]: unknown;
+}
+
 const Study = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [currentCard, setCurrentCard] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [studyMode, setStudyMode] = useState('flashcard');
+  const [tab, setTab] = useState<'flashcards' | 'quiz' | 'review'>('flashcards');
   const [sessionStats, setSessionStats] = useState({
     correct: 0,
     difficult: 0,
     timeSpent: 0
   });
+  const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
+  const [flashcards, setFlashcards] = useState<GeneratedCard[]>([]);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [sessionRatings, setSessionRatings] = useState<(null | 'again' | 'hard' | 'good' | 'easy')[]>([]);
+  const [quizStep, setQuizStep] = useState(0);
+  const [quizAnswers, setQuizAnswers] = useState<(string | null)[]>([]);
+  const [quizCompleted, setQuizCompleted] = useState(false);
 
-  // Get guest cards from localStorage if available
-  const getGuestCardsFromStorage = () => {
-    try {
-      const storedCards = localStorage.getItem('guestCards');
-      console.log('Stored cards from localStorage:', storedCards);
-      return storedCards ? JSON.parse(storedCards) : null;
-    } catch (error) {
-      console.error('Error reading from localStorage:', error);
-      return null;
-    }
-  };
+  const isGuestUser = !user && generatedContent !== null;
 
-  const guestCardsFromStorage = getGuestCardsFromStorage();
-  
-  // Determine if user is guest - check authentication first, then localStorage
-  const isGuestUser = !user && guestCardsFromStorage !== null;
-  
-  console.log('Guest detection:', {
-    user: user ? 'Signed in' : 'Not signed in',
-    hasLocalStorageCards: guestCardsFromStorage !== null,
-    finalIsGuest: isGuestUser
-  });
-
-  // Parse cards - handle both signed-in users and guests
-  const flashcards = (() => {
-    // If user is signed in and has cards in localStorage, use them
-    if (user && guestCardsFromStorage) {
-      try {
-        console.log('Signed-in user with uploaded cards');
-        const mappedCards = guestCardsFromStorage.map((card: GeneratedCard, index: number): Flashcard => ({
-          ...card,
-          id: index + 1,
-          subject: 'Uploaded Content'
-        }));
-        return mappedCards;
-      } catch (error) {
-        console.error('Error parsing cards for signed-in user:', error);
-        return [];
-      }
+  useEffect(() => {
+    const data = localStorage.getItem('generatedContent');
+    if (data) {
+      const parsed: GeneratedContent = JSON.parse(data);
+      setGeneratedContent(parsed);
+      setFlashcards(parsed.flashcards || []);
+      setQuizzes(parsed.quizzes || []);
+      setSessionRatings(Array(parsed.flashcards?.length || 0).fill(null));
     }
-    
-    // If user is guest and has cards in localStorage, use them
-    if (isGuestUser && guestCardsFromStorage) {
-      try {
-        console.log('Guest user with uploaded cards');
-        const mappedCards = guestCardsFromStorage.map((card: GeneratedCard, index: number): Flashcard => ({
-          ...card,
-          id: index + 1,
-          subject: 'Uploaded Content'
-        }));
-        return mappedCards;
-      } catch (error) {
-        console.error('Error parsing guest cards:', error);
-        return [];
-      }
-    }
-    
-    console.log('No cards available');
-    return [];
-  })();
+  }, []);
 
   const currentCardData = flashcards[currentCard];
-  const progress = ((currentCard + 1) / flashcards.length) * 100;
+  const progress = flashcards.length > 0 ? ((currentCard + 1) / flashcards.length) * 100 : 0;
 
   // Timer for session stats
   useEffect(() => {
     const timer = setInterval(() => {
       setSessionStats(prev => ({ ...prev, timeSpent: prev.timeSpent + 1 }));
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
@@ -114,16 +88,22 @@ const Study = () => {
   useEffect(() => {
     return () => {
       if (isGuestUser) {
-        // Clear localStorage after a delay to allow navigation (only for guests)
         setTimeout(() => {
-          localStorage.removeItem('guestCards');
+          localStorage.removeItem('generatedContent');
         }, 1000);
       }
     };
   }, [isGuestUser]);
 
+  // Reset quiz state when quizzes change or tab switches
+  useEffect(() => {
+    setQuizStep(0);
+    setQuizAnswers(Array(quizzes.length).fill(null));
+    setQuizCompleted(false);
+  }, [quizzes, tab]);
+
   // Handle case where no cards are available
-  if (flashcards.length === 0) {
+  if (!generatedContent) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
         <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
@@ -132,10 +112,28 @@ const Study = () => {
             <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-foreground mb-4">No Flashcards Available</h1>
             <p className="text-muted-foreground mb-6">
-              {isGuestUser && guestCardsFromStorage 
-                ? "No cards were generated from your uploaded document. Please try uploading a different document."
-                : "No flashcards are available for study. Please create or upload some flashcards first."
-              }
+              No flashcards are available for study. Please create or upload some flashcards first.
+            </p>
+            <Link to="/upload">
+              <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
+                Upload Document
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (tab === 'flashcards' && flashcards.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
+        <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          <div className="text-center">
+            <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-foreground mb-4">No Flashcards Available</h1>
+            <p className="text-muted-foreground mb-6">
+              No flashcards were generated from your uploaded document. Please try uploading a different document.
             </p>
             <Link to="/upload">
               <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
@@ -153,21 +151,19 @@ const Study = () => {
   };
 
   const handleNextCard = (rating: 'again' | 'hard' | 'good' | 'easy') => {
-    console.log(`Card ${currentCard} rated as: ${rating}`);
-    
-    // Update stats
     if (rating === 'good' || rating === 'easy') {
       setSessionStats(prev => ({ ...prev, correct: prev.correct + 1 }));
     } else if (rating === 'hard') {
       setSessionStats(prev => ({ ...prev, difficult: prev.difficult + 1 }));
     }
-
+    setSessionRatings(prev => {
+      const updated = [...prev];
+      updated[currentCard] = rating;
+      return updated;
+    });
     if (currentCard < flashcards.length - 1) {
       setCurrentCard(currentCard + 1);
       setIsFlipped(false);
-    } else {
-      // Study session complete
-      console.log('Study session completed!');
     }
   };
 
@@ -185,6 +181,14 @@ const Study = () => {
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // For Review tab: filter difficult cards
+  const difficultCards = flashcards.filter((_, idx) => {
+    // If the card index is less than or equal to currentCard and was marked as difficult
+    // We'll need to track which cards were marked as difficult in session
+    // Let's add a state to track ratings per card
+    return sessionRatings[idx] === 'hard';
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
@@ -220,7 +224,7 @@ const Study = () => {
           <div className="flex items-center justify-center space-x-2 mb-4">
             <BookOpen className="h-6 w-6 text-blue-600" />
             <h1 className="text-2xl font-bold text-foreground">
-              {user ? 'Your Study Session' : (guestCardsFromStorage ? 'Uploaded Content' : 'Demo Flashcards')}
+              {user ? 'Your Study Session' : 'Uploaded Content'}
             </h1>
             {isGuestUser && (
               <Badge variant="outline" className="text-orange-600 border-orange-300">
@@ -228,87 +232,257 @@ const Study = () => {
               </Badge>
             )}
           </div>
+          {tab === 'flashcards' && flashcards.length > 0 && (
           <div className="flex items-center justify-center space-x-4 mb-4">
             <Badge className={getDifficultyColor(currentCardData.difficulty)}>
               {currentCardData.difficulty}
             </Badge>
-            <Badge variant="outline">{currentCardData.subject}</Badge>
             <Badge variant="outline">{currentCardData.type}</Badge>
             <span className="text-sm text-muted-foreground">
               Card {currentCard + 1} of {flashcards.length}
             </span>
           </div>
+          )}
+          {tab === 'flashcards' && flashcards.length > 0 && (
           <Progress value={progress} className="max-w-md mx-auto" />
+          )}
         </div>
 
-        {/* Study Mode Selector */}
+        {/* Tab Selector */}
         <div className="flex justify-center mb-8">
           <div className="flex bg-card rounded-lg p-1">
             <Button
-              variant={studyMode === 'flashcard' ? 'default' : 'ghost'}
+              variant={tab === 'flashcards' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setStudyMode('flashcard')}
+              onClick={() => setTab('flashcards')}
             >
               Flashcards
             </Button>
             <Button
-              variant={studyMode === 'quiz' ? 'default' : 'ghost'}
+              variant={tab === 'quiz' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setStudyMode('quiz')}
+              onClick={() => setTab('quiz')}
             >
               Quiz
             </Button>
             <Button
-              variant={studyMode === 'review' ? 'default' : 'ghost'}
+              variant={tab === 'review' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setStudyMode('review')}
+              onClick={() => setTab('review')}
             >
               Review
             </Button>
           </div>
         </div>
 
-        {/* Flashcard */}
-        <div className="max-w-2xl mx-auto mb-8">
-          <Card 
-            className="h-96 cursor-pointer transform-gpu transition-all duration-300 hover:scale-105"
-            onClick={handleCardFlip}
-          >
-            <CardContent className="h-full flex flex-col justify-center items-center p-8 text-center">
-              {!isFlipped ? (
-                <div className="space-y-4">
-                  <div className="text-sm text-muted-foreground mb-4">Question</div>
-                  <h2 className="text-2xl font-semibold text-foreground leading-relaxed">
-                    {currentCardData.question}
-                  </h2>
-                  <div className="mt-8">
-                    <p className="text-sm text-muted-foreground">Click to reveal answer</p>
-                  </div>
+        {/* Tab Content with Animated Transitions */}
+        <div className="relative min-h-[400px]">
+          <AnimatePresence mode="wait">
+            {tab === 'flashcards' && flashcards.length > 0 && (
+              <motion.div
+                key="flashcards"
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -40 }}
+                transition={{ duration: 0.3 }}
+                className="absolute w-full"
+              >
+                {/* Flashcards Content */}
+                <div className="max-w-2xl mx-auto mb-8">
+                  <Card 
+                    className="h-96 cursor-pointer transform-gpu transition-all duration-300 hover:scale-105"
+                    onClick={handleCardFlip}
+                  >
+                    <CardContent className="h-full flex flex-col justify-center items-center p-8 text-center">
+                      {!isFlipped ? (
+                        <div className="space-y-4">
+                          <div className="text-sm text-muted-foreground mb-4">Question</div>
+                          <h2 className="text-2xl font-semibold text-foreground leading-relaxed">
+                            {currentCardData.question}
+                          </h2>
+                          <div className="mt-8">
+                            <p className="text-sm text-muted-foreground">Click to reveal answer</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="text-sm text-muted-foreground mb-4">Answer</div>
+                          <h2 className="text-xl font-medium text-foreground leading-relaxed">
+                            {currentCardData.answer}
+                          </h2>
+                          <div className="mt-8 flex items-center justify-center space-x-4">
+                            <Button variant="outline" size="sm">
+                              <Volume2 className="h-4 w-4 mr-2" />
+                              Play Audio
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              <Star className="h-4 w-4 mr-2" />
+                              {isGuestUser ? 'Sign up to Bookmark' : 'Bookmark'}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="text-sm text-muted-foreground mb-4">Answer</div>
-                  <h2 className="text-xl font-medium text-foreground leading-relaxed">
-                    {currentCardData.answer}
-                  </h2>
-                  <div className="mt-8 flex items-center justify-center space-x-4">
-                    <Button variant="outline" size="sm">
-                      <Volume2 className="h-4 w-4 mr-2" />
-                      Play Audio
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Star className="h-4 w-4 mr-2" />
-                      {isGuestUser ? 'Sign up to Bookmark' : 'Bookmark'}
-                    </Button>
-                  </div>
+              </motion.div>
+            )}
+            {tab === 'quiz' && (
+              <motion.div
+                key="quiz"
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -40 }}
+                transition={{ duration: 0.3 }}
+                className="absolute w-full"
+              >
+                <div className="max-w-2xl mx-auto mb-8 min-h-[500px] flex flex-col justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800 rounded-lg">
+                  {quizzes.length === 0 ? (
+                    <div className="text-center">
+                      <AlertCircle className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                      <h2 className="text-lg font-semibold mb-2">No Quizzes Available</h2>
+                      <p className="text-muted-foreground">No quizzes were generated for this document. Try uploading a different document or check back later.</p>
+                    </div>
+                  ) : quizCompleted ? (
+                    <div className="text-center">
+                      <h2 className="text-2xl font-bold mb-4 text-foreground">Quiz Results</h2>
+                      <div className="mb-6">
+                        {quizzes.map((quiz, idx) => {
+                          const userAnswer = quizAnswers[idx];
+                          const isCorrect = userAnswer === quiz.correct_answer_option;
+                          return (
+                            <Card key={idx} className="mb-4">
+                              <CardContent className="p-6">
+                                <div className="mb-2 font-medium">Q{idx + 1}: {quiz.question}</div>
+                                <ul className="mb-2 space-y-1">
+                                  {quiz.options.map((option, i) => (
+                                    <li key={i} className={`flex items-center gap-2 ${option === quiz.correct_answer_option ? 'text-green-700 font-semibold' : ''} ${userAnswer === option && !isCorrect ? 'text-red-600' : ''}`}> 
+                                      <span className="inline-block w-2 h-2 rounded-full bg-blue-400"></span>
+                                      <span>{option}</span>
+                                      {option === quiz.correct_answer_option && <span className="ml-2 text-xs">(Correct)</span>}
+                                      {userAnswer === option && !isCorrect && <span className="ml-2 text-xs">(Your Answer)</span>}
+                                    </li>
+                                  ))}
+                                </ul>
+                                <div className="text-sm mt-2">
+                                  {isCorrect ? (
+                                    <span className="text-green-700 font-semibold">Correct!</span>
+                                  ) : (
+                                    <span className="text-red-600 font-semibold">Incorrect. Correct answer: {quiz.correct_answer_option}</span>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                      <Button onClick={() => {
+                        setQuizStep(0);
+                        setQuizAnswers(Array(quizzes.length).fill(null));
+                        setQuizCompleted(false);
+                      }}>
+                        Retry Quiz
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center min-h-[400px]">
+                      <Card className="w-full mb-4">
+                        <CardContent className="p-6">
+                          <div className="mb-2 flex items-center gap-2">
+                            <Badge variant="secondary">Quiz</Badge>
+                            <Badge variant="outline">{quizzes[quizStep].difficulty}</Badge>
+                          </div>
+                          <div className="mb-2 font-medium">Q{quizStep + 1}: {quizzes[quizStep].question}</div>
+                          <ul className="mb-4 space-y-2">
+                            {quizzes[quizStep].options.map((option, i) => (
+                              <li key={i}>
+                                <Button
+                                  variant={quizAnswers[quizStep] === option ? 'default' : 'outline'}
+                                  className="w-full justify-start mb-2"
+                                  onClick={() => {
+                                    const updated = [...quizAnswers];
+                                    updated[quizStep] = option;
+                                    setQuizAnswers(updated);
+                                  }}
+                                  disabled={quizAnswers[quizStep] !== undefined && quizAnswers[quizStep] !== null}
+                                >
+                                  {option}
+                                </Button>
+                              </li>
+                            ))}
+                          </ul>
+                          <div className="flex justify-between">
+                            <Button
+                              variant="outline"
+                              onClick={() => setQuizStep(s => Math.max(0, s - 1))}
+                              disabled={quizStep === 0}
+                            >
+                              Previous
+                            </Button>
+                            {quizStep < quizzes.length - 1 ? (
+                              <Button
+                                onClick={() => setQuizStep(s => Math.min(quizzes.length - 1, s + 1))}
+                                disabled={quizAnswers[quizStep] === undefined || quizAnswers[quizStep] === null}
+                              >
+                                Next
+                              </Button>
+                            ) : (
+                              <Button
+                                onClick={() => setQuizCompleted(true)}
+                                disabled={quizAnswers.length !== quizzes.length || quizAnswers.includes(null) || quizAnswers.includes(undefined)}
+                              >
+                                Submit
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <div className="text-muted-foreground text-sm mb-2">
+                        Question {quizStep + 1} of {quizzes.length}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </motion.div>
+            )}
+            {tab === 'review' && (
+              <motion.div
+                key="review"
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -40 }}
+                transition={{ duration: 0.3 }}
+                className="absolute w-full"
+              >
+                <div className="max-w-2xl mx-auto mb-8">
+                  <h2 className="text-xl font-bold mb-4 text-foreground">Review: Difficult Cards</h2>
+                  {difficultCards.length === 0 ? (
+                    <div className="text-center text-muted-foreground">
+                      <Star className="h-8 w-8 mx-auto mb-2 text-yellow-400" />
+                      <p>No difficult cards to review! Great job!</p>
+                    </div>
+                  ) : (
+                    difficultCards.map((card, idx) => (
+                      <Card key={idx} className="mb-4">
+                        <CardContent className="p-6">
+                          <div className="mb-2 flex items-center gap-2">
+                            <Badge variant="outline">Difficult</Badge>
+                            <Badge variant="outline">{card.type}</Badge>
+                          </div>
+                          <div className="mb-2 font-medium">Q: {card.question}</div>
+                          <div className="mb-2">A: {card.answer}</div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Action Buttons */}
-        {isFlipped && (
+        {tab === 'flashcards' && isFlipped && flashcards.length > 0 && (
           <div className="max-w-2xl mx-auto">
             <div className="text-center mb-4">
               <p className="text-sm text-muted-foreground">How well did you know this?</p>

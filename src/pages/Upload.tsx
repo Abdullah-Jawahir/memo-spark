@@ -48,6 +48,30 @@ const Upload = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [guestLimitExceeded, setGuestLimitExceeded] = useState(false);
 
+  interface Quiz {
+    type: string;
+    answer: string;
+    options: string[];
+    question: string;
+    difficulty: string;
+    correct_answer_option: string;
+  }
+
+  interface GeneratedContent {
+    flashcards?: GeneratedCard[];
+    quizzes?: Quiz[];
+    [key: string]: unknown;
+  }
+  const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
+  const generatedContentRef = useRef<GeneratedContent | null>(null);
+
+  // Keep the ref in sync with the state
+  useEffect(() => {
+    if (generatedContent) {
+      generatedContentRef.current = generatedContent;
+    }
+  }, [generatedContent]);
+
   const supportedFormats = [
     { icon: FileText, name: "PDF", description: "Text documents, study materials" },
     { icon: Image, name: "Images", description: "JPG, PNG - with OCR support" },
@@ -158,7 +182,12 @@ const Upload = () => {
         setProcessingStatus('completed');
         setIsUploading(false);
         setUploadComplete(true);
-        setGeneratedCards(metadata.generated_cards || []);
+        const content = response.data.metadata.
+generated_content;
+        setGeneratedContent(content);
+        generatedContentRef.current = content;
+        setGeneratedCards(Array.isArray(content.flashcards) ? content.flashcards : []);
+        localStorage.setItem('generatedContent', JSON.stringify(content));
       } else if (status === 'failed') {
         setProcessingStatus('failed');
         setIsUploading(false);
@@ -348,9 +377,18 @@ const Upload = () => {
                       <Button
                         className="bg-gradient-to-r from-blue-600 to-purple-600 flex items-center gap-2 w-full h-full min-w-[140px]"
                         onClick={() => {
-                          localStorage.setItem('guestCards', JSON.stringify(generatedCards));
-                          navigate('/study');
+                          const content = generatedContentRef.current;
+                          console.log('Saving to localStorage (from button):', content);
+                          if (content && content.flashcards && content.flashcards.length > 0) {
+                            localStorage.setItem('generatedContent', JSON.stringify(content));
+                            navigate('/study');
+                          }
                         }}
+                        disabled={
+                          !generatedContentRef.current ||
+                          !generatedContentRef.current.flashcards ||
+                          generatedContentRef.current.flashcards.length === 0
+                        }
                       >
                         <BookOpen className="h-4 w-4" />
                         {isGuest ? 'Try Studying' : 'Start Studying'}
