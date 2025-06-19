@@ -59,6 +59,8 @@ const Study = () => {
   const [quizStep, setQuizStep] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<(string | null)[]>([]);
   const [quizCompleted, setQuizCompleted] = useState(false);
+  const [bookmarkedCards, setBookmarkedCards] = useState<number[]>([]);
+  const [showSettings, setShowSettings] = useState(false);
 
   const isGuestUser = !user && generatedContent !== null;
 
@@ -190,6 +192,51 @@ const Study = () => {
     return sessionRatings[idx] === 'hard';
   });
 
+  const handlePlayAudio = (text: string) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new window.SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert('Sorry, your browser does not support text-to-speech.');
+    }
+  };
+
+  const handleBookmark = (cardIdx: number) => {
+    if (isGuestUser) {
+      window.location.href = '/register';
+      return;
+    }
+    setBookmarkedCards(prev =>
+      prev.includes(cardIdx)
+        ? prev.filter(idx => idx !== cardIdx)
+        : [...prev, cardIdx]
+    );
+  };
+
+  const handleRestartSession = () => {
+    setCurrentCard(0);
+    setIsFlipped(false);
+    setSessionStats({ correct: 0, difficult: 0, timeSpent: 0 });
+    setSessionRatings(Array(flashcards.length).fill(null));
+  };
+
+  const handleExportProgress = () => {
+    const data = {
+      sessionStats,
+      sessionRatings,
+      flashcards,
+      bookmarkedCards,
+      time: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'memo-spark-session.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800 overflow-x-hidden">
       <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
@@ -311,13 +358,13 @@ const Study = () => {
                             {currentCardData.answer}
                           </h2>
                           <div className="mt-8 flex items-center justify-center space-x-4">
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); handlePlayAudio(currentCardData.answer); }}>
                               <Volume2 className="h-4 w-4 mr-2" />
                               Play Audio
                             </Button>
-                            <Button variant="outline" size="sm">
-                              <Star className="h-4 w-4 mr-2" />
-                              {isGuestUser ? 'Sign up to Bookmark' : 'Bookmark'}
+                            <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); handleBookmark(currentCard); }}>
+                              <Star className={`h-4 w-4 mr-2 ${bookmarkedCards.includes(currentCard) ? 'text-yellow-400 fill-yellow-400' : ''}`} />
+                              {isGuestUser ? 'Sign up to Bookmark' : (bookmarkedCards.includes(currentCard) ? 'Bookmarked' : 'Bookmark')}
                             </Button>
                           </div>
                         </div>
@@ -576,11 +623,11 @@ const Study = () => {
 
         {/* Study Controls */}
         <div className="max-w-2xl mx-auto mt-8 flex justify-center space-x-4">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleRestartSession}>
             <RotateCcw className="h-4 w-4 mr-2" />
             Restart Session
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => setShowSettings(true)}>
             Settings
           </Button>
           {isGuestUser ? (
@@ -591,11 +638,20 @@ const Study = () => {
               </Button>
             </Link>
           ) : (
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleExportProgress}>
               Export Progress
             </Button>
           )}
         </div>
+        {showSettings && (
+          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-8 shadow-lg max-w-sm w-full">
+              <h2 className="text-lg font-bold mb-4">Settings</h2>
+              <p className="mb-4 text-muted-foreground">Settings functionality coming soon!</p>
+              <Button variant="outline" onClick={() => setShowSettings(false)}>Close</Button>
+            </div>
+          </div>
+        )}
 
         {/* Study Stats */}
         <div className="max-w-2xl mx-auto mt-8">
