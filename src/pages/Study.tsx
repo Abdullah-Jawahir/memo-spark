@@ -409,13 +409,13 @@ const Study = () => {
                       </div>
                       {/* Action Buttons */}
                       <div className="flex flex-col sm:flex-row justify-center gap-4 mt-4">
-                        <Button onClick={() => {
-                          setQuizStep(0);
-                          setQuizAnswers(Array(quizzes.length).fill(null));
-                          setQuizCompleted(false);
-                        }}>
-                          Retry Quiz
-                        </Button>
+                      <Button onClick={() => {
+                        setQuizStep(0);
+                        setQuizAnswers(Array(quizzes.length).fill(null));
+                        setQuizCompleted(false);
+                      }}>
+                        Retry Quiz
+                      </Button>
                         <Button variant="outline" onClick={() => {
                           setTab('review');
                         }}>
@@ -437,8 +437,8 @@ const Study = () => {
                               <li key={i} className="w-full">
                                 <Button
                                   variant={quizAnswers[quizStep] === option ? 'default' : 'outline'}
-                                  className="w-full justify-start mb-2 break-words whitespace-normal"
-                                  style={{ whiteSpace: 'normal' }}
+                                  className="w-full justify-start mb-2 break-words whitespace-normal text-left"
+                                  style={{ whiteSpace: 'normal', padding: 25, paddingLeft: 10 }}
                                   onClick={() => {
                                     const updated = [...quizAnswers];
                                     updated[quizStep] = option;
