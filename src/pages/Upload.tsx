@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload as UploadIcon, FileText, Image, File, Cloud, CheckCircle, AlertCircle, Info, UserPlus, Eye, BookOpen } from 'lucide-react';
+import { Upload as UploadIcon, FileText, Image, File, Cloud, CheckCircle, AlertCircle, Info, UserPlus, Eye, BookOpen, Lock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
@@ -20,6 +20,17 @@ interface GeneratedCard {
   answer: string;
   difficulty: string;
 }
+
+interface ApiErrorResponse {
+  error: string;
+  code?: string;
+}
+
+const isApiError = (error: unknown): error is { response: { data: ApiErrorResponse } } => {
+  return error && typeof error === 'object' && 'response' in error && 
+         error.response && typeof error.response === 'object' && 'data' in error.response &&
+         error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data;
+};
 
 const Upload = () => {
   const { user, session } = useAuth();
@@ -35,6 +46,7 @@ const Upload = () => {
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [processingStatus, setProcessingStatus] = useState<'idle' | 'processing' | 'completed' | 'failed'>('idle');
   const [showPreview, setShowPreview] = useState(false);
+  const [guestLimitExceeded, setGuestLimitExceeded] = useState(false);
 
   const supportedFormats = [
     { icon: FileText, name: "PDF", description: "Text documents, study materials" },
@@ -50,6 +62,20 @@ const Upload = () => {
     }
   };
 
+  // Helper to get the correct upload endpoint
+  const getUploadEndpoint = () =>
+    isGuest
+      ? API_ENDPOINTS.DOCUMENTS.GUEST_UPLOAD
+      : API_ENDPOINTS.DOCUMENTS.UPLOAD;
+
+  // Helper to get the correct status endpoint
+  const getStatusEndpoint = (id: string) =>
+    isGuest
+      ? typeof API_ENDPOINTS.DOCUMENTS.GUEST_STATUS === 'function'
+        ? API_ENDPOINTS.DOCUMENTS.GUEST_STATUS(id)
+        : API_ENDPOINTS.DOCUMENTS.GUEST_STATUS
+      : API_ENDPOINTS.DOCUMENTS.STATUS(id);
+
   const handleFileUpload = async () => {
     if (!selectedFile) {
       toast({
@@ -63,6 +89,7 @@ const Upload = () => {
     setIsUploading(true);
     setUploadProgress(0);
     setProcessingStatus('processing');
+    setGuestLimitExceeded(false);
 
     const formData = new FormData();
     formData.append('file', selectedFile);
@@ -70,7 +97,7 @@ const Upload = () => {
     formData.append('is_guest', !user ? '1' : '0');
 
     try {
-      const response = await axios.post(API_ENDPOINTS.DOCUMENTS.UPLOAD, formData, {
+      const response = await axios.post(getUploadEndpoint(), formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': session ? `Bearer ${session.access_token}` : undefined
@@ -89,11 +116,28 @@ const Upload = () => {
 
       setDocumentId(response.data.document_id);
       checkProcessingStatus(response.data.document_id);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Upload failed:', error);
+      
+      // Handle specific guest limit exceeded error
+      if (isApiError(error) && error.response.data.code === 'GUEST_LIMIT_EXCEEDED') {
+        setGuestLimitExceeded(true);
+        setProcessingStatus('failed');
+        setIsUploading(false);
+        toast({
+          title: "Upload limit reached",
+          description: error.response.data.error || "Guest users can only upload one document. Please sign up to upload more documents.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Handle other errors
+      const errorMessage = isApiError(error) ? error.response.data.error : "There was an error uploading your file. Please try again.";
+      
       toast({
         title: "Upload failed",
-        description: "There was an error uploading your file. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
       setIsUploading(false);
@@ -103,7 +147,7 @@ const Upload = () => {
 
   const checkProcessingStatus = async (id: string) => {
     try {
-      const response = await axios.get(API_ENDPOINTS.DOCUMENTS.STATUS(id), {
+      const response = await axios.get(getStatusEndpoint(id), {
         headers: {
           'Authorization': session ? `Bearer ${session.access_token}` : undefined
         }
@@ -136,6 +180,17 @@ const Upload = () => {
 
   const isGuest = !user;
 
+  // Reset guest limit exceeded state when user signs in
+  useEffect(() => {
+    if (user && guestLimitExceeded) {
+      setGuestLimitExceeded(false);
+      setProcessingStatus('idle');
+      setUploadComplete(false);
+      setGeneratedCards([]);
+      setSelectedFile(null);
+    }
+  }, [user, guestLimitExceeded]);
+
   // Calculate difficulty distribution
   const getDifficultyDistribution = () => {
     const distribution = generatedCards.reduce((acc, card) => {
@@ -161,13 +216,26 @@ const Upload = () => {
         </div>
 
         {/* Guest User Banner */}
-        {isGuest && (
+        {isGuest && !guestLimitExceeded && (
           <Alert className="mb-6 border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
             <Info className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-800">
               <strong>Try out MemoSpark instantly—no sign-up needed!</strong> Upload a document and generate flashcards to experience our AI-powered learning platform. 
               <Link to="/register" className="ml-2 underline font-medium hover:text-blue-600">
                 Create a free account to save your progress →
+              </Link>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Guest Limit Exceeded Banner */}
+        {guestLimitExceeded && (
+          <Alert className="mb-6 border-red-200 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20">
+            <Lock className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">
+              <strong>Upload limit reached!</strong> Guest users can only upload one document per session. 
+              <Link to="/register" className="ml-2 underline font-medium hover:text-red-600">
+                Create a free account to upload unlimited documents →
               </Link>
             </AlertDescription>
           </Alert>
@@ -267,36 +335,39 @@ const Upload = () => {
                     </Alert>
                   )}
                   
-                  <div className="flex justify-center gap-4 mb-6">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowPreview(!showPreview)}
-                      className="flex items-center gap-2"
-                    >
-                      <Eye className="h-4 w-4" />
-                      {showPreview ? 'Hide Preview' : 'Preview Cards'}
-                    </Button>
-                    <Button 
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 flex items-center gap-2"
-                      onClick={() => {
-                        console.log('Upload page debug - generatedCards:', generatedCards);
-                        // Store cards in localStorage instead of URL parameters
-                        localStorage.setItem('guestCards', JSON.stringify(generatedCards));
-                        console.log('Stored cards in localStorage');
-                        // Navigate to study page
-                        navigate('/study');
-                      }}
-                    >
-                      <BookOpen className="h-4 w-4" />
-                      {isGuest ? 'Try Studying' : 'Start Studying'}
-                    </Button>
+                  <div className="mb-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowPreview(!showPreview)}
+                        className="flex items-center gap-2 w-full h-full min-w-[140px]"
+                      >
+                        <Eye className="h-4 w-4" />
+                        {showPreview ? 'Hide Preview' : 'Preview Cards'}
+                      </Button>
+                      <Button
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 flex items-center gap-2 w-full h-full min-w-[140px]"
+                        onClick={() => {
+                          localStorage.setItem('guestCards', JSON.stringify(generatedCards));
+                          navigate('/study');
+                        }}
+                      >
+                        <BookOpen className="h-4 w-4" />
+                        {isGuest ? 'Try Studying' : 'Start Studying'}
+                      </Button>
+                    </div>
                     {isGuest && (
-                      <Link to="/register">
-                        <Button variant="outline" className="border-green-500 text-green-700 hover:bg-green-50">
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          Save Progress
-                        </Button>
-                      </Link>
+                      <div className="flex justify-center mt-4">
+                        <Link to="/register" className="w-full sm:w-auto">
+                          <Button
+                            variant="outline"
+                            className="border-green-500 text-green-700 hover:bg-green-50 flex items-center gap-2 w-full sm:w-[200px] h-full min-w-[140px]"
+                          >
+                            <UserPlus className="h-4 w-4" />
+                            Save Progress
+                          </Button>
+                        </Link>
+                      </div>
                     )}
                   </div>
 
@@ -371,6 +442,38 @@ const Upload = () => {
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Guest Limit Exceeded State */}
+              {guestLimitExceeded && (
+                <div className="text-center py-8">
+                  <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20 rounded-lg p-8 border-2 border-dashed border-red-200 dark:border-red-800">
+                    <Lock className="h-16 w-16 text-red-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-foreground mb-2">Upload Limit Reached</h3>
+                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                      Guest users can only upload one document per session. Create a free account to upload unlimited documents and save your progress!
+                    </p>
+                    
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                      <Link to="/register">
+                        <Button className="bg-gradient-to-r from-blue-600 to-purple-600 flex items-center gap-2">
+                          <UserPlus className="h-4 w-4" />
+                          Create Free Account
+                        </Button>
+                      </Link>
+                      <Link to="/login">
+                        <Button variant="outline" className="flex items-center gap-2">
+                          <UserPlus className="h-4 w-4" />
+                          Sign In
+                        </Button>
+                      </Link>
+                    </div>
+                    
+                    <div className="mt-6 text-sm text-muted-foreground">
+                      <p>Already have an account? <Link to="/login" className="text-blue-600 hover:underline">Sign in here</Link></p>
+                    </div>
+                  </div>
                 </div>
               )}
             </CardContent>
