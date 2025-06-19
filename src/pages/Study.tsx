@@ -191,7 +191,7 @@ const Study = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800 overflow-x-hidden">
       <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
       <div className="max-w-4xl mx-auto px-6 py-8">
         {/* Logo Header */}
@@ -345,60 +345,100 @@ const Study = () => {
                     </div>
                   ) : quizCompleted ? (
                     <div className="text-center">
-                      <h2 className="text-2xl font-bold mb-4 text-foreground">Quiz Results</h2>
-                      <div className="mb-6">
+                      {/* Quiz Results Summary */}
+                      <Card className="mb-6 bg-card shadow-lg border border-border">
+                        <CardContent className="flex flex-col items-center p-6">
+                          <div className="text-3xl font-bold mb-2 text-foreground">
+                            {(() => {
+                              const correct = quizzes.filter((q, idx) => quizAnswers[idx] === q.correct_answer_option).length;
+                              if (correct === quizzes.length) return '🏆 Perfect!';
+                              if (correct / quizzes.length >= 0.8) return '🎉 Great Job!';
+                              if (correct / quizzes.length >= 0.5) return '👍 Good Effort!';
+                              return '💡 Keep Practicing!';
+                            })()}
+                          </div>
+                          <div className="text-2xl font-bold mb-1 text-foreground">
+                            {quizzes.filter((q, idx) => quizAnswers[idx] === q.correct_answer_option).length} / {quizzes.length}
+                          </div>
+                          <div className="text-base mb-2 text-muted-foreground">
+                            Score
+                          </div>
+                          <Progress value={100 * quizzes.filter((q, idx) => quizAnswers[idx] === q.correct_answer_option).length / quizzes.length} className="w-full max-w-xs mb-2" />
+                          <div className="text-sm text-muted-foreground">
+                            {(() => {
+                              const correct = quizzes.filter((q, idx) => quizAnswers[idx] === q.correct_answer_option).length;
+                              if (correct === quizzes.length) return 'Outstanding! You got everything right.';
+                              if (correct / quizzes.length >= 0.8) return 'Awesome! Just a little more to perfection.';
+                              if (correct / quizzes.length >= 0.5) return 'Nice work! Review the incorrect answers to improve.';
+                              return 'Don\'t worry, keep practicing and you\'ll get there!';
+                            })()}
+                          </div>
+                        </CardContent>
+                      </Card>
+                      {/* Quiz Results Per Question */}
+                      <div className="mb-6 grid gap-4">
                         {quizzes.map((quiz, idx) => {
                           const userAnswer = quizAnswers[idx];
                           const isCorrect = userAnswer === quiz.correct_answer_option;
                           return (
-                            <Card key={idx} className="mb-4">
-                              <CardContent className="p-6">
-                                <div className="mb-2 font-medium">Q{idx + 1}: {quiz.question}</div>
-                                <ul className="mb-2 space-y-1">
-                                  {quiz.options.map((option, i) => (
-                                    <li key={i} className={`flex items-center gap-2 ${option === quiz.correct_answer_option ? 'text-green-700 font-semibold' : ''} ${userAnswer === option && !isCorrect ? 'text-red-600' : ''}`}> 
-                                      <span className="inline-block w-2 h-2 rounded-full bg-blue-400"></span>
-                                      <span>{option}</span>
-                                      {option === quiz.correct_answer_option && <span className="ml-2 text-xs">(Correct)</span>}
-                                      {userAnswer === option && !isCorrect && <span className="ml-2 text-xs">(Your Answer)</span>}
-                                    </li>
-                                  ))}
-                                </ul>
-                                <div className="text-sm mt-2">
-                                  {isCorrect ? (
-                                    <span className="text-green-700 font-semibold">Correct!</span>
-                                  ) : (
-                                    <span className="text-red-600 font-semibold">Incorrect. Correct answer: {quiz.correct_answer_option}</span>
+                            <Card key={idx} className={`mb-2 shadow border-l-4 bg-card text-card-foreground ${isCorrect ? 'border-primary' : 'border-destructive'}`}> 
+                              <CardContent className="p-4">
+                                <div className="flex items-center mb-2">
+                                  <span className={`mr-2 text-lg ${isCorrect ? 'text-primary' : 'text-destructive'}`}>{isCorrect ? '✔️' : '❌'}</span>
+                                  <span className="font-semibold text-card-foreground">Q{idx + 1}: {quiz.question}</span>
+                                </div>
+                                <div className="mb-1">
+                                  <span className="font-medium text-card-foreground">Your answer: </span>
+                                  <span className={userAnswer === quiz.correct_answer_option ? 'text-primary font-semibold' : 'text-destructive font-semibold'}>
+                                    {userAnswer}
+                                  </span>
+                                  {userAnswer !== quiz.correct_answer_option && (
+                                    <span className="ml-2 text-xs text-destructive">(Incorrect)</span>
                                   )}
                                 </div>
+                                {userAnswer !== quiz.correct_answer_option && (
+                                  <div>
+                                    <span className="font-medium text-card-foreground">Correct answer: </span>
+                                    <span className="text-primary font-semibold">{quiz.correct_answer_option}</span>
+                                  </div>
+                                )}
                               </CardContent>
                             </Card>
                           );
                         })}
                       </div>
-                      <Button onClick={() => {
-                        setQuizStep(0);
-                        setQuizAnswers(Array(quizzes.length).fill(null));
-                        setQuizCompleted(false);
-                      }}>
-                        Retry Quiz
-                      </Button>
+                      {/* Action Buttons */}
+                      <div className="flex flex-col sm:flex-row justify-center gap-4 mt-4">
+                        <Button onClick={() => {
+                          setQuizStep(0);
+                          setQuizAnswers(Array(quizzes.length).fill(null));
+                          setQuizCompleted(false);
+                        }}>
+                          Retry Quiz
+                        </Button>
+                        <Button variant="outline" onClick={() => {
+                          setTab('review');
+                        }}>
+                          Review Incorrect Answers
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center min-h-[400px]">
-                      <Card className="w-full mb-4">
-                        <CardContent className="p-6">
+                      <Card className="w-full mb-4 bg-card shadow-md">
+                        <CardContent className="p-6 overflow-x-auto">
                           <div className="mb-2 flex items-center gap-2">
                             <Badge variant="secondary">Quiz</Badge>
                             <Badge variant="outline">{quizzes[quizStep].difficulty}</Badge>
                           </div>
-                          <div className="mb-2 font-medium">Q{quizStep + 1}: {quizzes[quizStep].question}</div>
-                          <ul className="mb-4 space-y-2">
+                          <div className="mb-2 font-medium break-words">Q{quizStep + 1}: {quizzes[quizStep].question}</div>
+                          <ul className="mb-4 space-y-2 break-words">
                             {quizzes[quizStep].options.map((option, i) => (
-                              <li key={i}>
+                              <li key={i} className="w-full">
                                 <Button
                                   variant={quizAnswers[quizStep] === option ? 'default' : 'outline'}
-                                  className="w-full justify-start mb-2"
+                                  className="w-full justify-start mb-2 break-words whitespace-normal"
+                                  style={{ whiteSpace: 'normal' }}
                                   onClick={() => {
                                     const updated = [...quizAnswers];
                                     updated[quizStep] = option;
@@ -463,14 +503,14 @@ const Study = () => {
                     </div>
                   ) : (
                     difficultCards.map((card, idx) => (
-                      <Card key={idx} className="mb-4">
-                        <CardContent className="p-6">
+                      <Card key={idx} className="mb-4 bg-card shadow-md">
+                        <CardContent className="p-6 overflow-x-auto">
                           <div className="mb-2 flex items-center gap-2">
                             <Badge variant="outline">Difficult</Badge>
                             <Badge variant="outline">{card.type}</Badge>
                           </div>
-                          <div className="mb-2 font-medium">Q: {card.question}</div>
-                          <div className="mb-2">A: {card.answer}</div>
+                          <div className="mb-2 font-medium break-words">Q: {card.question}</div>
+                          <div className="mb-2 break-words">A: {card.answer}</div>
                         </CardContent>
                       </Card>
                     ))
