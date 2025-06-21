@@ -47,6 +47,9 @@ const Upload = () => {
   const [processingStatus, setProcessingStatus] = useState<'idle' | 'processing' | 'completed' | 'failed'>('idle');
   const [showPreview, setShowPreview] = useState(false);
   const [guestLimitExceeded, setGuestLimitExceeded] = useState(false);
+  const [deckName, setDeckName] = useState("");
+  const [cardTypes, setCardTypes] = useState<string[]>(["flashcard", "exercise"]); // default checked
+  const [difficulty, setDifficulty] = useState<string>("intermediate");
 
   interface Quiz {
     type: string;
@@ -118,6 +121,9 @@ const Upload = () => {
     const formData = new FormData();
     formData.append('file', selectedFile);
     formData.append('language', selectedLanguage);
+    formData.append('deck_name', deckName);
+    cardTypes.forEach(type => formData.append('card_types[]', type));
+    formData.append('difficulty', difficulty);
     formData.append('is_guest', !user ? '1' : '0');
 
     try {
@@ -546,33 +552,76 @@ generated_content;
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="deck-name">Deck Name</Label>
-                    <Input id="deck-name" placeholder="e.g., Biology Chapter 5" className="mt-1" />
+                    <Input
+                      id="deck-name"
+                      placeholder="e.g., Biology Chapter 5"
+                      className="mt-1"
+                      value={deckName}
+                      onChange={e => setDeckName(e.target.value)}
+                    />
                   </div>
-                  
                   <div>
                     <Label>Card Types</Label>
                     <div className="mt-2 space-y-2">
                       <label className="flex items-center space-x-2">
-                        <input type="checkbox" defaultChecked className="rounded" />
+                        <input
+                          type="checkbox"
+                          className="rounded"
+                          checked={cardTypes.includes('flashcard')}
+                          onChange={e => {
+                            setCardTypes(prev => e.target.checked ? [...prev, 'flashcard'] : prev.filter(t => t !== 'flashcard'));
+                          }}
+                        />
                         <span className="text-sm">Question & Answer</span>
                       </label>
                       <label className="flex items-center space-x-2">
-                        <input type="checkbox" defaultChecked className="rounded" />
+                        <input
+                          type="checkbox"
+                          className="rounded"
+                          checked={cardTypes.includes('exercise')}
+                          onChange={e => {
+                            setCardTypes(prev => e.target.checked ? [...prev, 'exercise'] : prev.filter(t => t !== 'exercise'));
+                          }}
+                        />
                         <span className="text-sm">Fill in the blanks</span>
                       </label>
                       <label className="flex items-center space-x-2">
-                        <input type="checkbox" className="rounded" />
+                        <input
+                          type="checkbox"
+                          className="rounded"
+                          checked={cardTypes.includes('quiz')}
+                          onChange={e => {
+                            setCardTypes(prev => e.target.checked ? [...prev, 'quiz'] : prev.filter(t => t !== 'quiz'));
+                          }}
+                        />
                         <span className="text-sm">Multiple choice</span>
                       </label>
                     </div>
                   </div>
-
                   <div>
                     <Label>Difficulty Level</Label>
                     <div className="mt-2 flex gap-2">
-                      <Badge variant="outline" className="cursor-pointer">Beginner</Badge>
-                      <Badge variant="default" className="cursor-pointer">Intermediate</Badge>
-                      <Badge variant="outline" className="cursor-pointer">Advanced</Badge>
+                      <Badge
+                        variant={difficulty === 'beginner' ? 'default' : 'outline'}
+                        className="cursor-pointer"
+                        onClick={() => setDifficulty('beginner')}
+                      >
+                        Beginner
+                      </Badge>
+                      <Badge
+                        variant={difficulty === 'intermediate' ? 'default' : 'outline'}
+                        className="cursor-pointer"
+                        onClick={() => setDifficulty('intermediate')}
+                      >
+                        Intermediate
+                      </Badge>
+                      <Badge
+                        variant={difficulty === 'advanced' ? 'default' : 'outline'}
+                        className="cursor-pointer"
+                        onClick={() => setDifficulty('advanced')}
+                      >
+                        Advanced
+                      </Badge>
                     </div>
                   </div>
                 </div>
