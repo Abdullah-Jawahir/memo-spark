@@ -60,9 +60,20 @@ const Upload = () => {
     correct_answer_option: string;
   }
 
+  interface Exercise {
+    type: 'fill_blank' | 'true_false' | 'short_answer' | 'matching';
+    instruction: string;
+    exercise_text?: string;
+    answer: string | Record<string, string>;
+    difficulty: string;
+    concepts?: string[];
+    definitions?: string[];
+  }
+
   interface GeneratedContent {
     flashcards?: GeneratedCard[];
     quizzes?: Quiz[];
+    exercises?: Exercise[];
     [key: string]: unknown;
   }
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
@@ -418,19 +429,25 @@ generated_content;
                   {/* Preview Cards Section */}
                   {showPreview && (
                     <div className="mt-6">
-                      <h4 className="text-lg font-semibold text-foreground mb-4">Generated Flashcards Preview</h4>
+                      <h4 className="text-lg font-semibold text-foreground mb-4">Generated Content Preview</h4>
                       
                       {/* Summary Statistics */}
-                      <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="grid grid-cols-3 gap-4 mb-4">
                         <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg">
                           <div className="text-2xl font-bold text-blue-600">{generatedCards.length}</div>
-                          <div className="text-xs text-blue-600">Total Cards</div>
+                          <div className="text-xs text-blue-600">Flashcards</div>
+                        </div>
+                        <div className="bg-purple-50 dark:bg-purple-950/20 p-3 rounded-lg">
+                          <div className="text-2xl font-bold text-purple-600">
+                            {generatedContent?.quizzes?.length || 0}
+                          </div>
+                          <div className="text-xs text-purple-600">Quizzes</div>
                         </div>
                         <div className="bg-green-50 dark:bg-green-950/20 p-3 rounded-lg">
                           <div className="text-2xl font-bold text-green-600">
-                            {Object.keys(difficultyDistribution).length}
+                            {generatedContent?.exercises?.length || 0}
                           </div>
-                          <div className="text-xs text-green-600">Difficulty Levels</div>
+                          <div className="text-xs text-green-600">Exercises</div>
                         </div>
                       </div>
                       
