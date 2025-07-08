@@ -201,13 +201,16 @@ const Study = () => {
   };
 
   const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Easy': return 'bg-green-100 text-green-800';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800';
-      case 'Hard': return 'bg-red-100 text-red-800';
+    switch (difficulty.toLowerCase()) {
+      case 'easy': return 'bg-green-100 text-green-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'hard': return 'bg-red-100 text-red-800';
+      case 'intermediate': return 'bg-yellow-100 text-yellow-800'; // treat as medium
       default: return 'bg-card text-card-foreground';
     }
   };
+
+  const capitalize = (s: string | undefined) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -297,7 +300,7 @@ const Study = () => {
           <Alert className="mb-6 border-orange-200 bg-gradient-to-r from-orange-50 to-red-50 text-sm sm:text-base">
             <AlertCircle className="h-4 w-4 text-orange-600" />
             <AlertDescription className="text-orange-800">
-              <strong>Guest Session:</strong> These flashcards are for temporary use only—create a free account to save them and track your progress! 
+              <strong>Guest Session:</strong> These flashcards are for temporary use only—create a free account to save them and track your progress!
               <Link to="/register" className="ml-2 underline font-medium hover:text-orange-600">
                 Sign up now to unlock full features →
               </Link>
@@ -319,18 +322,18 @@ const Study = () => {
             )}
           </div>
           {tab === 'flashcards' && flashcards.length > 0 && (
-          <div className="flex items-center justify-center space-x-4 mb-4">
-            <Badge className={getDifficultyColor(currentCardData.difficulty)}>
-              {currentCardData.difficulty}
-            </Badge>
-            <Badge variant="outline">{currentCardData.type}</Badge>
-            <span className="text-sm text-muted-foreground">
-              Card {currentCard + 1} of {flashcards.length}
-            </span>
-          </div>
+            <div className="flex items-center justify-center space-x-4 mb-4">
+              <Badge className={getDifficultyColor(currentCardData.difficulty)}>
+                {capitalize(currentCardData.difficulty)}
+              </Badge>
+              <Badge variant="outline">{currentCardData.type}</Badge>
+              <span className="text-sm text-muted-foreground">
+                Card {currentCard + 1} of {flashcards.length}
+              </span>
+            </div>
           )}
           {tab === 'flashcards' && flashcards.length > 0 && (
-          <Progress value={progress} className="max-w-md mx-auto" />
+            <Progress value={progress} className="max-w-md mx-auto" />
           )}
         </div>
 
@@ -409,7 +412,7 @@ const Study = () => {
                     </motion.div>
                   )}
                   {!sessionComplete && (
-                    <Card 
+                    <Card
                       className="h-fit sm:h-96 cursor-pointer transform-gpu transition-all duration-300 hover:scale-105 mt-2 sm:mt-0 "
                       onClick={handleCardFlip}
                     >
@@ -502,7 +505,7 @@ const Study = () => {
                           const userAnswer = quizAnswers[idx];
                           const isCorrect = userAnswer === quiz.correct_answer_option;
                           return (
-                            <Card key={idx} className={`mb-2 shadow border-l-4 bg-card text-card-foreground ${isCorrect ? 'border-primary' : 'border-destructive'}`}> 
+                            <Card key={idx} className={`mb-2 shadow border-l-4 bg-card text-card-foreground ${isCorrect ? 'border-primary' : 'border-destructive'}`}>
                               <CardContent className="p-2 sm:p-4 text-sm sm:text-base">
                                 <div className="flex items-center mb-2">
                                   <span className={`mr-2 text-lg ${isCorrect ? 'text-primary' : 'text-destructive'}`}>{isCorrect ? '✔️' : '❌'}</span>
@@ -530,13 +533,13 @@ const Study = () => {
                       </div>
                       {/* Action Buttons */}
                       <div className="flex flex-col sm:flex-row justify-center gap-4 mt-4">
-                      <Button onClick={() => {
-                        setQuizStep(0);
-                        setQuizAnswers(Array(quizzes.length).fill(null));
-                        setQuizCompleted(false);
-                      }}>
-                        Retry Quiz
-                      </Button>
+                        <Button onClick={() => {
+                          setQuizStep(0);
+                          setQuizAnswers(Array(quizzes.length).fill(null));
+                          setQuizCompleted(false);
+                        }}>
+                          Retry Quiz
+                        </Button>
                         <Button variant="outline" onClick={() => {
                           setTab('review');
                         }}>
@@ -550,7 +553,7 @@ const Study = () => {
                         <CardContent className="p-2 sm:p-6 overflow-x-auto pb-4">
                           <div className="mb-2 flex items-center gap-2">
                             <Badge variant="secondary">Quiz</Badge>
-                            <Badge variant="outline">{quizzes[quizStep].difficulty}</Badge>
+                            <Badge variant="outline">{capitalize(quizzes[quizStep].difficulty) || "Unknown"}</Badge>
                           </div>
                           <div className="mb-4 font-medium break-words break-all whitespace-pre-line text-base sm:text-lg">Q{quizStep + 1}: {quizzes[quizStep].question}</div>
                           <hr className="my-2 border-muted" />
@@ -699,13 +702,13 @@ const Study = () => {
                           const correctAnswerDisplay = isMatching && typeof correctAnswer === 'object' && correctAnswer !== null
                             ? Object.entries(correctAnswer).map(([k, v]) => `${k}: ${v}`).join(', ')
                             : correctAnswer;
-                          const isCorrect = typeof correctAnswer === 'string' && typeof userAnswer === 'string' 
+                          const isCorrect = typeof correctAnswer === 'string' && typeof userAnswer === 'string'
                             ? userAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim()
                             : (isMatching && typeof userAnswer === 'object' && typeof correctAnswer === 'object'
-                                ? JSON.stringify(userAnswer) === JSON.stringify(correctAnswer)
-                                : false);
+                              ? JSON.stringify(userAnswer) === JSON.stringify(correctAnswer)
+                              : false);
                           return (
-                            <Card key={idx} className={`mb-2 shadow border-l-4 bg-card text-card-foreground ${isCorrect ? 'border-primary' : 'border-destructive'}`}> 
+                            <Card key={idx} className={`mb-2 shadow border-l-4 bg-card text-card-foreground ${isCorrect ? 'border-primary' : 'border-destructive'}`}>
                               <CardContent className="p-2 sm:p-4 text-sm sm:text-base">
                                 <div className="flex items-center mb-2">
                                   <span className={`mr-2 text-lg ${isCorrect ? 'text-primary' : 'text-destructive'}`}>{isCorrect ? '✔️' : '❌'}</span>
@@ -756,7 +759,7 @@ const Study = () => {
                         <CardContent className="p-3 sm:p-6 overflow-x-auto">
                           <div className="mb-2 flex items-center gap-2">
                             <Badge variant="secondary">Exercise</Badge>
-                            <Badge variant="outline">{exercises[exerciseStep].difficulty}</Badge>
+                            <Badge variant="outline">{capitalize(exercises[exerciseStep].difficulty) || "Unknown"}</Badge>
                           </div>
                           <div className="mb-2 font-medium break-words">Q{exerciseStep + 1}: {exercises[exerciseStep].instruction}</div>
                           {exercises[exerciseStep].exercise_text && (
@@ -764,7 +767,7 @@ const Study = () => {
                               <p className="text-sm text-muted-foreground">{exercises[exerciseStep].exercise_text}</p>
                             </div>
                           )}
-                          
+
                           {exercises[exerciseStep].type === 'fill_blank' && (
                             <div className="mb-4">
                               <Input
@@ -779,7 +782,7 @@ const Study = () => {
                               />
                             </div>
                           )}
-                          
+
                           {exercises[exerciseStep].type === 'true_false' && (
                             <div className="mb-4">
                               <div className="flex items-center justify-center space-x-4">
@@ -806,7 +809,7 @@ const Study = () => {
                               </div>
                             </div>
                           )}
-                          
+
                           {exercises[exerciseStep].type === 'short_answer' && (
                             <div className="mb-4">
                               <Textarea
@@ -821,7 +824,7 @@ const Study = () => {
                               />
                             </div>
                           )}
-                          
+
                           {exercises[exerciseStep].type === 'matching' && (
                             <div className="mb-4">
                               <div className="space-y-3">
@@ -867,7 +870,7 @@ const Study = () => {
                               </div>
                             </div>
                           )}
-                          
+
                           <div className="flex justify-between">
                             <Button
                               variant="outline"
@@ -960,7 +963,7 @@ const Study = () => {
                   <Button
                     key={rating}
                     variant="outline"
-                    className={`flex flex-col items-center p-4 h-auto border-${['red','orange','blue','green'][idx]}-200 hover:bg-${['red','orange','blue','green'][idx]}-50`}
+                    className={`flex flex-col items-center p-4 h-auto border-${['red', 'orange', 'blue', 'green'][idx]}-200 hover:bg-${['red', 'orange', 'blue', 'green'][idx]}-50`}
                     onClick={async () => {
                       // Save review to backend for auth users
                       const card = flashcards[currentCard];

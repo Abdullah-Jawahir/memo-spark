@@ -291,6 +291,17 @@ const Upload = () => {
 
   const difficultyDistribution = getDifficultyDistribution();
 
+  // Add utility for mapping and capitalizing difficulty
+  const mapAndCapitalizeDifficulty = (difficulty: string | undefined) => {
+    if (!difficulty) return 'Unknown';
+    switch (difficulty.toLowerCase()) {
+      case 'beginner': return 'Easy';
+      case 'intermediate': return 'Medium';
+      case 'advanced': return 'Hard';
+      default: return difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
       <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
@@ -501,7 +512,7 @@ const Upload = () => {
                           <div className="flex flex-wrap gap-2">
                             {Object.entries(difficultyDistribution).map(([difficulty, count]) => (
                               <Badge key={difficulty} variant="outline" className="text-xs">
-                                {difficulty}: {count}
+                                {mapAndCapitalizeDifficulty(difficulty)}: {count}
                               </Badge>
                             ))}
                           </div>
@@ -514,7 +525,7 @@ const Upload = () => {
                             <CardHeader className="pb-3">
                               <div className="flex items-center justify-between">
                                 <Badge variant="secondary" className="text-xs">
-                                  {card.type} • {card.difficulty}
+                                  {card.type} • {mapAndCapitalizeDifficulty(card.difficulty)}
                                 </Badge>
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs text-muted-foreground">Card {index + 1}</span>
