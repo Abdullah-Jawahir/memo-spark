@@ -27,10 +27,35 @@ interface ApiErrorResponse {
 }
 
 const isApiError = (error: unknown): error is { response: { data: ApiErrorResponse } } => {
-  return error && typeof error === 'object' && 'response' in error && 
-         error.response && typeof error.response === 'object' && 'data' in error.response &&
-         error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data;
+  return error && typeof error === 'object' && 'response' in error &&
+    error.response && typeof error.response === 'object' && 'data' in error.response &&
+    error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data;
 };
+
+// Helper to extract generated content from various API response shapes
+function extractGeneratedContent(response: any): {
+  quizzes?: any[];
+  exercises?: any[];
+  flashcards?: any[];
+} | null {
+  // Case 1: New upload (nested)
+  if (response?.metadata?.generated_content) {
+    let content = response.metadata.generated_content;
+    if (content.generated_content) {
+      content = content.generated_content;
+    }
+    return content;
+  }
+  // Case 2: Already processed (flat)
+  if (response?.result?.generated_content) {
+    return response.result.generated_content;
+  }
+  // Fallback: direct
+  if (response?.generated_content) {
+    return response.generated_content;
+  }
+  return null;
+}
 
 const Upload = () => {
   const { user, session } = useAuth();
@@ -155,11 +180,31 @@ const Upload = () => {
         }
       });
 
-      setDocumentId(response.data.document_id);
-      checkProcessingStatus(response.data.document_id);
+      // Use the helper to extract generated content
+      const content = extractGeneratedContent(response.data);
+      if (content) {
+        setGeneratedContent(content);
+        generatedContentRef.current = content;
+        setGeneratedCards(Array.isArray(content.flashcards) ? content.flashcards : []);
+        localStorage.setItem('generatedContent', JSON.stringify(content));
+        setUploadComplete(true);
+        setProcessingStatus('completed');
+      } else if (response.data.document_id) {
+        // If not already processed, check status as before
+        setDocumentId(response.data.document_id);
+        checkProcessingStatus(response.data.document_id);
+      } else {
+        toast({
+          title: "Upload failed",
+          description: "No generated content found in response.",
+          variant: "destructive"
+        });
+        setIsUploading(false);
+        setProcessingStatus('failed');
+      }
     } catch (error: unknown) {
       console.error('Upload failed:', error);
-      
+
       // Handle specific guest limit exceeded error
       if (isApiError(error) && error.response.data.code === 'GUEST_LIMIT_EXCEEDED') {
         setGuestLimitExceeded(true);
@@ -172,10 +217,10 @@ const Upload = () => {
         });
         return;
       }
-      
+
       // Handle other errors
       const errorMessage = isApiError(error) ? error.response.data.error : "There was an error uploading your file. Please try again.";
-      
+
       toast({
         title: "Upload failed",
         description: errorMessage,
@@ -193,24 +238,22 @@ const Upload = () => {
           'Authorization': session ? `Bearer ${session.access_token}` : undefined
         }
       });
-      const { status, metadata } = response.data;
-
-      if (status === 'completed') {
+      // Use the helper to extract generated content
+      const content = extractGeneratedContent(response.data);
+      if (content) {
         setProcessingStatus('completed');
         setIsUploading(false);
         setUploadComplete(true);
-        const content = response.data.metadata.
-generated_content;
         setGeneratedContent(content);
         generatedContentRef.current = content;
         setGeneratedCards(Array.isArray(content.flashcards) ? content.flashcards : []);
         localStorage.setItem('generatedContent', JSON.stringify(content));
-      } else if (status === 'failed') {
+      } else if (response.data.status === 'failed') {
         setProcessingStatus('failed');
         setIsUploading(false);
         toast({
           title: "Processing failed",
-          description: metadata.error || "There was an error processing your file.",
+          description: response.data.metadata?.error || "There was an error processing your file.",
           variant: "destructive"
         });
       } else {
@@ -256,7 +299,7 @@ generated_content;
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-4">Upload Your Study Materials</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Transform your documents into interactive flashcards automatically. 
+            Transform your documents into interactive flashcards automatically.
             Our AI will analyze your content and create personalized learning cards.
           </p>
         </div>
@@ -266,7 +309,7 @@ generated_content;
           <Alert className="mb-6 border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
             <Info className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-800">
-              <strong>Try out MemoSpark instantly—no sign-up needed!</strong> Upload a document and generate flashcards to experience our AI-powered learning platform. 
+              <strong>Try out MemoSpark instantly—no sign-up needed!</strong> Upload a document and generate flashcards to experience our AI-powered learning platform.
               <Link to="/register" className="ml-2 underline font-medium hover:text-blue-600">
                 Create a free account to save your progress →
               </Link>
@@ -279,7 +322,7 @@ generated_content;
           <Alert className="mb-6 border-red-200 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20">
             <Lock className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800">
-              <strong>Upload limit reached!</strong> Guest users can only upload one document per session. 
+              <strong>Upload limit reached!</strong> Guest users can only upload one document per session.
               <Link to="/register" className="ml-2 underline font-medium hover:text-red-600">
                 Create a free account to upload unlimited documents →
               </Link>
@@ -294,22 +337,22 @@ generated_content;
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-3">
-              <Badge 
-                variant={selectedLanguage === 'en' ? 'default' : 'outline'} 
+              <Badge
+                variant={selectedLanguage === 'en' ? 'default' : 'outline'}
                 className="cursor-pointer"
                 onClick={() => setSelectedLanguage('en')}
               >
                 English
               </Badge>
-              <Badge 
-                variant={selectedLanguage === 'si' ? 'default' : 'outline'} 
+              <Badge
+                variant={selectedLanguage === 'si' ? 'default' : 'outline'}
                 className="cursor-pointer"
                 onClick={() => setSelectedLanguage('si')}
               >
                 සිංහල (Sinhala)
               </Badge>
-              <Badge 
-                variant={selectedLanguage === 'ta' ? 'default' : 'outline'} 
+              <Badge
+                variant={selectedLanguage === 'ta' ? 'default' : 'outline'}
                 className="cursor-pointer"
                 onClick={() => setSelectedLanguage('ta')}
               >
@@ -327,7 +370,7 @@ generated_content;
             </CardHeader>
             <CardContent>
               {!isUploading && !uploadComplete && (
-                <div 
+                <div
                   className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer"
                   onClick={() => fileInputRef.current?.click()}
                 >
@@ -343,7 +386,7 @@ generated_content;
                     {selectedFile ? selectedFile.name : 'Drop files here or click to browse'}
                   </h3>
                   <p className="text-muted-foreground mb-4">Support for PDF, images, and text files up to 10MB</p>
-                  <Button 
+                  <Button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleFileUpload();
@@ -356,7 +399,7 @@ generated_content;
                 </div>
               )}
 
-              {isUploading && (
+              {isUploading && !uploadComplete && (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                   <h3 className="text-lg font-semibold text-foreground mb-2">Processing your document...</h3>
@@ -371,7 +414,7 @@ generated_content;
                   <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-foreground mb-2">Upload Complete!</h3>
                   <p className="text-muted-foreground mb-4">Generated {generatedCards.length} flashcards from your document</p>
-                  
+
                   {isGuest && (
                     <Alert className="mb-4 border-orange-200 bg-orange-50">
                       <AlertCircle className="h-4 w-4 text-orange-600" />
@@ -380,7 +423,7 @@ generated_content;
                       </AlertDescription>
                     </Alert>
                   )}
-                  
+
                   <div className="mb-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Button
@@ -430,7 +473,7 @@ generated_content;
                   {showPreview && (
                     <div className="mt-6">
                       <h4 className="text-lg font-semibold text-foreground mb-4">Generated Content Preview</h4>
-                      
+
                       {/* Summary Statistics */}
                       <div className="grid grid-cols-3 gap-4 mb-4">
                         <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg">
@@ -450,7 +493,7 @@ generated_content;
                           <div className="text-xs text-green-600">Exercises</div>
                         </div>
                       </div>
-                      
+
                       {/* Difficulty Breakdown */}
                       {Object.keys(difficultyDistribution).length > 0 && (
                         <div className="mb-4">
@@ -515,7 +558,7 @@ generated_content;
                     <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                       Guest users can only upload one document per session. Create a free account to upload unlimited documents and save your progress!
                     </p>
-                    
+
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                       <Link to="/register">
                         <Button className="bg-gradient-to-r from-blue-600 to-purple-600 flex items-center gap-2">
@@ -530,7 +573,7 @@ generated_content;
                         </Button>
                       </Link>
                     </div>
-                    
+
                     <div className="mt-6 text-sm text-muted-foreground">
                       <p>Already have an account? <Link to="/login" className="text-blue-600 hover:underline">Sign in here</Link></p>
                     </div>
