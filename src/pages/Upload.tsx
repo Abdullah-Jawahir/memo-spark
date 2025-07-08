@@ -149,6 +149,26 @@ const Upload = () => {
       return;
     }
 
+    // Validation: Deck name required
+    if (!deckName.trim()) {
+      toast({
+        title: "Deck name required",
+        description: "Please enter a name for your deck before uploading.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validation: At least one card type selected
+    if (!cardTypes || cardTypes.length === 0) {
+      toast({
+        title: "Select at least one card type",
+        description: "Please select at least one card type to generate.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsUploading(true);
     setUploadProgress(0);
     setProcessingStatus('processing');
