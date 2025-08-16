@@ -253,7 +253,11 @@ const Upload = () => {
 
   const checkProcessingStatus = async (id: string) => {
     try {
-      const response = await axios.get(getStatusEndpoint(id), {
+      // Build query string for card_types[]
+      const params = new URLSearchParams();
+      cardTypes.forEach(type => params.append('card_types[]', type));
+      const url = `${getStatusEndpoint(id)}?${params.toString()}`;
+      const response = await axios.get(url, {
         headers: {
           'Authorization': session ? `Bearer ${session.access_token}` : undefined
         }
