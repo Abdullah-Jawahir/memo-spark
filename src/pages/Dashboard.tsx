@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, Target, TrendingUp, Clock, Plus, Search, LogOut, Loader2 } from 'lucide-react';
+import { BookOpen, Target, TrendingUp, Clock, Plus, Search, LogOut, Loader2, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
 import { API_ENDPOINTS } from '@/config/api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -63,144 +63,219 @@ interface Achievement {
   total?: number;
 }
 
+const DASHBOARD_DATA_KEY = 'memo-spark-dashboard-data';
+const DASHBOARD_ACHIEVEMENTS_KEY = 'memo-spark-dashboard-achievements';
+const DASHBOARD_LAST_FETCH_KEY = 'memo-spark-dashboard-last-fetch';
+
 const Dashboard = () => {
   const { profile, signOut, session } = useAuth();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isTabVisible, setIsTabVisible] = useState(true); // Track tab visibility
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch dashboard data
-  useEffect(() => {
-    // Track whether the component is mounted
-    let isMounted = true;
+  // Function to fetch dashboard data - only called explicitly
+  const fetchDashboardData = async (forceRefresh = false) => {
+    // Only allow one fetch operation at a time
+    if ((loading && !forceRefresh) || isRefreshing) {
+      console.log('Skipping fetch - already in progress');
+      return;
+    }
 
-    // Store the access token to avoid re-fetching on session object reference changes
     const accessToken = session?.access_token;
-
-    // Skip fetching if there's no access token
     if (!accessToken) {
+      console.log('No access token available');
       setError('You need to be logged in to view this page');
       setLoading(false);
       return;
     }
 
-    const fetchDashboardData = async () => {
-      // Skip if component unmounted or no longer active
-      if (!isMounted) return;
+    console.log(`Fetching dashboard data (force=${forceRefresh})`);
 
+    // If we're forcing a refresh, show the refreshing indicator
+    // Otherwise show the main loading indicator
+    if (forceRefresh) {
+      setIsRefreshing(true);
+    } else {
       setLoading(true);
-      setError(null);
+    }
 
-      try {
-        // Import the fetchWithAuth utility
-        const { fetchWithAuth } = await import('@/config/api');
+    setError(null);
 
-        // Fetch main dashboard data using the utility
-        const data = await fetchWithAuth(
-          API_ENDPOINTS.DASHBOARD.MAIN,
-          {},
-          { access_token: accessToken }
-        );
-
-        if (isMounted) {
-          setDashboardData(data);
-        }
-
-        // Also fetch achievements
-        try {
-          const achievementsData = await fetchWithAuth(
-            API_ENDPOINTS.DASHBOARD.ACHIEVEMENTS,
-            {},
-            { access_token: accessToken }
-          );
-
-          if (isMounted) {
-            setAchievements(achievementsData.achievements || []);
-          }
-        } catch (achievementErr) {
-          console.error('Failed to fetch achievements:', achievementErr);
-          // Don't set the main error state for achievement failures
-        }
-      } catch (err) {
-        console.error('Failed to fetch dashboard data:', err);
-        if (isMounted) {
-          setError('Failed to load dashboard data. Please try again later.');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+    // Create fallback data to show something if the API call fails
+    const fallbackData: DashboardData = {
+      user: {
+        id: profile?.id || 'unknown',
+        name: profile?.full_name || 'Student',
+        email: '',
+        user_type: 'student',
+        display_name: profile?.full_name || 'Student',
+        user_tag: 'Student'
+      },
+      metrics: {
+        cards_studied_today: 0,
+        current_streak: 0,
+        overall_progress: 0,
+        study_time: '0h 0m'
+      },
+      recent_decks: [],
+      todays_goal: {
+        studied: 0,
+        goal: 0,
+        remaining: 0,
+        progress_percentage: 0,
+        goal_type: 'cards_studied',
+        goal_description: 'No active goal',
+        is_completed: false,
+        message: 'No active goal'
       }
     };
 
-    // Initial data fetch
-    fetchDashboardData();
+    try {
+      // Fetch directly rather than dynamic import to simplify
+      console.log(`Making API call to ${API_ENDPOINTS.DASHBOARD.MAIN}`);
 
-    // Set up polling for real-time updates (every 5 minutes)
-    const pollingInterval = setInterval(() => {
-      // Skip polling if component is unmounted, session is gone, or tab is not visible
-      if (!isMounted || !accessToken || !isTabVisible) return;
-
-      const fetchUpdates = async () => {
-        try {
-          const { fetchWithAuth } = await import('@/config/api');
-
-          // Fetch overview data
-          const overviewData = await fetchWithAuth(
-            API_ENDPOINTS.DASHBOARD.OVERVIEW,
-            {},
-            { access_token: accessToken }
-          );
-
-          // Fetch goal data
-          const goalData = await fetchWithAuth(
-            API_ENDPOINTS.DASHBOARD.TODAYS_GOAL,
-            {},
-            { access_token: accessToken }
-          );
-
-          // Update only the metrics and goal parts of the dashboard data
-          if (isMounted) {
-            setDashboardData(prev => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                metrics: overviewData.metrics,
-                todays_goal: goalData
-              };
-            });
-          }
-        } catch (err) {
-          console.error('Failed to fetch updates:', err);
+      // First try direct fetch for debugging
+      const response = await fetch(API_ENDPOINTS.DASHBOARD.MAIN, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
         }
-      };
+      });
 
-      fetchUpdates();
-    }, 300000); // 5 minutes
+      console.log(`API response status: ${response.status}`);
 
-    // Clean up function
-    return () => {
-      isMounted = false;
-      clearInterval(pollingInterval);
-    };
-  }, [session?.access_token, isTabVisible]); // Include tab visibility in dependencies
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'No error details');
+        console.error(`API error: ${response.status} - ${errorText}`);
+        throw new Error(`API error: ${response.status}`);
+      }
 
-  // Add event listener for tab visibility changes
+      try {
+        const data = await response.json();
+        console.log('Dashboard data received', data);
+
+        // Check if the data has the expected structure
+        if (!data || !data.metrics) {
+          console.warn('Received invalid dashboard data format', data);
+          throw new Error('Invalid data format received from server');
+        }
+
+        // Store in state and localStorage
+        setDashboardData(data);
+        localStorage.setItem(DASHBOARD_DATA_KEY, JSON.stringify(data));
+
+        // Update last fetch time
+        const now = new Date();
+        setLastUpdated(now);
+        localStorage.setItem(DASHBOARD_LAST_FETCH_KEY, now.toISOString());
+      } catch (parseError) {
+        console.error('Error parsing dashboard response:', parseError);
+        throw new Error('Could not parse server response');
+      }
+
+      // Also fetch achievements
+      try {
+        const achievementsResponse = await fetch(API_ENDPOINTS.DASHBOARD.ACHIEVEMENTS, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (achievementsResponse.ok) {
+          const achievementsData = await achievementsResponse.json();
+          setAchievements(achievementsData.achievements || []);
+          localStorage.setItem(DASHBOARD_ACHIEVEMENTS_KEY, JSON.stringify(achievementsData.achievements || []));
+        } else {
+          console.warn('Failed to fetch achievements, status:', achievementsResponse.status);
+        }
+      } catch (achievementErr) {
+        console.error('Failed to fetch achievements:', achievementErr);
+      }
+    } catch (err) {
+      console.error('Failed to fetch dashboard data:', err);
+      setError(`Failed to load dashboard data: ${err instanceof Error ? err.message : 'Unknown error'}`);
+
+      // Use fallback data if we have nothing
+      if (!dashboardData) {
+        console.log('Using fallback data');
+        setDashboardData(fallbackData);
+      }
+    } finally {
+      console.log('Fetch completed, resetting loading state');
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  // Load data from cache or fetch on initial load
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      setIsTabVisible(!document.hidden);
-    };
+    console.log('Dashboard init effect running');
 
-    // Add visibility change event listener
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // Skip if no session (handled by ProtectedRoute)
+    if (!session?.access_token) {
+      console.log('No access token in session');
+      return;
+    }
 
-    // Clean up
+    // Make sure we always reset the loading state after a short delay
+    // This prevents the UI from getting stuck in loading state
+    const loadingSafetyTimeout = setTimeout(() => {
+      if (loading) {
+        console.log('Safety timeout: forcing loading state to false');
+        setLoading(false);
+      }
+    }, 10000); // 10 second safety timeout
+
+    // Try to load from localStorage first
+    const cachedData = localStorage.getItem(DASHBOARD_DATA_KEY);
+    const cachedAchievements = localStorage.getItem(DASHBOARD_ACHIEVEMENTS_KEY);
+    const lastFetchTime = localStorage.getItem(DASHBOARD_LAST_FETCH_KEY);
+
+    console.log('Cached data available:', !!cachedData);
+    let shouldFetch = true;
+
+    if (cachedData && lastFetchTime) {
+      try {
+        const parsedData = JSON.parse(cachedData);
+        console.log('Using cached dashboard data');
+        setDashboardData(parsedData);
+
+        if (cachedAchievements) {
+          console.log('Using cached achievements data');
+          setAchievements(JSON.parse(cachedAchievements));
+        }
+
+        setLastUpdated(new Date(lastFetchTime));
+        setLoading(false);
+
+        // Only fetch fresh data if cache is older than 10 minutes (reduced from 1 hour for testing)
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+        shouldFetch = new Date(lastFetchTime) < tenMinutesAgo;
+        console.log('Should fetch fresh data:', shouldFetch);
+      } catch (e) {
+        console.error('Error parsing cached dashboard data:', e);
+        // Clear invalid cache
+        localStorage.removeItem(DASHBOARD_DATA_KEY);
+        localStorage.removeItem(DASHBOARD_ACHIEVEMENTS_KEY);
+        localStorage.removeItem(DASHBOARD_LAST_FETCH_KEY);
+        shouldFetch = true;
+      }
+    }
+
+    // Only fetch from API if we need to (no cache or cache expired)
+    if (shouldFetch) {
+      console.log('Initiating API fetch');
+      fetchDashboardData();
+    }
+
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearTimeout(loadingSafetyTimeout);
     };
-  }, []);
+  }, [session?.access_token]); // Only depend on the access token
 
   // Fallback data for when API data is not available
   const fallbackStats = [
@@ -221,6 +296,76 @@ const Dashboard = () => {
   // Recent decks from API or fallback
   const recentDecks = dashboardData?.recent_decks || [];
 
+  // Check for query param indicating return from upload
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if we just returned from upload with a new document
+    const queryParams = new URLSearchParams(location.search);
+    if (queryParams.get('refresh') === 'true') {
+      // Remove the query param
+      navigate(location.pathname, { replace: true });
+      // Fetch fresh data
+      fetchDashboardData(true);
+    }
+  }, [location]);
+
+  // Direct API test on mount
+  useEffect(() => {
+    const testApiConnection = async () => {
+      if (!session?.access_token) return;
+
+      console.log('Testing direct API connection');
+      try {
+        // Make a simple test request to validate API connectivity
+        const testResponse = await fetch(`${API_BASE_URL}/api/ping`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+
+        console.log(`API test ping response: ${testResponse.status}`);
+
+        if (testResponse.ok) {
+          const pingData = await testResponse.text();
+          console.log(`Ping response: ${pingData}`);
+        } else {
+          console.error(`API test failed: ${testResponse.status}`);
+        }
+      } catch (err) {
+        console.error('API connection test error:', err);
+      }
+    };
+
+    testApiConnection();
+  }, []);
+
+  // Format the last updated date
+  const formatLastUpdated = () => {
+    if (!lastUpdated) return 'Never';
+
+    // If it's today, show time
+    const now = new Date();
+    const isToday = lastUpdated.getDate() === now.getDate() &&
+      lastUpdated.getMonth() === now.getMonth() &&
+      lastUpdated.getFullYear() === now.getFullYear();
+
+    if (isToday) {
+      return `Today at ${lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } else {
+      // If it's within the last week, show day and time
+      const diffDays = Math.floor((now.getTime() - lastUpdated.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays < 7) {
+        return `${lastUpdated.toLocaleDateString([], { weekday: 'long' })} at ${lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      } else {
+        // Otherwise show full date
+        return lastUpdated.toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
+      }
+    }
+  };
+
   return (
     <ProtectedRoute requiredRole="student">
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
@@ -231,6 +376,48 @@ const Dashboard = () => {
           {error && (
             <Alert className="mb-6 border-red-200 bg-red-50 dark:bg-red-900/20">
               <AlertDescription>{error}</AlertDescription>
+              <div className="mt-4 flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // Use fallback data
+                    const fallbackData: DashboardData = {
+                      user: {
+                        id: profile?.id || 'unknown',
+                        name: profile?.full_name || 'Student',
+                        email: '',
+                        user_type: 'student',
+                        display_name: profile?.full_name || 'Student',
+                        user_tag: 'Student'
+                      },
+                      metrics: {
+                        cards_studied_today: 0,
+                        current_streak: 0,
+                        overall_progress: 0,
+                        study_time: '0h 0m'
+                      },
+                      recent_decks: [],
+                      todays_goal: {
+                        studied: 0,
+                        goal: 0,
+                        remaining: 0,
+                        progress_percentage: 0,
+                        goal_type: 'cards_studied',
+                        goal_description: 'No active goal',
+                        is_completed: false,
+                        message: 'No active goal'
+                      }
+                    };
+                    setDashboardData(fallbackData);
+                    setError(null);
+                    setLoading(false);
+                    setLastUpdated(new Date());
+                  }}
+                >
+                  Continue in Offline Mode
+                </Button>
+              </div>
             </Alert>
           )}
 
@@ -239,6 +426,26 @@ const Dashboard = () => {
             <div className="flex flex-col items-center justify-center py-12">
               <Loader2 className="h-12 w-12 text-blue-600 animate-spin mb-4" />
               <p className="text-lg text-muted-foreground">Loading your dashboard data...</p>
+              <div className="mt-4 p-4 bg-card rounded border text-xs text-left w-full max-w-md">
+                <p className="font-semibold mb-2">Debug Info:</p>
+                <p>Session: {session ? 'Available' : 'Not available'}</p>
+                <p>Token: {session?.access_token ? 'Present' : 'Missing'}</p>
+                <p>API URL: {API_ENDPOINTS.DASHBOARD.MAIN}</p>
+                <p>Cache: {localStorage.getItem(DASHBOARD_DATA_KEY) ? 'Available' : 'Not available'}</p>
+                <div className="mt-2">
+                  <Button
+                    onClick={() => {
+                      // Force exit loading state
+                      setLoading(false);
+                      setError('Loading manually cancelled. Please refresh the page or try again.');
+                    }}
+                    variant="destructive"
+                    size="sm"
+                  >
+                    Cancel Loading
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -246,28 +453,64 @@ const Dashboard = () => {
           {!loading && (
             <>
               {/* Header */}
-              <div className="flex justify-between items-center mb-8">
-                <div>
-                  <div className="flex items-center gap-4 mb-2">
-                    <h1 className="text-3xl font-bold text-foreground">
-                      Welcome back, {dashboardData?.user?.display_name || profile?.full_name || 'Student'}!
-                    </h1>
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                      {dashboardData?.user?.user_tag || 'Student'}
-                    </Badge>
+              <div className="flex flex-col mb-8">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <div className="flex items-center gap-4 mb-2">
+                      <h1 className="text-3xl font-bold text-foreground">
+                        Welcome back, {dashboardData?.user?.display_name || profile?.full_name || 'Student'}!
+                      </h1>
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                        {dashboardData?.user?.user_tag || 'Student'}
+                      </Badge>
+                    </div>
+                    <p className="text-muted-foreground">Ready to continue your learning journey?</p>
                   </div>
-                  <p className="text-muted-foreground">Ready to continue your learning journey?</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Link to="/upload">
-                    <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create New Deck
+                  <div className="flex items-center gap-4">
+                    <Link to="/upload">
+                      <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create New Deck
+                      </Button>
+                    </Link>
+                    <Button variant="outline" onClick={signOut}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
                     </Button>
-                  </Link>
-                  <Button variant="outline" onClick={signOut}>
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
+                  </div>
+                </div>
+
+                {/* Data refresh info */}
+                <div className="flex items-center justify-between bg-card/50 rounded-lg p-3">
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4 mr-2 opacity-70" />
+                    Last updated: {formatLastUpdated()}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => fetchDashboardData(true)}
+                    disabled={isRefreshing}
+                    className="text-sm"
+                  >
+                    {isRefreshing ? (
+                      <>
+                        <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                        Refreshing...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="h-3 w-3 mr-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Refresh Data
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
