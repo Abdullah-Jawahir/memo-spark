@@ -15,6 +15,12 @@ export const API_ENDPOINTS = {
     TODAYS_GOAL: `${API_BASE_URL}/api/dashboard/todays-goal`,
     ACHIEVEMENTS: `${API_BASE_URL}/api/dashboard/achievements`,
   },
+  STUDY: {
+    START_SESSION: `${API_BASE_URL}/api/study/start-session`,
+    RECORD_REVIEW: `${API_BASE_URL}/api/study/record-review`,
+    STATS: `${API_BASE_URL}/api/study/stats`,
+    RECENT_ACTIVITY: `${API_BASE_URL}/api/study/recent-activity`,
+  },
 } as const;
 
 // Helper function for authenticated API calls using fetch
