@@ -7,4 +7,36 @@ export const API_ENDPOINTS = {
     GUEST_UPLOAD: `${API_BASE_URL}/api/guest/documents/upload`,
     GUEST_STATUS: (id: string) => `${API_BASE_URL}/api/guest/documents/${id}/status`,
   },
-} as const; 
+  DASHBOARD: {
+    MAIN: `${API_BASE_URL}/api/dashboard`,
+    USER_INFO: `${API_BASE_URL}/api/dashboard/user-info`,
+    OVERVIEW: `${API_BASE_URL}/api/dashboard/overview`,
+    RECENT_DECKS: `${API_BASE_URL}/api/dashboard/recent-decks`,
+    TODAYS_GOAL: `${API_BASE_URL}/api/dashboard/todays-goal`,
+    ACHIEVEMENTS: `${API_BASE_URL}/api/dashboard/achievements`,
+  },
+} as const;
+
+// Helper function for authenticated API calls using fetch
+export const fetchWithAuth = async (url: string, options: RequestInit = {}, session?: { access_token: string } | null) => {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `API error: ${response.status}`);
+  }
+
+  return response.json();
+};
