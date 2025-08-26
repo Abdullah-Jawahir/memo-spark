@@ -221,12 +221,10 @@ const Study = () => {
 
   // Update session stats when study time changes
   useEffect(() => {
-    console.log(`Study time updated: ${studyTime} seconds`);
     setSessionStats(prev => ({ ...prev, timeSpent: studyTime }));
 
     // Add this to debug the study time issue
     if (studyTime > 0 && !isStudying && !sessionComplete) {
-      console.log('Timer is running but isStudying is false - fixing...');
       setIsStudying(true);
     }
   }, [studyTime, isStudying, sessionComplete]);
@@ -255,15 +253,6 @@ const Study = () => {
       setStudySession(existingSession);
       setIsStudying(true);
     }
-
-    // Clean up when component unmounts
-    return () => {
-      // If session is not complete, we can keep it in localStorage
-      // Otherwise it will be cleared when user completes the session
-      if (!sessionComplete && user) {
-        console.log('Study session paused');
-      }
-    };
   }, []);
 
   // Cleanup localStorage when component unmounts (only for guest users)
@@ -400,11 +389,8 @@ const Study = () => {
           session
         );
 
-        console.log(`Recorded review for card ${currentCard}, rating: ${rating}, time: ${studyTimeForCard}s`);
-
         // If we received session stats from the backend, use them to update our UI
         if (result.success && result.sessionStats) {
-          console.log('Received session stats:', result.sessionStats);
 
           // Update session stats with the values from the backend
           setSessionStats({
@@ -538,7 +524,6 @@ const Study = () => {
 
           try {
             clearCurrentStudySession();
-            console.log('Restarting study session...');
             const sess = await startStudySession(idToUse || 'default-deck', session);
             if (sess) {
               setStudySession(sess);
@@ -553,7 +538,6 @@ const Study = () => {
         restartWithDeck();
       } else {
         // For guest users, just start the timer
-        console.log('Restarting guest study session');
         setIsStudying(true);
         setTimerKey(k => k + 1);
       }
@@ -630,7 +614,7 @@ const Study = () => {
         </div>
       </div>
 
-      <div className="max-w-full sm:max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8 pt-24 mt-4">
+      <div className="max-w-full sm:max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8 pt-24 mt-10">
         {/* Guest Warning Banner */}
         {isGuestUser && (
           <Alert className="mb-6 border-orange-200 bg-gradient-to-r from-orange-50 to-red-50 text-sm sm:text-base shadow-sm">

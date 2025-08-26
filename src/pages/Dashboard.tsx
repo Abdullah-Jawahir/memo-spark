@@ -82,19 +82,15 @@ const Dashboard = () => {
   const fetchDashboardData = async (forceRefresh = false) => {
     // Only allow one fetch operation at a time
     if ((loading && !forceRefresh) || isRefreshing) {
-      console.log('Skipping fetch - already in progress');
       return;
     }
 
     const accessToken = session?.access_token;
     if (!accessToken) {
-      console.log('No access token available');
       setError('You need to be logged in to view this page');
       setLoading(false);
       return;
     }
-
-    console.log(`Fetching dashboard data (force=${forceRefresh})`);
 
     // If we're forcing a refresh, show the refreshing indicator
     // Otherwise show the main loading indicator
@@ -137,8 +133,6 @@ const Dashboard = () => {
 
     try {
       // Fetch directly rather than dynamic import to simplify
-      console.log(`Making API call to ${API_ENDPOINTS.DASHBOARD.MAIN}`);
-
       // First try direct fetch for debugging
       const response = await fetch(API_ENDPOINTS.DASHBOARD.MAIN, {
         headers: {
@@ -146,8 +140,6 @@ const Dashboard = () => {
           'Content-Type': 'application/json'
         }
       });
-
-      console.log(`API response status: ${response.status}`);
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'No error details');
@@ -157,7 +149,6 @@ const Dashboard = () => {
 
       try {
         const data = await response.json();
-        console.log('Dashboard data received', data);
 
         // Check if the data has the expected structure
         if (!data || !data.metrics) {
@@ -189,7 +180,6 @@ const Dashboard = () => {
 
         if (achievementsResponse.ok) {
           const achievementsData = await achievementsResponse.json();
-          console.log('Raw achievements data:', achievementsData);
 
           // Handle different response formats
           let list = [];
@@ -202,10 +192,8 @@ const Dashboard = () => {
             list = Object.values(achievementsData);
           }
 
-          console.log('Processed achievements list:', list);
           setAchievements(list);
           localStorage.setItem(DASHBOARD_ACHIEVEMENTS_KEY, JSON.stringify(list));
-          console.log('Achievements state after setting:', list);
         } else {
           console.warn('Failed to fetch achievements, status:', achievementsResponse.status);
         }
@@ -218,11 +206,9 @@ const Dashboard = () => {
 
       // Use fallback data if we have nothing
       if (!dashboardData) {
-        console.log('Using fallback data');
         setDashboardData(fallbackData);
       }
     } finally {
-      console.log('Fetch completed, resetting loading state');
       setLoading(false);
       setIsRefreshing(false);
     }
@@ -230,10 +216,7 @@ const Dashboard = () => {
 
   // Always fetch fresh data on initial load; hydrate from cache first for UX
   useEffect(() => {
-    console.log('Dashboard init effect running');
-
     if (!session?.access_token) {
-      console.log('No access token in session');
       return;
     }
 
@@ -245,14 +228,12 @@ const Dashboard = () => {
         setDashboardData(JSON.parse(cachedData));
         if (cachedAchievements) {
           const parsedAchievements = JSON.parse(cachedAchievements);
-          console.log('Cached achievements:', parsedAchievements);
 
           // Ensure it's an array
           const achievementsList = Array.isArray(parsedAchievements)
             ? parsedAchievements
             : Object.values(parsedAchievements || {});
 
-          console.log('Processed cached achievements:', achievementsList);
           setAchievements(achievementsList);
         }
         if (lastFetchTime) setLastUpdated(new Date(lastFetchTime));
@@ -303,7 +284,6 @@ const Dashboard = () => {
     const testApiConnection = async () => {
       if (!session?.access_token) return;
 
-      console.log('Testing direct API connection');
       try {
         // Make a simple test request to validate API connectivity
         const testResponse = await fetch(`${API_BASE_URL}/api/ping`, {
@@ -313,11 +293,8 @@ const Dashboard = () => {
           }
         });
 
-        console.log(`API test ping response: ${testResponse.status}`);
-
         if (testResponse.ok) {
           const pingData = await testResponse.text();
-          console.log(`Ping response: ${pingData}`);
         } else {
           console.error(`API test failed: ${testResponse.status}`);
         }
