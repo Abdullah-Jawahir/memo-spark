@@ -1306,7 +1306,7 @@ const Study = () => {
         </div>
 
         {/* Action Buttons */}
-        {tab === 'flashcards' && isFlipped && flashcards.length > 0 && !isGuestUser && (
+        {tab === 'flashcards' && isFlipped && flashcards.length > 0 && !isGuestUser && !sessionComplete && (
           <div className="max-w-full sm:max-w-4xl mx-auto">
             <div className="text-center mb-4">
               <p className="text-sm text-muted-foreground">How well did you know this?</p>
@@ -1344,7 +1344,7 @@ const Study = () => {
             </div>
           </div>
         )}
-        {tab === 'flashcards' && isFlipped && flashcards.length > 0 && isGuestUser && (
+        {tab === 'flashcards' && isFlipped && flashcards.length > 0 && isGuestUser && !sessionComplete && (
           <div className="max-w-full sm:max-w-4xl mx-auto text-center mt-4">
             <p className="text-sm text-muted-foreground mb-4">
               Sign up to track your progress and unlock spaced repetition!
