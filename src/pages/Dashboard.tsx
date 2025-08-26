@@ -188,6 +188,7 @@ const Dashboard = () => {
 
         if (achievementsResponse.ok) {
           const achievementsData = await achievementsResponse.json();
+          // Handle both array response and object with achievements property
           const list = Array.isArray(achievementsData) ? achievementsData : (achievementsData.achievements || []);
           setAchievements(list);
           localStorage.setItem(DASHBOARD_ACHIEVEMENTS_KEY, JSON.stringify(list));
@@ -602,12 +603,17 @@ const Dashboard = () => {
                         <div className="space-y-3">
                           {achievements.slice(0, 3).map((achievement, index) => (
                             <div key={index} className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                              <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center text-lg">
                                 {achievement.icon || "🏆"}
                               </div>
-                              <div>
+                              <div className="flex-1">
                                 <p className="font-medium text-foreground">{achievement.title}</p>
                                 <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                                {achievement.earned_at && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {new Date(achievement.earned_at).toLocaleDateString()}
+                                  </p>
+                                )}
                               </div>
                             </div>
                           ))}
