@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
-import { API_ENDPOINTS } from '@/config/api';
+import { API_ENDPOINTS, API_BASE_URL } from '@/config/api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Type definitions based on the API response
@@ -30,6 +30,7 @@ interface Metrics {
 }
 
 interface RecentDeck {
+  id?: number;
   name: string;
   card_count: number;
   last_studied: string;
@@ -187,8 +188,9 @@ const Dashboard = () => {
 
         if (achievementsResponse.ok) {
           const achievementsData = await achievementsResponse.json();
-          setAchievements(achievementsData.achievements || []);
-          localStorage.setItem(DASHBOARD_ACHIEVEMENTS_KEY, JSON.stringify(achievementsData.achievements || []));
+          const list = Array.isArray(achievementsData) ? achievementsData : (achievementsData.achievements || []);
+          setAchievements(list);
+          localStorage.setItem(DASHBOARD_ACHIEVEMENTS_KEY, JSON.stringify(list));
         } else {
           console.warn('Failed to fetch achievements, status:', achievementsResponse.status);
         }
@@ -211,71 +213,30 @@ const Dashboard = () => {
     }
   };
 
-  // Load data from cache or fetch on initial load
+  // Always fetch fresh data on initial load; hydrate from cache first for UX
   useEffect(() => {
     console.log('Dashboard init effect running');
 
-    // Skip if no session (handled by ProtectedRoute)
     if (!session?.access_token) {
       console.log('No access token in session');
       return;
     }
 
-    // Make sure we always reset the loading state after a short delay
-    // This prevents the UI from getting stuck in loading state
-    const loadingSafetyTimeout = setTimeout(() => {
-      if (loading) {
-        console.log('Safety timeout: forcing loading state to false');
-        setLoading(false);
-      }
-    }, 10000); // 10 second safety timeout
-
-    // Try to load from localStorage first
     const cachedData = localStorage.getItem(DASHBOARD_DATA_KEY);
     const cachedAchievements = localStorage.getItem(DASHBOARD_ACHIEVEMENTS_KEY);
     const lastFetchTime = localStorage.getItem(DASHBOARD_LAST_FETCH_KEY);
-
-    console.log('Cached data available:', !!cachedData);
-    let shouldFetch = true;
-
-    if (cachedData && lastFetchTime) {
+    if (cachedData) {
       try {
-        const parsedData = JSON.parse(cachedData);
-        console.log('Using cached dashboard data');
-        setDashboardData(parsedData);
-
-        if (cachedAchievements) {
-          console.log('Using cached achievements data');
-          setAchievements(JSON.parse(cachedAchievements));
-        }
-
-        setLastUpdated(new Date(lastFetchTime));
+        setDashboardData(JSON.parse(cachedData));
+        if (cachedAchievements) setAchievements(JSON.parse(cachedAchievements));
+        if (lastFetchTime) setLastUpdated(new Date(lastFetchTime));
         setLoading(false);
-
-        // Only fetch fresh data if cache is older than 10 minutes (reduced from 1 hour for testing)
-        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
-        shouldFetch = new Date(lastFetchTime) < tenMinutesAgo;
-        console.log('Should fetch fresh data:', shouldFetch);
-      } catch (e) {
-        console.error('Error parsing cached dashboard data:', e);
-        // Clear invalid cache
-        localStorage.removeItem(DASHBOARD_DATA_KEY);
-        localStorage.removeItem(DASHBOARD_ACHIEVEMENTS_KEY);
-        localStorage.removeItem(DASHBOARD_LAST_FETCH_KEY);
-        shouldFetch = true;
-      }
+      } catch { }
     }
 
-    // Only fetch from API if we need to (no cache or cache expired)
-    if (shouldFetch) {
-      console.log('Initiating API fetch');
-      fetchDashboardData();
-    }
-
-    return () => {
-      clearTimeout(loadingSafetyTimeout);
-    };
-  }, [session?.access_token]); // Only depend on the access token
+    // Always fetch fresh
+    fetchDashboardData(true);
+  }, [session?.access_token]);
 
   // Fallback data for when API data is not available
   const fallbackStats = [
@@ -580,7 +541,7 @@ const Dashboard = () => {
                                   <Progress value={deck.progress} className="h-2" />
                                 </div>
                               </div>
-                              <Link to={`/study?deck=${deck.name}`}>
+                              <Link to={deck.id ? `/study?deckId=${deck.id}` : `/study?deck=${encodeURIComponent(deck.name)}`}>
                                 <Button variant="outline" className="ml-4">
                                   Study
                                 </Button>

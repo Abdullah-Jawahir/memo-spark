@@ -69,17 +69,17 @@ const About = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
       <Header currentLanguage="en" />
-      
+
       <div className="max-w-7xl mx-auto px-6 py-16">
         {/* Hero Section */}
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-            Our Mission: 
+            Our Mission:
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Democratize Learning</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
-            MemoSpark was born from a simple belief: every student deserves access to powerful, 
-            personalized learning tools that adapt to their unique needs and cultural context. 
+            MemoSpark was born from a simple belief: every student deserves access to powerful,
+            personalized learning tools that adapt to their unique needs and cultural context.
             We're building the future of education, one flashcard at a time.
           </p>
         </div>
@@ -91,22 +91,22 @@ const About = () => {
               <h2 className="text-3xl font-bold text-foreground mb-6">Why MemoSpark Exists</h2>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  In classrooms around the world, we noticed students struggling with traditional study methods 
-                  that didn't adapt to their learning pace or cultural background. Many talented learners were 
+                  In classrooms around the world, we noticed students struggling with traditional study methods
+                  that didn't adapt to their learning pace or cultural background. Many talented learners were
                   left behind simply because existing tools weren't designed for their needs.
                 </p>
                 <p>
-                  That's when we decided to create something different. MemoSpark combines cutting-edge AI 
-                  with deep respect for linguistic diversity, creating personalized learning experiences 
+                  That's when we decided to create something different. MemoSpark combines cutting-edge AI
+                  with deep respect for linguistic diversity, creating personalized learning experiences
                   that work for students in English, Sinhala, Tamil, and beyond.
                 </p>
                 <p>
-                  Today, thousands of students and educators use MemoSpark to transform how they create, 
+                  Today, thousands of students and educators use MemoSpark to transform how they create,
                   study, and share knowledge. But we're just getting started.
                 </p>
               </div>
             </div>
-            <div className="bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl p-8 text-center">
+            <div className="bg-gradient-to-br from-blue-100 to-purple-100 dark:from-gray-900 dark:to-gray-800 rounded-2xl p-8 text-center">
               <div className="text-6xl font-bold text-blue-600 mb-2">50K+</div>
               <div className="text-muted-foreground font-medium mb-4">Students Empowered</div>
               <div className="text-4xl font-bold text-purple-600 mb-2">1M+</div>
@@ -157,7 +157,7 @@ const About = () => {
         <div className="text-center bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-12 text-white">
           <h2 className="text-3xl font-bold mb-4">Join Our Learning Revolution</h2>
           <p className="text-xl mb-8 opacity-90">
-            Ready to be part of a community that's transforming education for everyone? 
+            Ready to be part of a community that's transforming education for everyone?
             Let's build the future of learning together.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

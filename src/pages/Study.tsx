@@ -14,6 +14,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import StudyTimer from '@/components/study/StudyTimer';
 import StudyStatsPanel from '@/components/study/StudyStatsPanel';
 import { startStudySession, recordFlashcardReview, getCurrentStudySession, clearCurrentStudySession } from '@/utils/studyTracking';
+import { API_ENDPOINTS } from '@/config/api';
 
 interface Flashcard {
   id: number;
@@ -84,6 +85,9 @@ const Study = () => {
   const [bookmarkedCards, setBookmarkedCards] = useState<number[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);
+  const [isLoadingMaterials, setIsLoadingMaterials] = useState(false);
+  const [materialsNotFound, setMaterialsNotFound] = useState(false);
+  const [reviewedDifficult, setReviewedDifficult] = useState<Set<number>>(new Set());
 
   // Study tracking specific state
   const [studyTime, setStudyTime] = useState(0);
@@ -91,45 +95,98 @@ const Study = () => {
   const [cardStudyStartTime, setCardStudyStartTime] = useState(0);
   const [studySession, setStudySession] = useState<any>(null);
   const [showStatsPanel, setShowStatsPanel] = useState(false);
+  const [timerKey, setTimerKey] = useState(0);
 
   const isGuestUser = !user && generatedContent !== null;
 
   useEffect(() => {
-    const data = localStorage.getItem('generatedContent');
-    if (data) {
-      const parsed: GeneratedContent = JSON.parse(data);
-      setGeneratedContent(parsed);
-      setFlashcards(parsed.flashcards || []);
-      setQuizzes(parsed.quizzes || []);
-      setExercises(parsed.exercises || []);
-      setSessionRatings(Array(parsed.flashcards?.length || 0).fill(null));
-
-      // Start study session when content is loaded and user is authenticated
-      if (user && session && parsed.flashcards?.length) {
-        const deckId = searchParams.get('deck') || 'default-deck';
-
-        // Explicitly set studying to true to start the timer
-        console.log('Setting study session active');
-        setIsStudying(true);
-
-        // Start a study session
-        startStudySession(deckId, session)
-          .then(sessionData => {
-            if (sessionData) {
-              console.log('Study session started:', sessionData);
-              setStudySession(sessionData);
-              // Make sure studying is true and card timer is reset
-              setIsStudying(true);
-              setCardStudyStartTime(0);
-            }
-          })
-          .catch(error => {
-            console.error('Failed to start study session:', error);
+    const deckId = searchParams.get('deckId');
+    const deckName = searchParams.get('deck');
+    const loadFromDeck = async () => {
+      if (!session?.access_token) return;
+      let idToUse: string | null = deckId;
+      setIsLoadingMaterials(true);
+      setMaterialsNotFound(false);
+      // Resolve deck id from name if missing
+      if (!idToUse && deckName) {
+        try {
+          const listRes = await fetch(API_ENDPOINTS.DECKS.LIST, {
+            headers: { Authorization: `Bearer ${session.access_token}` },
           });
-      } else {
-        // For guest users, still activate the timer
-        if (!user && parsed.flashcards?.length) {
-          console.log('Guest study session active');
+          if (listRes.ok) {
+            const decks = await listRes.json();
+            const match = (decks || []).find((d: any) => d.name === deckName);
+            if (match?.id) idToUse = String(match.id);
+          }
+        } catch (e) { console.error('Failed to resolve deck id from name', e); }
+      }
+      if (!idToUse) return;
+      try {
+        const res = await fetch(API_ENDPOINTS.STUDY.DECK_MATERIALS(idToUse), {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (!res.ok) throw new Error(`Failed to load deck materials (${res.status})`);
+        const data = await res.json();
+        const parsed: GeneratedContent = {
+          flashcards: data.flashcards || [],
+          quizzes: data.quizzes || [],
+          exercises: data.exercises || [],
+        };
+        setGeneratedContent(parsed);
+        setFlashcards(parsed.flashcards || []);
+        setQuizzes(parsed.quizzes || []);
+        setExercises(parsed.exercises || []);
+        setSessionRatings(Array(parsed.flashcards?.length || 0).fill(null));
+
+        if ((!parsed.flashcards || parsed.flashcards.length === 0) &&
+          (!parsed.quizzes || parsed.quizzes.length === 0) &&
+          (!parsed.exercises || parsed.exercises.length === 0)) {
+          setMaterialsNotFound(true);
+        }
+
+        if (user && parsed.flashcards?.length) {
+          console.log('Setting study session active');
+          setIsStudying(true);
+          startStudySession(idToUse, session)
+            .then(sessionData => {
+              if (sessionData) {
+                setStudySession(sessionData);
+                setIsStudying(true);
+                setCardStudyStartTime(0);
+              }
+            })
+            .catch(error => console.error('Failed to start study session:', error));
+        } else if (!user && parsed.flashcards?.length) {
+          setIsStudying(true);
+        }
+      } catch (e) {
+        console.error(e);
+        setMaterialsNotFound(true);
+      } finally {
+        setIsLoadingMaterials(false);
+      }
+    };
+
+    if (deckId || deckName) {
+      loadFromDeck();
+    } else {
+      // Legacy fallback: localStorage content
+      const data = localStorage.getItem('generatedContent');
+      if (data) {
+        const parsed: GeneratedContent = JSON.parse(data);
+        setGeneratedContent(parsed);
+        setFlashcards(parsed.flashcards || []);
+        setQuizzes(parsed.quizzes || []);
+        setExercises(parsed.exercises || []);
+        setSessionRatings(Array(parsed.flashcards?.length || 0).fill(null));
+
+        if (user && session && parsed.flashcards?.length) {
+          const legacyDeckId = searchParams.get('deck') || 'default-deck';
+          setIsStudying(true);
+          startStudySession(legacyDeckId, session)
+            .then(sessionData => { if (sessionData) setStudySession(sessionData); })
+            .catch(console.error);
+        } else if (!user && parsed.flashcards?.length) {
           setIsStudying(true);
         }
       }
@@ -194,18 +251,30 @@ const Study = () => {
     setShowExerciseAnswers(false);
   }, [exercises, tab]);
 
-  // Handle case where no cards are available
-  if (!generatedContent) {
+  // Loading state while fetching materials
+  if (isLoadingMaterials) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
+        <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
+        <div className="max-w-full sm:max-w-4xl mx-auto px-6 py-16 text-center">
+          <BookOpen className="h-16 w-16 text-blue-500 mx-auto mb-4 animate-pulse" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Loading study materials...</h1>
+          <p className="text-muted-foreground">Please wait while we fetch your deck content.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle case where no materials were found
+  if (materialsNotFound) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
         <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
         <div className="max-w-full sm:max-w-4xl mx-auto px-6 py-8">
           <div className="text-center">
             <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-foreground mb-4">No Flashcards Available</h1>
-            <p className="text-muted-foreground mb-6">
-              No flashcards are available for study. Please create or upload some flashcards first.
-            </p>
+            <h1 className="text-2xl font-bold text-foreground mb-4">No Study Materials Found</h1>
+            <p className="text-muted-foreground mb-6">We couldn't find flashcards, quizzes, or exercises for this deck.</p>
             <Link to="/upload">
               <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
                 Upload Document
@@ -262,7 +331,7 @@ const Study = () => {
 
     // Record the flashcard review if user is authenticated
     const currentCardData = flashcards[currentCard];
-    if (user && session && currentCardData) {
+    if (user && session && currentCardData && currentCardData.id) {
       const studyTimeForCard = studyTime - cardStudyStartTime;
 
       try {
@@ -366,31 +435,47 @@ const Study = () => {
     setTimeout(() => {
       // Start a new study session if the user is authenticated
       if (user && session) {
-        const deckId = searchParams.get('deck') || 'default-deck';
+        const idFromQuery = searchParams.get('deckId');
+        const nameFromQuery = searchParams.get('deck');
+        const restartWithDeck = async () => {
+          let idToUse: string | null = idFromQuery;
+          if (!idToUse && nameFromQuery && session?.access_token) {
+            try {
+              const listRes = await fetch(API_ENDPOINTS.DECKS.LIST, {
+                headers: { Authorization: `Bearer ${session.access_token}` },
+              });
+              if (listRes.ok) {
+                const decks = await listRes.json();
+                const match = (decks || []).find((d: any) => d.name === nameFromQuery);
+                if (match?.id) idToUse = String(match.id);
+              }
+            } catch (e) { console.error('Failed to resolve deck for restart', e); }
+          }
 
-        try {
-          // Clear the existing session first
-          clearCurrentStudySession();
-
-          // Start a new session
-          console.log('Restarting study session...');
-          startStudySession(deckId, session).then(sessionData => {
-            if (sessionData) {
-              setStudySession(sessionData);
-              console.log('New study session started, activating timer');
+          try {
+            clearCurrentStudySession();
+            console.log('Restarting study session...');
+            const sess = await startStudySession(idToUse || 'default-deck', session);
+            if (sess) {
+              setStudySession(sess);
               setIsStudying(true);
+              setCardStudyStartTime(0);
+              setTimerKey(k => k + 1);
             }
-          });
-        } catch (error) {
-          console.error('Failed to restart study session:', error);
-        }
+          } catch (error) {
+            console.error('Failed to restart study session:', error);
+          }
+        };
+        restartWithDeck();
       } else {
         // For guest users, just start the timer
         console.log('Restarting guest study session');
         setIsStudying(true);
+        setTimerKey(k => k + 1);
       }
     }, 100);
-  }; const handleExportProgress = () => {
+  };
+  const handleExportProgress = () => {
     const data = {
       sessionStats,
       sessionRatings,
@@ -1027,6 +1112,7 @@ const Study = () => {
                                             (updated[exerciseStep] as Record<string, string>)[concept] = e.target.value;
                                             setExerciseAnswers(updated);
                                           }}
+                                          aria-label={`Select definition for ${concept}`}
                                         >
                                           <option value="">Select definition...</option>
                                           {exercises[exerciseStep].definitions?.map((def, defIdx) => (
@@ -1107,7 +1193,44 @@ const Study = () => {
                             <Badge variant="outline">{card.type}</Badge>
                           </div>
                           <div className="mb-2 font-medium break-words">Q: {card.question}</div>
-                          <div className="mb-2 break-words">A: {card.answer}</div>
+                          <div className="mb-4 break-words">A: {card.answer}</div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                // Mark as reviewed: record an 'good' review quickly with 1s
+                                if (user && session && card.id !== undefined) {
+                                  try {
+                                    await recordFlashcardReview(card.id, 'good', 1, session);
+                                    const newSet = new Set(reviewedDifficult);
+                                    newSet.add(idx);
+                                    setReviewedDifficult(newSet);
+                                  } catch (e) {
+                                    console.error('Failed to mark reviewed', e);
+                                  }
+                                }
+                              }}
+                              disabled={reviewedDifficult.has(idx)}
+                            >
+                              {reviewedDifficult.has(idx) ? 'Reviewed' : 'Mark Reviewed'}
+                            </Button>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => {
+                                // Jump to this card in flashcards tab
+                                const targetIndex = flashcards.findIndex(fc => fc.question === card.question && fc.answer === card.answer);
+                                if (targetIndex !== -1) {
+                                  setCurrentCard(targetIndex);
+                                  setIsFlipped(true);
+                                  setTab('flashcards');
+                                }
+                              }}
+                            >
+                              Study Again
+                            </Button>
+                          </div>
                         </CardContent>
                       </Card>
                     ))
@@ -1220,6 +1343,7 @@ const Study = () => {
 
                 {/* Study Timer */}
                 <StudyTimer
+                  key={timerKey}
                   isActive={isStudying && !sessionComplete}
                   initialTime={studyTime}
                   onTimeUpdate={setStudyTime}

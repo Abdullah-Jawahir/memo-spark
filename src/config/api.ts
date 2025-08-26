@@ -20,6 +20,10 @@ export const API_ENDPOINTS = {
     RECORD_REVIEW: `${API_BASE_URL}/api/study/record-review`,
     STATS: `${API_BASE_URL}/api/study/stats`,
     RECENT_ACTIVITY: `${API_BASE_URL}/api/study/recent-activity`,
+    DECK_MATERIALS: (deckId: string | number) => `${API_BASE_URL}/api/decks/${deckId}/materials`,
+  },
+  DECKS: {
+    LIST: `${API_BASE_URL}/api/decks`,
   },
 } as const;
 
