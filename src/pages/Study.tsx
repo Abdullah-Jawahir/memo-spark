@@ -96,102 +96,121 @@ const Study = () => {
   const [studySession, setStudySession] = useState<any>(null);
   const [showStatsPanel, setShowStatsPanel] = useState(false);
   const [timerKey, setTimerKey] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const isGuestUser = !user && generatedContent !== null;
 
-  useEffect(() => {
+  const fetchMaterials = async (force = false) => {
+    if (!session?.access_token) return;
+    if (!force && (isLoadingMaterials || isRefreshing)) return;
+
     const deckId = searchParams.get('deckId');
     const deckName = searchParams.get('deck');
-    const loadFromDeck = async () => {
-      if (!session?.access_token) return;
-      let idToUse: string | null = deckId;
+    let idToUse: string | null = deckId;
+
+    setMaterialsNotFound(false);
+    if (force) {
+      setIsRefreshing(true);
+    } else {
       setIsLoadingMaterials(true);
-      setMaterialsNotFound(false);
-      // Resolve deck id from name if missing
-      if (!idToUse && deckName) {
-        try {
-          const listRes = await fetch(API_ENDPOINTS.DECKS.LIST, {
-            headers: { Authorization: `Bearer ${session.access_token}` },
-          });
-          if (listRes.ok) {
-            const decks = await listRes.json();
-            const match = (decks || []).find((d: any) => d.name === deckName);
-            if (match?.id) idToUse = String(match.id);
-          }
-        } catch (e) { console.error('Failed to resolve deck id from name', e); }
-      }
-      if (!idToUse) return;
+    }
+
+    // Resolve deck id from name if missing
+    if (!idToUse && deckName) {
       try {
-        const res = await fetch(API_ENDPOINTS.STUDY.DECK_MATERIALS(idToUse), {
+        const listRes = await fetch(API_ENDPOINTS.DECKS.LIST, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
-        if (!res.ok) throw new Error(`Failed to load deck materials (${res.status})`);
-        const data = await res.json();
-        const parsed: GeneratedContent = {
-          flashcards: data.flashcards || [],
-          quizzes: data.quizzes || [],
-          exercises: data.exercises || [],
-        };
-        setGeneratedContent(parsed);
-        setFlashcards(parsed.flashcards || []);
-        setQuizzes(parsed.quizzes || []);
-        setExercises(parsed.exercises || []);
-        setSessionRatings(Array(parsed.flashcards?.length || 0).fill(null));
-
-        if ((!parsed.flashcards || parsed.flashcards.length === 0) &&
-          (!parsed.quizzes || parsed.quizzes.length === 0) &&
-          (!parsed.exercises || parsed.exercises.length === 0)) {
-          setMaterialsNotFound(true);
+        if (listRes.ok) {
+          const decks = await listRes.json();
+          const match = (decks || []).find((d: any) => d.name === deckName);
+          if (match?.id) idToUse = String(match.id);
         }
-
-        if (user && parsed.flashcards?.length) {
-          console.log('Setting study session active');
-          setIsStudying(true);
-          startStudySession(idToUse, session)
-            .then(sessionData => {
-              if (sessionData) {
-                setStudySession(sessionData);
-                setIsStudying(true);
-                setCardStudyStartTime(0);
-              }
-            })
-            .catch(error => console.error('Failed to start study session:', error));
-        } else if (!user && parsed.flashcards?.length) {
-          setIsStudying(true);
-        }
-      } catch (e) {
-        console.error(e);
-        setMaterialsNotFound(true);
-      } finally {
-        setIsLoadingMaterials(false);
-      }
-    };
-
-    if (deckId || deckName) {
-      loadFromDeck();
-    } else {
-      // Legacy fallback: localStorage content
-      const data = localStorage.getItem('generatedContent');
-      if (data) {
-        const parsed: GeneratedContent = JSON.parse(data);
-        setGeneratedContent(parsed);
-        setFlashcards(parsed.flashcards || []);
-        setQuizzes(parsed.quizzes || []);
-        setExercises(parsed.exercises || []);
-        setSessionRatings(Array(parsed.flashcards?.length || 0).fill(null));
-
-        if (user && session && parsed.flashcards?.length) {
-          const legacyDeckId = searchParams.get('deck') || 'default-deck';
-          setIsStudying(true);
-          startStudySession(legacyDeckId, session)
-            .then(sessionData => { if (sessionData) setStudySession(sessionData); })
-            .catch(console.error);
-        } else if (!user && parsed.flashcards?.length) {
-          setIsStudying(true);
-        }
-      }
+      } catch (e) { console.error('Failed to resolve deck id from name', e); }
     }
-  }, [user, session, searchParams]); const currentCardData = flashcards[currentCard];
+    if (!idToUse) {
+      setIsLoadingMaterials(false);
+      setIsRefreshing(false);
+      return;
+    }
+    try {
+      const res = await fetch(API_ENDPOINTS.STUDY.DECK_MATERIALS(idToUse), {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!res.ok) throw new Error(`Failed to load deck materials (${res.status})`);
+      const data = await res.json();
+      const parsed: GeneratedContent = {
+        flashcards: data.flashcards || [],
+        quizzes: data.quizzes || [],
+        exercises: data.exercises || [],
+      };
+      setGeneratedContent(parsed);
+      setFlashcards(parsed.flashcards || []);
+      setQuizzes(parsed.quizzes || []);
+      setExercises(parsed.exercises || []);
+      setSessionRatings(Array(parsed.flashcards?.length || 0).fill(null));
+
+      if ((!parsed.flashcards || parsed.flashcards.length === 0) &&
+        (!parsed.quizzes || parsed.quizzes.length === 0) &&
+        (!parsed.exercises || parsed.exercises.length === 0)) {
+        setMaterialsNotFound(true);
+      }
+
+      if (user && parsed.flashcards?.length) {
+        setIsStudying(true);
+        startStudySession(idToUse, session)
+          .then(sessionData => {
+            if (sessionData) {
+              setStudySession(sessionData);
+              setIsStudying(true);
+              setCardStudyStartTime(0);
+            }
+          })
+          .catch(error => console.error('Failed to start study session:', error));
+      } else if (!user && parsed.flashcards?.length) {
+        setIsStudying(true);
+      }
+
+      setLastUpdated(new Date());
+    } catch (e) {
+      console.error(e);
+      setMaterialsNotFound(true);
+    } finally {
+      setIsLoadingMaterials(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    // Initial load only
+    const data = localStorage.getItem('generatedContent');
+    const deckId = searchParams.get('deckId');
+    const deckName = searchParams.get('deck');
+    if (deckId || deckName) {
+      fetchMaterials(false);
+    } else if (data) {
+      const parsed: GeneratedContent = JSON.parse(data);
+      setGeneratedContent(parsed);
+      setFlashcards(parsed.flashcards || []);
+      setQuizzes(parsed.quizzes || []);
+      setExercises(parsed.exercises || []);
+      setSessionRatings(Array(parsed.flashcards?.length || 0).fill(null));
+
+      if (user && session && parsed.flashcards?.length) {
+        const legacyDeckId = searchParams.get('deck') || 'default-deck';
+        setIsStudying(true);
+        startStudySession(legacyDeckId, session)
+          .then(sessionData => { if (sessionData) setStudySession(sessionData); })
+          .catch(console.error);
+      } else if (!user && parsed.flashcards?.length) {
+        setIsStudying(true);
+      }
+      setLastUpdated(new Date());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const currentCardData = flashcards[currentCard];
   const progress = flashcards.length > 0 ? ((currentCard + 1) / flashcards.length) * 100 : 0;
 
   // Update session stats when study time changes
@@ -535,12 +554,24 @@ const Study = () => {
             <h1 className="text-2xl font-bold text-foreground">
               {user ? 'Your Study Session' : 'Uploaded Content'}
             </h1>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => fetchMaterials(true)}
+              disabled={isRefreshing}
+              className="ml-2"
+            >
+              {isRefreshing ? 'Refreshing...' : 'Refresh Materials'}
+            </Button>
             {isGuestUser && (
               <Badge variant="outline" className="text-orange-600 border-orange-300">
                 Guest Mode
               </Badge>
             )}
           </div>
+          {lastUpdated && (
+            <div className="text-xs text-muted-foreground">Last updated: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+          )}
           {tab === 'flashcards' && flashcards.length > 0 && (
             <div className="flex items-center justify-center space-x-4 mb-4">
               <Badge className={getDifficultyColor(currentCardData.difficulty)}>
