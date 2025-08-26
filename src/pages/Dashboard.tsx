@@ -188,10 +188,23 @@ const Dashboard = () => {
 
         if (achievementsResponse.ok) {
           const achievementsData = await achievementsResponse.json();
-          // Handle both array response and object with achievements property
-          const list = Array.isArray(achievementsData) ? achievementsData : (achievementsData.achievements || []);
+          console.log('Raw achievements data:', achievementsData);
+
+          // Handle different response formats
+          let list = [];
+          if (Array.isArray(achievementsData)) {
+            list = achievementsData;
+          } else if (achievementsData.achievements && Array.isArray(achievementsData.achievements)) {
+            list = achievementsData.achievements;
+          } else if (typeof achievementsData === 'object' && achievementsData !== null) {
+            // Convert object with numeric keys to array
+            list = Object.values(achievementsData);
+          }
+
+          console.log('Processed achievements list:', list);
           setAchievements(list);
           localStorage.setItem(DASHBOARD_ACHIEVEMENTS_KEY, JSON.stringify(list));
+          console.log('Achievements state after setting:', list);
         } else {
           console.warn('Failed to fetch achievements, status:', achievementsResponse.status);
         }
@@ -229,7 +242,18 @@ const Dashboard = () => {
     if (cachedData) {
       try {
         setDashboardData(JSON.parse(cachedData));
-        if (cachedAchievements) setAchievements(JSON.parse(cachedAchievements));
+        if (cachedAchievements) {
+          const parsedAchievements = JSON.parse(cachedAchievements);
+          console.log('Cached achievements:', parsedAchievements);
+
+          // Ensure it's an array
+          const achievementsList = Array.isArray(parsedAchievements)
+            ? parsedAchievements
+            : Object.values(parsedAchievements || {});
+
+          console.log('Processed cached achievements:', achievementsList);
+          setAchievements(achievementsList);
+        }
         if (lastFetchTime) setLastUpdated(new Date(lastFetchTime));
         setLoading(false);
       } catch { }
@@ -592,31 +616,61 @@ const Dashboard = () => {
                   {/* Achievements */}
                   <Card>
                     <CardHeader>
-                      <CardTitle>Recent Achievements</CardTitle>
+                      <div className="flex justify-between items-center">
+                        <CardTitle>Recent Achievements</CardTitle>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            localStorage.removeItem(DASHBOARD_ACHIEVEMENTS_KEY);
+                            fetchDashboardData(true);
+                          }}
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </CardHeader>
                     <CardContent>
+                      <div className="mb-2 text-xs text-muted-foreground">
+                        Debug: {achievements.length} achievements loaded
+                      </div>
                       {achievements.length === 0 ? (
                         <div className="text-center py-6">
                           <p className="text-muted-foreground">Keep studying to earn achievements!</p>
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          {achievements.slice(0, 3).map((achievement, index) => (
-                            <div key={index} className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center text-lg">
-                                {achievement.icon || "🏆"}
+                          {achievements.slice(0, 3).map((achievement, index) => {
+                            // Map text-based icons to emojis
+                            const getIconDisplay = (icon: string) => {
+                              const iconMap: { [key: string]: string } = {
+                                'lightning-bolt': '⚡',
+                                'target': '🎯',
+                                'trophy': '🏆',
+                                'rocket': '🚀',
+                                'brain': '🧠',
+                                'medal': '🥇'
+                              };
+                              return iconMap[icon] || icon || "🏆";
+                            };
+
+                            return (
+                              <div key={index} className="flex items-center space-x-3">
+                                <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center text-lg">
+                                  {getIconDisplay(achievement.icon)}
+                                </div>
+                                <div className="flex-1">
+                                  <p className="font-medium text-foreground">{achievement.title}</p>
+                                  <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                                  {achievement.earned_at && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      {new Date(achievement.earned_at).toLocaleDateString()}
+                                    </p>
+                                  )}
+                                </div>
                               </div>
-                              <div className="flex-1">
-                                <p className="font-medium text-foreground">{achievement.title}</p>
-                                <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                                {achievement.earned_at && (
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    {new Date(achievement.earned_at).toLocaleDateString()}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </CardContent>
