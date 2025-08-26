@@ -571,20 +571,20 @@ const Study = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
       {/* Top Navigation Bar */}
       <div className="w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm fixed top-0 z-40 border-b border-gray-200 dark:border-gray-800">
-        <div className="container mx-auto px-4 py-2 flex justify-between items-center">
+        <div className="container mx-auto px-3 sm:px-4 py-2 flex justify-between items-center">
           <Link to="/dashboard" className="flex items-center space-x-2 group">
             <div className="p-1.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg group-hover:scale-105 transition-transform">
-              <BookOpen className="h-5 w-5 text-white" />
+              <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
-            <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="text-base sm:text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               MemoSpark
             </span>
           </Link>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3">
             {/* Overall study time always shown in nav bar */}
-            <div className="hidden sm:flex items-center mr-2 text-sm">
-              <Clock className={`h-4 w-4 ${isStudying ? 'text-green-500' : 'text-blue-600'} mr-1`} />
+            <div className="flex items-center mr-1 sm:mr-2 text-xs sm:text-sm">
+              <Clock className={`h-3 w-3 sm:h-4 sm:w-4 ${isStudying ? 'text-green-500' : 'text-blue-600'} mr-1`} />
               <span className="font-medium">{formatTime(overallStudyTime)}</span>
             </div>
             <Button
@@ -592,36 +592,36 @@ const Study = () => {
               size="sm"
               onClick={() => fetchMaterials(true)}
               disabled={isRefreshing}
-              className="bg-white/80 dark:bg-gray-800/80 mr-2"
+              className="bg-white/80 dark:bg-gray-800/80 mr-1 sm:mr-2 px-2 sm:px-3"
             >
               {isRefreshing ? (
                 <span className="flex items-center">
-                  <span className="animate-spin mr-2">
-                    <RefreshCw className="h-3.5 w-3.5" />
+                  <span className="animate-spin mr-1 sm:mr-2">
+                    <RefreshCw className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   </span>
-                  Refreshing
+                  <span className="hidden sm:inline">Refreshing</span>
                 </span>
               ) : (
                 <span className="flex items-center">
-                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                  Refresh
+                  <RefreshCw className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-0 sm:mr-1.5" />
+                  <span className="hidden sm:inline">Refresh</span>
                 </span>
               )}
             </Button>
-            <div className="border-l border-gray-200 dark:border-gray-700 h-6 mx-1"></div>
+            <div className="border-l border-gray-200 dark:border-gray-700 h-4 sm:h-6 mx-1"></div>
             <ThemeSwitcher />
           </div>
         </div>
       </div>
 
-      <div className="max-w-full sm:max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8 pt-24 mt-10">
+      <div className="max-w-full sm:max-w-4xl lg:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pt-20 sm:pt-24 mt-6 sm:mt-10">
         {/* Guest Warning Banner */}
         {isGuestUser && (
-          <Alert className="mb-6 border-orange-200 bg-gradient-to-r from-orange-50 to-red-50 text-sm sm:text-base shadow-sm">
-            <AlertCircle className="h-4 w-4 text-orange-600" />
+          <Alert className="mb-4 sm:mb-6 border-orange-200 bg-gradient-to-r from-orange-50 to-red-50 text-sm sm:text-base shadow-sm">
+            <AlertCircle className="h-4 w-4 text-orange-600 flex-shrink-0" />
             <AlertDescription className="text-orange-800">
               <strong>Guest Session:</strong> These flashcards are for temporary use only—create a free account to save them and track your progress!
-              <Link to="/register" className="ml-2 underline font-medium hover:text-orange-600">
+              <Link to="/register" className="ml-2 underline font-medium hover:text-orange-600 block sm:inline mt-1 sm:mt-0">
                 Sign up now to unlock full features →
               </Link>
             </AlertDescription>
@@ -629,17 +629,17 @@ const Study = () => {
         )}
 
         {/* Study Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           <div className="flex flex-col items-center justify-center mb-4">
-            <div className="flex items-center space-x-2 mb-3">
+            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2 mb-3">
               <div className="p-2 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-full">
-                <BookOpen className="h-7 w-7 text-blue-600" />
+                <BookOpen className="h-6 w-6 sm:h-7 sm:w-7 text-blue-600" />
               </div>
-              <h1 className="text-3xl font-bold text-foreground">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-center sm:text-left">
                 {user ? 'Your Study Session' : 'Uploaded Content'}
               </h1>
               {isGuestUser && (
-                <Badge variant="outline" className="text-orange-600 border-orange-300 ml-2">
+                <Badge variant="outline" className="text-orange-600 border-orange-300 mt-2 sm:mt-0 sm:ml-2">
                   Guest Mode
                 </Badge>
               )}
@@ -652,22 +652,22 @@ const Study = () => {
               </div>
             )}
           </div>          {tab === 'flashcards' && flashcards.length > 0 && (
-            <div className="bg-card dark:bg-card/30 rounded-lg p-3 max-w-md mx-auto mb-5 shadow-sm border border-gray-100 dark:border-gray-800">
-              <div className="flex items-center justify-between px-2 mb-2">
-                <div className="flex items-center">
-                  <Badge className={getDifficultyColor(currentCardData.difficulty) + " mr-2 px-2 py-0.5"}>
+            <div className="bg-card dark:bg-card/30 rounded-lg p-3 sm:p-4 max-w-md mx-auto mb-4 sm:mb-5 shadow-sm border border-gray-100 dark:border-gray-800">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 mb-2 space-y-2 sm:space-y-0">
+                <div className="flex items-center flex-wrap gap-2">
+                  <Badge className={getDifficultyColor(currentCardData.difficulty) + " px-2 py-0.5 text-xs sm:text-sm"}>
                     {capitalize(currentCardData.difficulty)}
                   </Badge>
-                  <Badge variant="outline" className="px-2 py-0.5">{currentCardData.type}</Badge>
+                  <Badge variant="outline" className="px-2 py-0.5 text-xs sm:text-sm">{currentCardData.type}</Badge>
                 </div>
-                <span className="text-sm font-medium bg-gray-50 dark:bg-gray-800/40 px-2 py-1 rounded-md">
+                <span className="text-sm font-medium bg-gray-50 dark:bg-gray-800/40 px-2 py-1 rounded-md whitespace-nowrap">
                   Card {currentCard + 1} of {flashcards.length}
                 </span>
               </div>
               <div className="mt-3">
                 <Progress
                   value={progress}
-                  className="h-2.5"
+                  className="h-2 sm:h-2.5"
                   indicatorClassName="bg-gradient-to-r from-blue-500 to-purple-500"
                 />
               </div>
@@ -676,50 +676,52 @@ const Study = () => {
         </div>
 
         {/* Tab Selector */}
-        <div className="flex justify-center mb-6">
-          <div className="flex bg-white dark:bg-gray-800 rounded-lg p-1 w-full max-w-md shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="flex justify-center mb-4 sm:mb-6">
+          <div className="flex bg-white dark:bg-gray-800 rounded-lg p-1 w-full max-w-2xl shadow-sm border border-gray-100 dark:border-gray-700">
             <Button
-              className={`flex-1 rounded-md transition-all duration-300 ${tab === 'flashcards' ?
+              className={`flex-1 rounded-md transition-all duration-300 text-xs sm:text-sm ${tab === 'flashcards' ?
                 'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
                 'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               variant="ghost"
               onClick={() => setTab('flashcards')}
               size="sm"
             >
-              <LayersIcon className={`h-4 w-4 mr-1.5 ${tab === 'flashcards' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
-              Flashcards
+              <LayersIcon className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 ${tab === 'flashcards' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
+              <span className="hidden xs:inline">Flashcards</span>
+              <span className="xs:hidden">Cards</span>
             </Button>
             <Button
-              className={`flex-1 rounded-md transition-all duration-300 ${tab === 'quiz' ?
+              className={`flex-1 rounded-md transition-all duration-300 text-xs sm:text-sm ${tab === 'quiz' ?
                 'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
                 'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               variant="ghost"
               onClick={() => setTab('quiz')}
               size="sm"
             >
-              <CheckSquare className={`h-4 w-4 mr-1.5 ${tab === 'quiz' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
+              <CheckSquare className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 ${tab === 'quiz' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
               Quiz
             </Button>
             <Button
-              className={`flex-1 rounded-md transition-all duration-300 ${tab === 'exercises' ?
+              className={`flex-1 rounded-md transition-all duration-300 text-xs sm:text-sm ${tab === 'exercises' ?
                 'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
                 'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               variant="ghost"
               onClick={() => setTab('exercises')}
               size="sm"
             >
-              <PencilIcon className={`h-4 w-4 mr-1.5 ${tab === 'exercises' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
-              Exercises
+              <PencilIcon className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 ${tab === 'exercises' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
+              <span className="hidden xs:inline">Exercises</span>
+              <span className="xs:hidden">Exec</span>
             </Button>
             <Button
-              className={`flex-1 rounded-md transition-all duration-300 ${tab === 'review' ?
+              className={`flex-1 rounded-md transition-all duration-300 text-xs sm:text-sm ${tab === 'review' ?
                 'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
                 'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               variant="ghost"
               onClick={() => setTab('review')}
               size="sm"
             >
-              <RotateCcw className={`h-4 w-4 mr-1.5 ${tab === 'review' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
+              <RotateCcw className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 ${tab === 'review' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
               Review
             </Button>
           </div>
@@ -737,59 +739,59 @@ const Study = () => {
                 transition={{ duration: 0.3 }}
               >
                 {/* Flashcards Content */}
-                <div className="max-w-full sm:max-w-4xl mx-auto mb-8 sm:px-4">
+                <div className="max-w-full sm:max-w-4xl lg:max-w-5xl mx-auto mb-6 sm:mb-8 px-2 sm:px-4">
                   {sessionComplete && (
                     <motion.div
                       initial={{ opacity: 0, y: 40 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -40 }}
                       transition={{ duration: 0.5 }}
-                      className="max-w-full sm:max-w-4xl mx-auto text-center mt-16 sm:mt-24 mb-16 sm:mb-24 py-8 sm:py-16"
+                      className="max-w-full sm:max-w-4xl mx-auto text-center mt-8 sm:mt-16 lg:mt-24 mb-12 sm:mb-16 lg:mb-24 py-6 sm:py-8 lg:py-16"
                     >
-                      <h2 className="text-2xl font-bold mb-4">🎉 Session Complete!</h2>
-                      <p className="text-muted-foreground mb-6">
+                      <h2 className="text-xl sm:text-2xl font-bold mb-4">🎉 Session Complete!</h2>
+                      <p className="text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-base px-4">
                         You've reviewed all flashcards for this session.
                       </p>
 
                       {/* Summary of the study session */}
-                      <div className="mb-8">
+                      <div className="mb-6 sm:mb-8">
                         <Card>
-                          <CardContent className="p-6">
-                            <h3 className="font-semibold text-xl mb-4">Session Summary</h3>
-                            <div className="grid grid-cols-3 gap-4 text-center">
+                          <CardContent className="p-4 sm:p-6">
+                            <h3 className="font-semibold text-lg sm:text-xl mb-4">Session Summary</h3>
+                            <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
                               <div>
-                                <div className="text-3xl font-bold text-green-600">
+                                <div className="text-2xl sm:text-3xl font-bold text-green-600">
                                   {sessionStats.correct}
                                 </div>
-                                <div className="text-sm text-muted-foreground">Cards Mastered</div>
+                                <div className="text-xs sm:text-sm text-muted-foreground">Cards Mastered</div>
                               </div>
                               <div>
-                                <div className="text-3xl font-bold text-blue-600">
+                                <div className="text-2xl sm:text-3xl font-bold text-blue-600">
                                   {flashcards.length}
                                 </div>
-                                <div className="text-sm text-muted-foreground">Total Cards</div>
+                                <div className="text-xs sm:text-sm text-muted-foreground">Total Cards</div>
                               </div>
                               <div>
-                                <div className="text-3xl font-bold text-purple-600">
+                                <div className="text-2xl sm:text-3xl font-bold text-purple-600">
                                   {studyTime > 0 ? formatTime(studyTime) : '0:00'}
                                 </div>
-                                <div className="text-sm text-muted-foreground">Study Time</div>
+                                <div className="text-xs sm:text-sm text-muted-foreground">Study Time</div>
                               </div>
                             </div>
                           </CardContent>
                         </Card>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
-                        <Button onClick={handleRestartSession}>
+                      <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-6 sm:mb-8 px-4">
+                        <Button onClick={handleRestartSession} className="w-full sm:w-auto">
                           Restart Session
                         </Button>
-                        <Link to="/dashboard?refresh=true">
-                          <Button variant="outline">
+                        <Link to="/dashboard?refresh=true" className="w-full sm:w-auto">
+                          <Button variant="outline" className="w-full">
                             Go to Dashboard
                           </Button>
                         </Link>
-                        <Button variant="outline" onClick={() => setTab('review')}>
+                        <Button variant="outline" onClick={() => setTab('review')} className="w-full sm:w-auto">
                           Review Difficult Cards
                         </Button>
                       </div>
@@ -809,34 +811,40 @@ const Study = () => {
                   )}
                   {!sessionComplete && (
                     <Card
-                      className="h-fit sm:h-96 cursor-pointer transform-gpu transition-all duration-300 hover:scale-105 mt-2 sm:mt-0 "
+                      className="h-auto sm:h-96 cursor-pointer transform-gpu transition-all duration-300 hover:scale-105 mt-2 sm:mt-0 min-h-[300px] sm:min-h-[384px]"
                       onClick={handleCardFlip}
                     >
-                      <CardContent className="h-full flex flex-col justify-center items-center p-2 sm:p-8 text-center">
+                      <CardContent className="h-full flex flex-col justify-center items-center p-4 sm:p-8 text-center">
                         {!isFlipped ? (
-                          <div className="space-y-4">
+                          <div className="space-y-4 w-full">
                             <div className="text-sm text-muted-foreground mb-4">Question</div>
-                            <h2 className="text-1xl sm:text-2xl font-semibold text-foreground leading-relaxed">
+                            <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-foreground leading-relaxed break-words">
                               {currentCardData.question}
                             </h2>
-                            <div className="mt-8">
+                            <div className="mt-6 sm:mt-8">
                               <p className="text-sm text-muted-foreground">Click to reveal answer</p>
                             </div>
                           </div>
                         ) : (
-                          <div className="space-y-4">
+                          <div className="space-y-4 w-full">
                             <div className="text-sm text-muted-foreground mb-4">Answer</div>
-                            <h2 className="text-1xl sm:text-2xl font-medium text-foreground leading-relaxed">
+                            <h2 className="text-lg sm:text-xl lg:text-2xl font-medium text-foreground leading-relaxed break-words">
                               {currentCardData.answer}
                             </h2>
-                            <div className="mt-8 flex items-center justify-center space-x-4">
-                              <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); handlePlayAudio(currentCardData.answer); }}>
+                            <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4">
+                              <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); handlePlayAudio(currentCardData.answer); }} className="w-full sm:w-auto">
                                 <Volume2 className="h-4 w-4 mr-2" />
-                                Play Audio
+                                <span className="hidden sm:inline">Play Audio</span>
+                                <span className="sm:hidden">Audio</span>
                               </Button>
-                              <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); handleBookmark(currentCard); }}>
+                              <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); handleBookmark(currentCard); }} className="w-full sm:w-auto">
                                 <Star className={`h-4 w-4 mr-2 ${bookmarkedCards.includes(currentCard) ? 'text-yellow-400 fill-yellow-400' : ''}`} />
-                                {isGuestUser ? 'Sign up to Bookmark' : (bookmarkedCards.includes(currentCard) ? 'Bookmarked' : 'Bookmark')}
+                                {isGuestUser ? (
+                                  <span className="hidden sm:inline">Sign up to Bookmark</span>
+                                ) : (
+                                  <span>{bookmarkedCards.includes(currentCard) ? 'Bookmarked' : 'Bookmark'}</span>
+                                )}
+                                {isGuestUser && <span className="sm:hidden">Sign up</span>}
                               </Button>
                             </div>
                           </div>
@@ -856,19 +864,19 @@ const Study = () => {
                 transition={{ duration: 0.3 }}
                 className="w-full"
               >
-                <div className="max-w-full sm:max-w-4xl px-1 sm:mx-auto mb-8 flex flex-col justify-center rounded-md sm:rounded-lg">
+                <div className="max-w-full sm:max-w-4xl lg:max-w-5xl px-2 sm:px-4 mx-auto mb-6 sm:mb-8 flex flex-col justify-center rounded-md sm:rounded-lg">
                   {quizzes.length === 0 ? (
-                    <div className="text-center">
-                      <AlertCircle className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                    <div className="text-center py-8">
+                      <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mx-auto mb-2" />
                       <h2 className="text-lg font-semibold mb-2">No Quizzes Available</h2>
-                      <p className="text-muted-foreground">No quizzes were generated for this document. Try uploading a different document or check back later.</p>
+                      <p className="text-muted-foreground text-sm sm:text-base px-4">No quizzes were generated for this document. Try uploading a different document or check back later.</p>
                     </div>
                   ) : quizCompleted ? (
                     <div className="text-center">
                       {/* Quiz Results Summary */}
-                      <Card className="mb-6 bg-card shadow-lg border border-border">
-                        <CardContent className="flex flex-col items-center p-3 sm:p-6 text-sm sm:text-base">
-                          <div className="text-3xl font-bold mb-2 text-foreground">
+                      <Card className="mb-4 sm:mb-6 bg-card shadow-lg border border-border">
+                        <CardContent className="flex flex-col items-center p-4 sm:p-6 text-sm sm:text-base">
+                          <div className="text-2xl sm:text-3xl font-bold mb-2 text-foreground">
                             {(() => {
                               const correct = quizzes.filter((q, idx) => quizAnswers[idx] === q.correct_answer_option).length;
                               if (correct === quizzes.length) return '🏆 Perfect!';
@@ -877,14 +885,14 @@ const Study = () => {
                               return '💡 Keep Practicing!';
                             })()}
                           </div>
-                          <div className="text-2xl font-bold mb-1 text-foreground">
+                          <div className="text-xl sm:text-2xl font-bold mb-1 text-foreground">
                             {quizzes.filter((q, idx) => quizAnswers[idx] === q.correct_answer_option).length} / {quizzes.length}
                           </div>
-                          <div className="text-base mb-2 text-muted-foreground">
+                          <div className="text-sm sm:text-base mb-2 text-muted-foreground">
                             Score
                           </div>
                           <Progress value={100 * quizzes.filter((q, idx) => quizAnswers[idx] === q.correct_answer_option).length / quizzes.length} className="w-full max-w-xs mb-2" />
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-sm text-muted-foreground text-center px-4">
                             {(() => {
                               const correct = quizzes.filter((q, idx) => quizAnswers[idx] === q.correct_answer_option).length;
                               if (correct === quizzes.length) return 'Outstanding! You got everything right.';
@@ -896,16 +904,16 @@ const Study = () => {
                         </CardContent>
                       </Card>
                       {/* Quiz Results Per Question */}
-                      <div className="mb-6 grid gap-4">
+                      <div className="mb-4 sm:mb-6 grid gap-2 sm:gap-4">
                         {quizzes.map((quiz, idx) => {
                           const userAnswer = quizAnswers[idx];
                           const isCorrect = userAnswer === quiz.correct_answer_option;
                           return (
                             <Card key={idx} className={`mb-2 shadow border-l-4 bg-card text-card-foreground ${isCorrect ? 'border-primary' : 'border-destructive'}`}>
-                              <CardContent className="p-2 sm:p-4 text-sm sm:text-base">
-                                <div className="flex items-center mb-2">
-                                  <span className={`mr-2 text-lg ${isCorrect ? 'text-primary' : 'text-destructive'}`}>{isCorrect ? '✔️' : '❌'}</span>
-                                  <span className="font-semibold text-card-foreground">Q{idx + 1}: {quiz.question}</span>
+                              <CardContent className="p-3 sm:p-4 text-sm sm:text-base">
+                                <div className="flex items-start mb-2">
+                                  <span className={`mr-2 text-lg flex-shrink-0 ${isCorrect ? 'text-primary' : 'text-destructive'}`}>{isCorrect ? '✔️' : '❌'}</span>
+                                  <span className="font-semibold text-card-foreground break-words">Q{idx + 1}: {quiz.question}</span>
                                 </div>
                                 <div className="mb-1">
                                   <span className="font-medium text-card-foreground">Your answer: </span>
@@ -919,7 +927,7 @@ const Study = () => {
                                 {userAnswer !== quiz.correct_answer_option && (
                                   <div>
                                     <span className="font-medium text-card-foreground">Correct answer: </span>
-                                    <span className="text-primary font-semibold">{quiz.correct_answer_option}</span>
+                                    <span className="text-primary font-semibold break-words">{quiz.correct_answer_option}</span>
                                   </div>
                                 )}
                               </CardContent>
@@ -928,17 +936,17 @@ const Study = () => {
                         })}
                       </div>
                       {/* Action Buttons */}
-                      <div className="flex flex-col sm:flex-row justify-center gap-4 mt-4">
+                      <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-4 px-4">
                         <Button onClick={() => {
                           setQuizStep(0);
                           setQuizAnswers(Array(quizzes.length).fill(null));
                           setQuizCompleted(false);
-                        }}>
+                        }} className="w-full sm:w-auto">
                           Retry Quiz
                         </Button>
                         <Button variant="outline" onClick={() => {
                           setTab('review');
-                        }}>
+                        }} className="w-full sm:w-auto">
                           Review Incorrect Answers
                         </Button>
                       </div>
@@ -946,19 +954,19 @@ const Study = () => {
                   ) : (
                     <div className="flex flex-col items-center justify-center min-h-[400px]">
                       <Card className="w-full mb-4 bg-card shadow-md rounded-md sm:rounded-lg">
-                        <CardContent className="p-2 sm:p-6 overflow-x-auto pb-4">
-                          <div className="mb-2 flex items-center gap-2">
-                            <Badge variant="secondary">Quiz</Badge>
-                            <Badge variant="outline">{capitalize(quizzes[quizStep].difficulty) || "Unknown"}</Badge>
+                        <CardContent className="p-4 sm:p-6 overflow-x-auto pb-4">
+                          <div className="mb-3 flex flex-wrap items-center gap-2">
+                            <Badge variant="secondary" className="text-xs sm:text-sm">Quiz</Badge>
+                            <Badge variant="outline" className="text-xs sm:text-sm">{capitalize(quizzes[quizStep].difficulty) || "Unknown"}</Badge>
                           </div>
-                          <div className="mb-4 font-medium break-words break-all whitespace-pre-line text-base sm:text-lg">Q{quizStep + 1}: {quizzes[quizStep].question}</div>
-                          <hr className="my-2 border-muted" />
-                          <ul className="mb-4 space-y-3 break-words">
+                          <div className="mb-4 font-medium break-words whitespace-pre-line text-sm sm:text-base lg:text-lg">Q{quizStep + 1}: {quizzes[quizStep].question}</div>
+                          <hr className="my-3 border-muted" />
+                          <ul className="mb-4 space-y-2 sm:space-y-3 break-words">
                             {quizzes[quizStep].options.map((option, i) => (
                               <li key={i} className="w-full">
                                 <Button
                                   variant={quizAnswers[quizStep] === option ? 'default' : 'outline'}
-                                  className="w-full justify-start break-words break-all whitespace-pre-line text-left px-3 py-4 text-base sm:px-4 sm:py-5 sm:text-lg min-h-fit border border-muted bg-muted/60 hover:bg-muted/80 transition rounded-md"
+                                  className="w-full justify-start break-words whitespace-pre-line text-left px-3 py-3 sm:px-4 sm:py-4 text-sm sm:text-base min-h-fit border border-muted bg-muted/60 hover:bg-muted/80 transition rounded-md"
                                   style={{ whiteSpace: 'pre-line' }}
                                   onClick={() => {
                                     const updated = [...quizAnswers];
@@ -972,12 +980,12 @@ const Study = () => {
                               </li>
                             ))}
                           </ul>
-                          <div className="flex flex-col gap-2 sm:flex-row sm:justify-between w-full mt-2">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:justify-between w-full mt-3">
                             <Button
                               variant="outline"
                               onClick={() => setQuizStep(s => Math.max(0, s - 1))}
                               disabled={quizStep === 0}
-                              className="w-full"
+                              className="w-full sm:w-auto"
                             >
                               Previous
                             </Button>
@@ -985,7 +993,7 @@ const Study = () => {
                               <Button
                                 onClick={() => setQuizStep(s => Math.min(quizzes.length - 1, s + 1))}
                                 disabled={quizAnswers[quizStep] === undefined || quizAnswers[quizStep] === null}
-                                className="w-full"
+                                className="w-full sm:w-auto"
                               >
                                 Next
                               </Button>
@@ -993,7 +1001,7 @@ const Study = () => {
                               <Button
                                 onClick={() => setQuizCompleted(true)}
                                 disabled={quizAnswers.length !== quizzes.length || quizAnswers.includes(null) || quizAnswers.includes(undefined)}
-                                className="w-full"
+                                className="w-full sm:w-auto"
                               >
                                 Submit
                               </Button>
@@ -1418,18 +1426,18 @@ const Study = () => {
 
         {/* Action Buttons */}
         {tab === 'flashcards' && isFlipped && flashcards.length > 0 && !isGuestUser && !sessionComplete && (
-          <div className="max-w-full sm:max-w-4xl mx-auto">
-            <div className="text-center mb-4">
+          <div className="max-w-full sm:max-w-4xl lg:max-w-5xl mx-auto px-4">
+            <div className="text-center mb-3 sm:mb-4">
               <p className="text-sm text-muted-foreground">How well did you know this?</p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               {['again', 'hard', 'good', 'easy'].map((rating, idx) => {
                 const icons = [X, RotateCcw, Check, Heart];
                 const colors = [
-                  'h-5 w-5 text-red-600 mb-1',
-                  'h-5 w-5 text-orange-600 mb-1',
-                  'h-5 w-5 text-blue-600 mb-1',
-                  'h-5 w-5 text-green-600 mb-1',
+                  'h-4 w-4 sm:h-5 sm:w-5 text-red-600 mb-1',
+                  'h-4 w-4 sm:h-5 sm:w-5 text-orange-600 mb-1',
+                  'h-4 w-4 sm:h-5 sm:w-5 text-blue-600 mb-1',
+                  'h-4 w-4 sm:h-5 sm:w-5 text-green-600 mb-1',
                 ];
                 const labels = ['Again', 'Hard', 'Good', 'Easy'];
                 const intervals = ['<1m', '6m', '10m', '4d'];
@@ -1438,39 +1446,39 @@ const Study = () => {
                   <Button
                     key={rating}
                     variant="outline"
-                    className={`flex flex-col items-center p-4 h-auto border-${['red', 'orange', 'blue', 'green'][idx]}-200 hover:bg-${['red', 'orange', 'blue', 'green'][idx]}-50`}
+                    className={`flex flex-col items-center p-3 sm:p-4 h-auto border-${['red', 'orange', 'blue', 'green'][idx]}-200 hover:bg-${['red', 'orange', 'blue', 'green'][idx]}-50 text-xs sm:text-sm`}
                     onClick={() => handleNextCard(rating as 'again' | 'hard' | 'good' | 'easy')}
                     disabled={ratingInProgress !== null}
                   >
                     {ratingInProgress === rating ? (
-                      <div className="h-5 w-5 mb-1">
-                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                      <div className="h-4 w-4 sm:h-5 sm:w-5 mb-1">
+                        <div className="animate-spin h-3 w-3 sm:h-4 sm:w-4 border-2 border-primary border-t-transparent rounded-full"></div>
                       </div>
                     ) : (
                       <Icon className={colors[idx]} />
                     )}
-                    <span className="text-xs">{labels[idx]}</span>
+                    <span className="text-xs sm:text-sm">{labels[idx]}</span>
                     <span className="text-xs text-muted-foreground">{intervals[idx]}</span>
                   </Button>
                 );
               })}
             </div>
-            <div className="text-center mt-4">
-              <p className="text-xs text-muted-foreground">
+            <div className="text-center mt-3 sm:mt-4">
+              <p className="text-xs text-muted-foreground px-2">
                 Based on your response, this card will appear again at the shown interval
               </p>
             </div>
           </div>
         )}
         {tab === 'flashcards' && isFlipped && flashcards.length > 0 && isGuestUser && !sessionComplete && (
-          <div className="max-w-full sm:max-w-4xl mx-auto text-center mt-4">
+          <div className="max-w-full sm:max-w-4xl mx-auto text-center mt-4 px-4">
             <p className="text-sm text-muted-foreground mb-4">
               Sign up to track your progress and unlock spaced repetition!
             </p>
             <Button
               variant="outline"
               onClick={() => handleNextCard('good')}
-              className="mt-2"
+              className="w-full sm:w-auto mt-2"
             >
               Next
             </Button>

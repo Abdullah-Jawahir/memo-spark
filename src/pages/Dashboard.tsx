@@ -334,12 +334,12 @@ const Dashboard = () => {
     <ProtectedRoute requiredRole="student">
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
         <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
           {/* Error State */}
           {error && (
-            <Alert className="mb-6 border-red-200 bg-red-50 dark:bg-red-900/20">
-              <AlertDescription>{error}</AlertDescription>
+            <Alert className="mb-4 sm:mb-6 border-red-200 bg-red-50 dark:bg-red-900/20">
+              <AlertDescription className="text-sm sm:text-base">{error}</AlertDescription>
               <div className="mt-4 flex justify-end">
                 <Button
                   variant="outline"
@@ -387,10 +387,10 @@ const Dashboard = () => {
 
           {/* Loading State */}
           {loading && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="h-12 w-12 text-blue-600 animate-spin mb-4" />
-              <p className="text-lg text-muted-foreground">Loading your dashboard data...</p>
-              <div className="mt-4 p-4 bg-card rounded border text-xs text-left w-full max-w-md">
+            <div className="flex flex-col items-center justify-center py-8 sm:py-12">
+              <Loader2 className="h-8 w-8 sm:h-12 sm:w-12 text-blue-600 animate-spin mb-4" />
+              <p className="text-base sm:text-lg text-muted-foreground text-center px-4">Loading your dashboard data...</p>
+              <div className="mt-4 p-3 sm:p-4 bg-card rounded border text-xs text-left w-full max-w-md mx-4">
                 <p className="font-semibold mb-2">Debug Info:</p>
                 <p>Session: {session ? 'Available' : 'Not available'}</p>
                 <p>Token: {session?.access_token ? 'Present' : 'Missing'}</p>
@@ -405,6 +405,7 @@ const Dashboard = () => {
                     }}
                     variant="destructive"
                     size="sm"
+                    className="w-full"
                   >
                     Cancel Loading
                   </Button>
@@ -417,27 +418,27 @@ const Dashboard = () => {
           {!loading && (
             <>
               {/* Header */}
-              <div className="flex flex-col mb-8">
-                <div className="flex justify-between items-center mb-4">
+              <div className="flex flex-col mb-6 sm:mb-8">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 space-y-4 lg:space-y-0">
                   <div>
-                    <div className="flex items-center gap-4 mb-2">
-                      <h1 className="text-3xl font-bold text-foreground">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
+                      <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
                         Welcome back, {dashboardData?.user?.display_name || profile?.full_name || 'Student'}!
                       </h1>
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 w-fit">
                         {dashboardData?.user?.user_tag || 'Student'}
                       </Badge>
                     </div>
-                    <p className="text-muted-foreground">Ready to continue your learning journey?</p>
+                    <p className="text-sm sm:text-base text-muted-foreground">Ready to continue your learning journey?</p>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <Link to="/upload">
-                      <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                    <Link to="/upload" className="w-full sm:w-auto">
+                      <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 w-full sm:w-auto">
                         <Plus className="h-4 w-4 mr-2" />
                         Create New Deck
                       </Button>
                     </Link>
-                    <Button variant="outline" onClick={signOut}>
+                    <Button variant="outline" onClick={signOut} className="w-full sm:w-auto">
                       <LogOut className="h-4 w-4 mr-2" />
                       Sign Out
                     </Button>
@@ -445,8 +446,8 @@ const Dashboard = () => {
                 </div>
 
                 {/* Data refresh info */}
-                <div className="flex items-center justify-between bg-card/50 rounded-lg p-3">
-                  <div className="flex items-center text-sm text-muted-foreground">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-card/50 rounded-lg p-3 space-y-2 sm:space-y-0">
+                  <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
                     <Clock className="h-4 w-4 mr-2 opacity-70" />
                     Last updated: {formatLastUpdated()}
                   </div>
@@ -480,17 +481,17 @@ const Dashboard = () => {
               </div>
 
               {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 {studyStats.map((stat, index) => (
                   <Card key={index} className="hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6">
+                    <CardContent className="p-4 sm:p-6">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-1">{stat.label}</p>
-                          <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 truncate">{stat.label}</p>
+                          <p className="text-xl sm:text-2xl font-bold text-foreground truncate">{stat.value}</p>
                         </div>
-                        <div className={`p-3 rounded-full bg-card ${stat.color}`}>
-                          <stat.icon className="h-6 w-6" />
+                        <div className={`p-2 sm:p-3 rounded-full bg-card flex-shrink-0 ${stat.color}`}>
+                          <stat.icon className="h-5 w-5 sm:h-6 sm:w-6" />
                         </div>
                       </div>
                     </CardContent>
@@ -498,40 +499,40 @@ const Dashboard = () => {
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
                 {/* Recent Decks */}
                 <div className="lg:col-span-2">
                   <Card>
                     <CardHeader>
-                      <div className="flex justify-between items-center">
-                        <CardTitle>Recent Study Decks</CardTitle>
-                        <div className="flex items-center space-x-2">
-                          <div className="relative">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-2 sm:space-y-0">
+                        <CardTitle className="text-lg sm:text-xl">Recent Study Decks</CardTitle>
+                        <div className="flex items-center space-x-2 w-full sm:w-auto">
+                          <div className="relative flex-1 sm:flex-none">
                             <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
-                            <Input placeholder="Search decks..." className="pl-10 w-64" />
+                            <Input placeholder="Search decks..." className="pl-10 w-full sm:w-64" />
                           </div>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent>
                       {recentDecks.length === 0 ? (
-                        <div className="text-center py-8">
-                          <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                          <p className="text-lg font-medium text-foreground">No study decks yet</p>
-                          <p className="text-sm text-muted-foreground mb-4">Create your first deck to start learning</p>
-                          <Link to="/upload">
-                            <Button size="sm">
+                        <div className="text-center py-6 sm:py-8">
+                          <BookOpen className="h-10 w-10 sm:h-12 sm:w-12 text-gray-300 mx-auto mb-3" />
+                          <p className="text-base sm:text-lg font-medium text-foreground">No study decks yet</p>
+                          <p className="text-sm text-muted-foreground mb-4 px-4">Create your first deck to start learning</p>
+                          <Link to="/upload" className="inline-block">
+                            <Button size="sm" className="w-full sm:w-auto">
                               <Plus className="h-4 w-4 mr-1" /> Create New Deck
                             </Button>
                           </Link>
                         </div>
                       ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-3 sm:space-y-4">
                           {recentDecks.map((deck, index) => (
-                            <div key={index} className="flex items-center justify-between p-4 bg-card rounded-lg hover:bg-muted transition-colors">
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-foreground mb-1">{deck.name}</h3>
-                                <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                            <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 bg-card rounded-lg hover:bg-muted transition-colors space-y-3 sm:space-y-0">
+                              <div className="flex-1 min-w-0 w-full sm:w-auto">
+                                <h3 className="font-semibold text-foreground mb-1 truncate">{deck.name}</h3>
+                                <div className="flex flex-wrap items-center space-x-2 sm:space-x-4 text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-0">
                                   <span>{deck.card_count} cards</span>
                                   <span>•</span>
                                   <span>{deck.last_studied}</span>
@@ -541,11 +542,11 @@ const Dashboard = () => {
                                     <span className="text-xs text-muted-foreground">Progress</span>
                                     <span className="text-xs text-foreground">{deck.progress}%</span>
                                   </div>
-                                  <Progress value={deck.progress} className="h-2" />
+                                  <Progress value={deck.progress} className="h-1.5 sm:h-2" />
                                 </div>
                               </div>
-                              <Link to={deck.id ? `/study?deckId=${deck.id}` : `/study?deck=${encodeURIComponent(deck.name)}`}>
-                                <Button variant="outline" className="ml-4">
+                              <Link to={deck.id ? `/study?deckId=${deck.id}` : `/study?deck=${encodeURIComponent(deck.name)}`} className="w-full sm:w-auto sm:ml-4">
+                                <Button variant="outline" className="w-full sm:w-auto">
                                   Study
                                 </Button>
                               </Link>
@@ -558,34 +559,34 @@ const Dashboard = () => {
                 </div>
 
                 {/* Study Goals & Achievements */}
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   {/* Today's Goal */}
                   <Card>
                     <CardHeader>
-                      <CardTitle>Today's Goal</CardTitle>
+                      <CardTitle className="text-lg sm:text-xl">Today's Goal</CardTitle>
                     </CardHeader>
                     <CardContent>
                       {dashboardData?.todays_goal ? (
                         <div className="text-center">
-                          <div className="mb-4">
-                            <div className="text-3xl font-bold text-blue-600 mb-1">
+                          <div className="mb-3 sm:mb-4">
+                            <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-1">
                               {dashboardData.todays_goal.studied}/{dashboardData.todays_goal.goal}
                             </div>
-                            <p className="text-sm text-muted-foreground">{dashboardData.todays_goal.goal_description}</p>
+                            <p className="text-xs sm:text-sm text-muted-foreground">{dashboardData.todays_goal.goal_description}</p>
                           </div>
                           <Progress
                             value={dashboardData.todays_goal.progress_percentage}
-                            className={`mb-4 ${dashboardData.todays_goal.is_completed ? "bg-green-200" : ""}`}
+                            className={`mb-3 sm:mb-4 ${dashboardData.todays_goal.is_completed ? "bg-green-200" : ""}`}
                           />
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs sm:text-sm text-muted-foreground">
                             {dashboardData.todays_goal.is_completed
                               ? "Daily goal completed! 🎉"
                               : dashboardData.todays_goal.message}
                           </p>
                         </div>
                       ) : (
-                        <div className="text-center py-6">
-                          <p className="text-muted-foreground">No active goal found</p>
+                        <div className="text-center py-4 sm:py-6">
+                          <p className="text-sm sm:text-base text-muted-foreground">No active goal found</p>
                         </div>
                       )}
                     </CardContent>
@@ -594,8 +595,8 @@ const Dashboard = () => {
                   {/* Achievements */}
                   <Card>
                     <CardHeader>
-                      <div className="flex justify-between items-center">
-                        <CardTitle>Recent Achievements</CardTitle>
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
+                        <CardTitle className="text-lg sm:text-xl">Recent Achievements</CardTitle>
                         <Button
                           variant="outline"
                           size="sm"
@@ -603,16 +604,18 @@ const Dashboard = () => {
                             localStorage.removeItem(DASHBOARD_ACHIEVEMENTS_KEY);
                             fetchDashboardData(true);
                           }}
+                          className="w-full sm:w-auto"
                         >
-                          <RefreshCw className="w-4 h-4" />
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          <span className="hidden sm:inline">Refresh</span>
                         </Button>
                       </div>
                     </CardHeader>
                     <CardContent>
 
                       {achievements.length === 0 ? (
-                        <div className="text-center py-6">
-                          <p className="text-muted-foreground">Keep studying to earn achievements!</p>
+                        <div className="text-center py-4 sm:py-6">
+                          <p className="text-sm sm:text-base text-muted-foreground">Keep studying to earn achievements!</p>
                         </div>
                       ) : (
                         <div className="space-y-3">
@@ -631,20 +634,20 @@ const Dashboard = () => {
                             };
 
                             return (
-                              <div key={index} className="flex items-center space-x-3">
-                                <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center text-lg">
+                              <div key={index} className="flex items-start sm:items-center space-x-3">
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-100 rounded-full flex items-center justify-center text-base sm:text-lg flex-shrink-0">
                                   {getIconDisplay(achievement.icon)}
                                 </div>
-                                <div className="flex-1">
-                                  <p className="font-medium text-foreground">{achievement.title}</p>
-                                  <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-foreground text-sm sm:text-base truncate">{achievement.title}</p>
+                                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{achievement.description}</p>
                                   {achievement.earned_at && (
                                     <p className="text-xs text-muted-foreground mt-1">
                                       {new Date(achievement.earned_at).toLocaleDateString()}
                                     </p>
                                   )}
                                 </div>
-                                <div className="text-right">
+                                <div className="text-right flex-shrink-0">
                                   <Badge variant="secondary" className="text-xs">
                                     {achievement.points || 0} pts
                                   </Badge>
