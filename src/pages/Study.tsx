@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -292,6 +292,23 @@ const Study = () => {
     setShowExerciseAnswers(false);
   }, [exercises, tab]);
 
+  // Reset review state when flashcards change or when switching to review tab
+  useEffect(() => {
+    if (tab === 'review') {
+      setReviewedDifficult(new Set()); // Reset reviewed state when entering review tab
+    }
+  }, [flashcards, tab]);
+
+  // For Review tab: filter difficult cards using useMemo to recalculate when ratings change
+  const difficultCards = useMemo(() => {
+    const filtered = flashcards.filter((_, idx) => {
+      // Only include cards that are currently marked as 'hard'
+      return sessionRatings[idx] === 'hard';
+    });
+
+    return filtered;
+  }, [flashcards, sessionRatings, tab]); // Recalculate when tab changes or ratings update
+
   // Loading state while fetching materials
   if (isLoadingMaterials) {
     return (
@@ -456,14 +473,6 @@ const Study = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // For Review tab: filter difficult cards
-  const difficultCards = flashcards.filter((_, idx) => {
-    // If the card index is less than or equal to currentCard and was marked as difficult
-    // We'll need to track which cards were marked as difficult in session
-    // Let's add a state to track ratings per card
-    return sessionRatings[idx] === 'hard';
-  });
-
   const handlePlayAudio = (text: string) => {
     if ('speechSynthesis' in window) {
       const utterance = new window.SpeechSynthesisUtterance(text);
@@ -492,6 +501,7 @@ const Study = () => {
     setSessionStats({ correct: 0, difficult: 0, timeSpent: 0 });
     setSessionRatings(Array(flashcards.length).fill(null));
     setSessionComplete(false);
+    setReviewedDifficult(new Set()); // Reset reviewed difficult cards
 
     // Important: Reset time tracking
     setStudyTime(0);
@@ -1318,7 +1328,9 @@ const Study = () => {
                 className="w-full"
               >
                 <div className="max-w-full sm:max-w-4xl mx-auto mb-8">
-                  <h2 className="text-xl font-bold mb-4 text-foreground">Review: Difficult Cards</h2>
+                  <h2 className="text-xl font-bold mb-4 text-foreground">
+                    Review: Difficult Cards ({difficultCards.length})
+                  </h2>
                   {difficultCards.length === 0 ? (
                     <div className="text-center text-muted-foreground">
                       <Star className="h-8 w-8 mx-auto mb-2 text-yellow-400" />
@@ -1347,6 +1359,19 @@ const Study = () => {
                                     newSet.add(idx);
                                     setReviewedDifficult(newSet);
 
+                                    // Update session ratings to remove this card from difficult cards
+                                    // Find the original index of this card in the flashcards array
+                                    const originalIndex = flashcards.findIndex(fc =>
+                                      fc.question === card.question && fc.answer === card.answer
+                                    );
+                                    if (originalIndex !== -1) {
+                                      setSessionRatings(prev => {
+                                        const updated = [...prev];
+                                        updated[originalIndex] = 'good'; // Update from 'hard' to 'good'
+                                        return updated;
+                                      });
+                                    }
+
                                     // Update session stats if available
                                     if (result.success && result.sessionStats) {
                                       setSessionStats({
@@ -1358,6 +1383,21 @@ const Study = () => {
                                   } catch (e) {
                                     console.error('Failed to mark reviewed', e);
                                   }
+                                } else {
+                                  // For guest users, just update the session ratings
+                                  const originalIndex = flashcards.findIndex(fc =>
+                                    fc.question === card.question && fc.answer === card.answer
+                                  );
+                                  if (originalIndex !== -1) {
+                                    setSessionRatings(prev => {
+                                      const updated = [...prev];
+                                      updated[originalIndex] = 'good'; // Update from 'hard' to 'good'
+                                      return updated;
+                                    });
+                                  }
+                                  const newSet = new Set(reviewedDifficult);
+                                  newSet.add(idx);
+                                  setReviewedDifficult(newSet);
                                 }
                               }}
                               disabled={reviewedDifficult.has(idx)}
@@ -1519,7 +1559,7 @@ const Study = () => {
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-orange-600">{sessionStats.difficult}</div>
-                  <div className="text-sm text-muted-foreground">Difficult</div>
+                  <div className="text-sm text-muted-foreground">Marked Difficult</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-blue-600">{formatTime(overallStudyTime)}</div>
