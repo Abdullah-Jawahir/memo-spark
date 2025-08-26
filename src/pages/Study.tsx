@@ -93,12 +93,14 @@ const Study = () => {
   const [reviewedDifficult, setReviewedDifficult] = useState<Set<number>>(new Set());
 
   // Study tracking specific state
-  const [studyTime, setStudyTime] = useState(0);
+  const [studyTime, setStudyTime] = useState(0);  // Time spent on current activity (flashcards, quiz, exercises)
+  const [overallStudyTime, setOverallStudyTime] = useState(0);  // Total time spent across all activities
   const [isStudying, setIsStudying] = useState(false);
   const [cardStudyStartTime, setCardStudyStartTime] = useState(0);
   const [studySession, setStudySession] = useState<any>(null);
   const [showStatsPanel, setShowStatsPanel] = useState(false);
   const [timerKey, setTimerKey] = useState(0);
+  const [overallTimerKey, setOverallTimerKey] = useState(0);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [ratingInProgress, setRatingInProgress] = useState<'again' | 'hard' | 'good' | 'easy' | null>(null);
@@ -228,6 +230,22 @@ const Study = () => {
       setIsStudying(true);
     }
   }, [studyTime, isStudying, sessionComplete]);
+
+  // Track overall study time across all tabs and activities
+  useEffect(() => {
+    // Setup interval for overall study timer
+    let timer: NodeJS.Timeout | null = null;
+
+    if (isStudying && !sessionComplete) {
+      timer = setInterval(() => {
+        setOverallStudyTime(prevTime => prevTime + 1);
+      }, 1000);
+    }
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isStudying, sessionComplete]);
 
   // Initialize the study session when component mounts
   useEffect(() => {
@@ -477,10 +495,15 @@ const Study = () => {
 
     // Important: Reset time tracking
     setStudyTime(0);
+    setOverallStudyTime(0);
     setCardStudyStartTime(0);
 
     // First set studying to false to ensure timer stops
     setIsStudying(false);
+
+    // Reset both timer keys to ensure fresh timers
+    setTimerKey(prev => prev + 1);
+    setOverallTimerKey(prev => prev + 1);
 
     // Use setTimeout to ensure the state updates before restarting
     setTimeout(() => {
@@ -565,12 +588,11 @@ const Study = () => {
           </Link>
 
           <div className="flex items-center space-x-3">
-            {isStudying && (
-              <div className="hidden sm:flex items-center mr-2 text-sm">
-                <Clock className="h-4 w-4 text-blue-600 mr-1" />
-                <span className="font-medium">{formatTime(studyTime)}</span>
-              </div>
-            )}
+            {/* Overall study time always shown in nav bar */}
+            <div className="hidden sm:flex items-center mr-2 text-sm">
+              <Clock className={`h-4 w-4 ${isStudying ? 'text-green-500' : 'text-blue-600'} mr-1`} />
+              <span className="font-medium">{formatTime(overallStudyTime)}</span>
+            </div>
             <Button
               variant="outline"
               size="sm"
@@ -1477,14 +1499,17 @@ const Study = () => {
                   )}
                 </h3>
 
-                {/* Study Timer */}
-                <StudyTimer
-                  key={timerKey}
-                  isActive={isStudying && !sessionComplete}
-                  initialTime={studyTime}
-                  onTimeUpdate={setStudyTime}
-                  className="text-sm font-medium bg-muted/30 px-2 py-1 rounded"
-                />
+                {/* Activity Study Timer */}
+                <div className="flex items-center">
+                  <span className="text-xs text-muted-foreground mr-2">Current Activity:</span>
+                  <StudyTimer
+                    key={timerKey}
+                    isActive={isStudying && !sessionComplete}
+                    initialTime={studyTime}
+                    onTimeUpdate={setStudyTime}
+                    className="text-sm font-medium bg-muted/30 px-2 py-1 rounded"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4 text-center">
@@ -1497,8 +1522,8 @@ const Study = () => {
                   <div className="text-sm text-muted-foreground">Difficult</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">{formatTime(sessionStats.timeSpent)}</div>
-                  <div className="text-sm text-muted-foreground">Time Spent</div>
+                  <div className="text-2xl font-bold text-blue-600">{formatTime(overallStudyTime)}</div>
+                  <div className="text-sm text-muted-foreground">Total Time</div>
                 </div>
               </div>
 
