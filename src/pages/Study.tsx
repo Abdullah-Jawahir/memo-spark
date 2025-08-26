@@ -98,6 +98,7 @@ const Study = () => {
   const [timerKey, setTimerKey] = useState(0);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [ratingInProgress, setRatingInProgress] = useState<'again' | 'hard' | 'good' | 'easy' | null>(null);
 
   const isGuestUser = !user && generatedContent !== null;
 
@@ -337,6 +338,9 @@ const Study = () => {
   };
 
   const handleNextCard = async (rating: 'again' | 'hard' | 'good' | 'easy') => {
+    // Set loading state for the specific button clicked
+    setRatingInProgress(rating);
+
     // Save the rating in our session state
     setSessionRatings(prev => {
       const updated = [...prev];
@@ -398,6 +402,9 @@ const Study = () => {
       setSessionComplete(true);
       setIsStudying(false); // Stop the timer
     }
+
+    // Reset rating state
+    setRatingInProgress(null);
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -1329,8 +1336,15 @@ const Study = () => {
                     variant="outline"
                     className={`flex flex-col items-center p-4 h-auto border-${['red', 'orange', 'blue', 'green'][idx]}-200 hover:bg-${['red', 'orange', 'blue', 'green'][idx]}-50`}
                     onClick={() => handleNextCard(rating as 'again' | 'hard' | 'good' | 'easy')}
+                    disabled={ratingInProgress !== null}
                   >
-                    <Icon className={colors[idx]} />
+                    {ratingInProgress === rating ? (
+                      <div className="h-5 w-5 mb-1">
+                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                      </div>
+                    ) : (
+                      <Icon className={colors[idx]} />
+                    )}
                     <span className="text-xs">{labels[idx]}</span>
                     <span className="text-xs text-muted-foreground">{intervals[idx]}</span>
                   </Button>
