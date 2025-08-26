@@ -337,11 +337,7 @@ const Study = () => {
   };
 
   const handleNextCard = async (rating: 'again' | 'hard' | 'good' | 'easy') => {
-    if (rating === 'good' || rating === 'easy') {
-      setSessionStats(prev => ({ ...prev, correct: prev.correct + 1 }));
-    } else if (rating === 'hard') {
-      setSessionStats(prev => ({ ...prev, difficult: prev.difficult + 1 }));
-    }
+    // Save the rating in our session state
     setSessionRatings(prev => {
       const updated = [...prev];
       updated[currentCard] = rating;
@@ -355,7 +351,7 @@ const Study = () => {
 
       try {
         // Record the flashcard review using our utility
-        await recordFlashcardReview(
+        const result = await recordFlashcardReview(
           currentCardData.id || `card-${currentCard}`,
           rating,
           studyTimeForCard,
@@ -363,8 +359,34 @@ const Study = () => {
         );
 
         console.log(`Recorded review for card ${currentCard}, rating: ${rating}, time: ${studyTimeForCard}s`);
+
+        // If we received session stats from the backend, use them to update our UI
+        if (result.success && result.sessionStats) {
+          console.log('Received session stats:', result.sessionStats);
+
+          // Update session stats with the values from the backend
+          setSessionStats({
+            correct: result.sessionStats.good_or_easy_count || 0,
+            difficult: result.sessionStats.hard_count || 0,
+            timeSpent: studyTime // Keep the existing time
+          });
+        } else {
+          // Fall back to the previous behavior if we don't have server stats
+          if (rating === 'good' || rating === 'easy') {
+            setSessionStats(prev => ({ ...prev, correct: prev.correct + 1 }));
+          } else if (rating === 'hard') {
+            setSessionStats(prev => ({ ...prev, difficult: prev.difficult + 1 }));
+          }
+        }
       } catch (error) {
         console.error('Failed to record flashcard review:', error);
+      }
+    } else {
+      // For unauthenticated users, still update the local stats
+      if (rating === 'good' || rating === 'easy') {
+        setSessionStats(prev => ({ ...prev, correct: prev.correct + 1 }));
+      } else if (rating === 'hard') {
+        setSessionStats(prev => ({ ...prev, difficult: prev.difficult + 1 }));
       }
     }
 
@@ -1233,10 +1255,19 @@ const Study = () => {
                                 // Mark as reviewed: record an 'good' review quickly with 1s
                                 if (user && session && card.id !== undefined) {
                                   try {
-                                    await recordFlashcardReview(card.id, 'good', 1, session);
+                                    const result = await recordFlashcardReview(card.id, 'good', 1, session);
                                     const newSet = new Set(reviewedDifficult);
                                     newSet.add(idx);
                                     setReviewedDifficult(newSet);
+
+                                    // Update session stats if available
+                                    if (result.success && result.sessionStats) {
+                                      setSessionStats({
+                                        correct: result.sessionStats.good_or_easy_count || 0,
+                                        difficult: result.sessionStats.hard_count || 0,
+                                        timeSpent: studyTime
+                                      });
+                                    }
                                   } catch (e) {
                                     console.error('Failed to mark reviewed', e);
                                   }

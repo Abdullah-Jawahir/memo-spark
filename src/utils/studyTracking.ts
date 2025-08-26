@@ -48,10 +48,10 @@ export const recordFlashcardReview = async (
   rating: 'again' | 'hard' | 'good' | 'easy',
   studyTimeSeconds: number,
   session: Session | null
-): Promise<boolean> => {
+): Promise<{ success: boolean, sessionStats?: any }> => {
   if (!session?.access_token) {
     console.error('No access token available');
-    return false;
+    return { success: false };
   }
 
   try {
@@ -59,10 +59,10 @@ export const recordFlashcardReview = async (
 
     if (!currentSession.session_id) {
       console.error('No active study session found');
-      return false;
+      return { success: false };
     }
 
-    await fetchWithAuth(
+    const response = await fetchWithAuth(
       API_ENDPOINTS.STUDY.RECORD_REVIEW,
       {
         method: 'POST',
@@ -81,7 +81,10 @@ export const recordFlashcardReview = async (
     currentSession.total_study_time = (currentSession.total_study_time || 0) + studyTimeSeconds;
     localStorage.setItem(CURRENT_STUDY_SESSION_KEY, JSON.stringify(currentSession));
 
-    return true;
+    return {
+      success: true,
+      sessionStats: response.session_stats
+    };
   } catch (error) {
     console.error('Error recording flashcard review:', error);
     return false;
