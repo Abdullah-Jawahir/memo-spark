@@ -7,7 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { RotateCcw, Heart, X, Check, Volume2, BookOpen, Star, AlertCircle, UserPlus, Edit3 } from 'lucide-react';
+import {
+  RotateCcw, Heart, X, Check, Volume2, BookOpen, Star, AlertCircle, UserPlus, Edit3,
+  Clock, RefreshCw, CheckSquare, Layers as LayersIcon, Pencil as PencilIcon
+} from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -549,23 +552,56 @@ const Study = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
-      <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
-      <div className="max-w-full sm:max-w-4xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
-        {/* Logo Header */}
-        <div className="absolute top-2 left-2 z-50 sm:top-4 sm:left-4">
+      {/* Top Navigation Bar */}
+      <div className="w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm fixed top-0 z-40 border-b border-gray-200 dark:border-gray-800">
+        <div className="container mx-auto px-4 py-2 flex justify-between items-center">
           <Link to="/dashboard" className="flex items-center space-x-2 group">
-            <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg group-hover:scale-105 transition-transform">
-              <BookOpen className="h-6 w-6 text-white" />
+            <div className="p-1.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg group-hover:scale-105 transition-transform">
+              <BookOpen className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               MemoSpark
             </span>
           </Link>
-        </div>
 
+          <div className="flex items-center space-x-3">
+            {isStudying && (
+              <div className="hidden sm:flex items-center mr-2 text-sm">
+                <Clock className="h-4 w-4 text-blue-600 mr-1" />
+                <span className="font-medium">{formatTime(studyTime)}</span>
+              </div>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchMaterials(true)}
+              disabled={isRefreshing}
+              className="bg-white/80 dark:bg-gray-800/80 mr-2"
+            >
+              {isRefreshing ? (
+                <span className="flex items-center">
+                  <span className="animate-spin mr-2">
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  </span>
+                  Refreshing
+                </span>
+              ) : (
+                <span className="flex items-center">
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                  Refresh
+                </span>
+              )}
+            </Button>
+            <div className="border-l border-gray-200 dark:border-gray-700 h-6 mx-1"></div>
+            <ThemeSwitcher />
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-full sm:max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8 pt-24 mt-4">
         {/* Guest Warning Banner */}
         {isGuestUser && (
-          <Alert className="mb-6 border-orange-200 bg-gradient-to-r from-orange-50 to-red-50 text-sm sm:text-base">
+          <Alert className="mb-6 border-orange-200 bg-gradient-to-r from-orange-50 to-red-50 text-sm sm:text-base shadow-sm">
             <AlertCircle className="h-4 w-4 text-orange-600" />
             <AlertDescription className="text-orange-800">
               <strong>Guest Session:</strong> These flashcards are for temporary use only—create a free account to save them and track your progress!
@@ -576,76 +612,98 @@ const Study = () => {
           </Alert>
         )}
 
-        {/* Header */}
-        <div className="text-center mb-8 mt-10 sm:mt-0">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <BookOpen className="h-6 w-6 text-blue-600" />
-            <h1 className="text-2xl font-bold text-foreground">
-              {user ? 'Your Study Session' : 'Uploaded Content'}
-            </h1>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => fetchMaterials(true)}
-              disabled={isRefreshing}
-              className="ml-2"
-            >
-              {isRefreshing ? 'Refreshing...' : 'Refresh Materials'}
-            </Button>
-            {isGuestUser && (
-              <Badge variant="outline" className="text-orange-600 border-orange-300">
-                Guest Mode
-              </Badge>
-            )}
-          </div>
-          {lastUpdated && (
-            <div className="text-xs text-muted-foreground">Last updated: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-          )}
-          {tab === 'flashcards' && flashcards.length > 0 && (
-            <div className="flex items-center justify-center space-x-4 mb-4">
-              <Badge className={getDifficultyColor(currentCardData.difficulty)}>
-                {capitalize(currentCardData.difficulty)}
-              </Badge>
-              <Badge variant="outline">{currentCardData.type}</Badge>
-              <span className="text-sm text-muted-foreground">
-                Card {currentCard + 1} of {flashcards.length}
-              </span>
+        {/* Study Header */}
+        <div className="text-center mb-8">
+          <div className="flex flex-col items-center justify-center mb-4">
+            <div className="flex items-center space-x-2 mb-3">
+              <div className="p-2 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-full">
+                <BookOpen className="h-7 w-7 text-blue-600" />
+              </div>
+              <h1 className="text-3xl font-bold text-foreground">
+                {user ? 'Your Study Session' : 'Uploaded Content'}
+              </h1>
+              {isGuestUser && (
+                <Badge variant="outline" className="text-orange-600 border-orange-300 ml-2">
+                  Guest Mode
+                </Badge>
+              )}
             </div>
-          )}
-          {tab === 'flashcards' && flashcards.length > 0 && (
-            <Progress value={progress} className="max-w-md mx-auto" />
+
+            {lastUpdated && (
+              <div className="text-xs text-muted-foreground flex items-center mt-1">
+                <Clock className="h-3 w-3 mr-1" />
+                Last updated: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            )}
+          </div>          {tab === 'flashcards' && flashcards.length > 0 && (
+            <div className="bg-card dark:bg-card/30 rounded-lg p-3 max-w-md mx-auto mb-5 shadow-sm border border-gray-100 dark:border-gray-800">
+              <div className="flex items-center justify-between px-2 mb-2">
+                <div className="flex items-center">
+                  <Badge className={getDifficultyColor(currentCardData.difficulty) + " mr-2 px-2 py-0.5"}>
+                    {capitalize(currentCardData.difficulty)}
+                  </Badge>
+                  <Badge variant="outline" className="px-2 py-0.5">{currentCardData.type}</Badge>
+                </div>
+                <span className="text-sm font-medium bg-gray-50 dark:bg-gray-800/40 px-2 py-1 rounded-md">
+                  Card {currentCard + 1} of {flashcards.length}
+                </span>
+              </div>
+              <div className="mt-3">
+                <Progress
+                  value={progress}
+                  className="h-2.5"
+                  indicatorClassName="bg-gradient-to-r from-blue-500 to-purple-500"
+                />
+              </div>
+            </div>
           )}
         </div>
 
         {/* Tab Selector */}
-        <div className="flex justify-center mb-2 sm:mb-8">
-          <div className="flex bg-card rounded-lg p-1 w-full max-w-xs">
+        <div className="flex justify-center mb-6">
+          <div className="flex bg-white dark:bg-gray-800 rounded-lg p-1 w-full max-w-md shadow-sm border border-gray-100 dark:border-gray-700">
             <Button
-              className={`flex-1 rounded-l-lg transition-all duration-200 ${tab === 'flashcards' ? 'bg-white dark:bg-muted text-black dark:text-foreground shadow' : 'bg-transparent text-foreground hover:bg-white/10 dark:hover:bg-muted/20'}`}
+              className={`flex-1 rounded-md transition-all duration-300 ${tab === 'flashcards' ?
+                'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
+                'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               variant="ghost"
               onClick={() => setTab('flashcards')}
+              size="sm"
             >
+              <LayersIcon className={`h-4 w-4 mr-1.5 ${tab === 'flashcards' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
               Flashcards
             </Button>
             <Button
-              className={`flex-1 transition-all duration-200 ${tab === 'quiz' ? 'bg-white dark:bg-muted text-black dark:text-foreground shadow' : 'bg-transparent text-foreground hover:bg-white/10 dark:hover:bg-muted/20'}`}
+              className={`flex-1 rounded-md transition-all duration-300 ${tab === 'quiz' ?
+                'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
+                'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               variant="ghost"
               onClick={() => setTab('quiz')}
+              size="sm"
             >
+              <CheckSquare className={`h-4 w-4 mr-1.5 ${tab === 'quiz' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
               Quiz
             </Button>
             <Button
-              className={`flex-1 transition-all duration-200 ${tab === 'exercises' ? 'bg-white dark:bg-muted text-black dark:text-foreground shadow' : 'bg-transparent text-foreground hover:bg-white/10 dark:hover:bg-muted/20'}`}
+              className={`flex-1 rounded-md transition-all duration-300 ${tab === 'exercises' ?
+                'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
+                'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               variant="ghost"
               onClick={() => setTab('exercises')}
+              size="sm"
             >
+              <PencilIcon className={`h-4 w-4 mr-1.5 ${tab === 'exercises' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
               Exercises
             </Button>
             <Button
-              className={`flex-1 rounded-r-lg transition-all duration-200 ${tab === 'review' ? 'bg-white dark:bg-muted text-black dark:text-foreground shadow' : 'bg-transparent text-foreground hover:bg-white/10 dark:hover:bg-muted/20'}`}
+              className={`flex-1 rounded-md transition-all duration-300 ${tab === 'review' ?
+                'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
+                'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               variant="ghost"
               onClick={() => setTab('review')}
+              size="sm"
             >
+              <RotateCcw className={`h-4 w-4 mr-1.5 ${tab === 'review' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
               Review
             </Button>
           </div>
