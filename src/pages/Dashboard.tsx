@@ -60,6 +60,7 @@ interface Achievement {
   description: string;
   icon: string;
   earned_at?: string;
+  points?: number;
   progress?: number;
   total?: number;
 }
@@ -631,16 +632,14 @@ const Dashboard = () => {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="mb-2 text-xs text-muted-foreground">
-                        Debug: {achievements.length} achievements loaded
-                      </div>
+
                       {achievements.length === 0 ? (
                         <div className="text-center py-6">
                           <p className="text-muted-foreground">Keep studying to earn achievements!</p>
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          {achievements.slice(0, 3).map((achievement, index) => {
+                          {achievements.map((achievement, index) => {
                             // Map text-based icons to emojis
                             const getIconDisplay = (icon: string) => {
                               const iconMap: { [key: string]: string } = {
@@ -667,6 +666,11 @@ const Dashboard = () => {
                                       {new Date(achievement.earned_at).toLocaleDateString()}
                                     </p>
                                   )}
+                                </div>
+                                <div className="text-right">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {achievement.points || 0} pts
+                                  </Badge>
                                 </div>
                               </div>
                             );
