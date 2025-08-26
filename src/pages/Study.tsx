@@ -1254,7 +1254,9 @@ const Study = () => {
                                 const targetIndex = flashcards.findIndex(fc => fc.question === card.question && fc.answer === card.answer);
                                 if (targetIndex !== -1) {
                                   setCurrentCard(targetIndex);
-                                  setIsFlipped(true);
+                                  setSessionComplete(false);
+                                  setIsFlipped(false);
+                                  setCardStudyStartTime(studyTime);
                                   setTab('flashcards');
                                 }
                               }}
