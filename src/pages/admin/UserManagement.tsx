@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, MoreVertical, UserCheck, UserX, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, MoreVertical, UserCheck, UserX, Edit, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -18,6 +18,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -82,6 +97,20 @@ const UserManagement = () => {
   const [paginationData, setPaginationData] = useState<PaginatedResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Modal states
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [roleModalOpen, setRoleModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Form states for edit modal
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    user_type: 'student' as 'student' | 'admin',
+    points: 0,
+  });
 
   const fetchUsers = async (page: number = 1, search: string = '') => {
     if (!session?.access_token) {
@@ -155,6 +184,166 @@ const UserManagement = () => {
     fetchUsers(page, searchTerm);
   };
 
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setEditForm({
+      name: user.name,
+      email: user.email,
+      user_type: user.user_type,
+      points: user.points,
+    });
+    setEditModalOpen(true);
+  };
+
+  const handleChangeRole = (user: User) => {
+    setSelectedUser(user);
+    setRoleModalOpen(true);
+  };
+
+  const handleDeactivateUser = async (user: User) => {
+    if (!session?.access_token) return;
+
+    if (!confirm(`Are you sure you want to deactivate ${user.name}?`)) {
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      const response = await fetch(`/api/admin/users/${user.id}/deactivate`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: `${user.name} has been deactivated.`,
+        });
+        fetchUsers(currentPage, searchTerm); // Refresh the list
+      } else {
+        throw new Error('Failed to deactivate user');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to deactivate user.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleActivateUser = async (user: User) => {
+    if (!session?.access_token) return;
+
+    try {
+      setActionLoading(true);
+      const response = await fetch(`/api/admin/users/${user.id}/activate`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: `${user.name} has been activated.`,
+        });
+        fetchUsers(currentPage, searchTerm); // Refresh the list
+      } else {
+        throw new Error('Failed to activate user');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to activate user.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUpdateUser = async () => {
+    if (!session?.access_token || !selectedUser) return;
+
+    try {
+      setActionLoading(true);
+      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editForm),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "User updated successfully.",
+        });
+        setEditModalOpen(false);
+        fetchUsers(currentPage, searchTerm); // Refresh the list
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update user');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update user.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUpdateRole = async (newRole: 'student' | 'admin') => {
+    if (!session?.access_token || !selectedUser) return;
+
+    try {
+      setActionLoading(true);
+      const response = await fetch('/api/admin/users/role', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: selectedUser.email,
+          user_type: newRole,
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: `User role changed to ${newRole}.`,
+        });
+        setRoleModalOpen(false);
+        fetchUsers(currentPage, searchTerm); // Refresh the list
+      } else {
+        throw new Error('Failed to update user role');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update user role.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
@@ -169,6 +358,10 @@ const UserManagement = () => {
 
   const capitalizeRole = (role: string) => {
     return role === 'admin' ? 'Admin' : 'Student';
+  };
+
+  const isUserDeactivated = (user: User) => {
+    return user.points === -1; // Our temporary way to mark deactivated users
   };
 
   return (
@@ -242,7 +435,9 @@ const UserManagement = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <span className="font-medium">{user.points || 0}</span>
+                        <span className="font-medium">
+                          {isUserDeactivated(user) ? 'Deactivated' : (user.points || 0)}
+                        </span>
                       </TableCell>
                       <TableCell>{user.decks_count || 0}</TableCell>
                       <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
@@ -254,18 +449,31 @@ const UserManagement = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditUser(user)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Edit User
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleChangeRole(user)}>
                               <UserCheck className="h-4 w-4 mr-2" />
                               Change Role
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
-                              <UserX className="h-4 w-4 mr-2" />
-                              Deactivate
-                            </DropdownMenuItem>
+                            {isUserDeactivated(user) ? (
+                              <DropdownMenuItem
+                                onClick={() => handleActivateUser(user)}
+                                className="text-green-600"
+                              >
+                                <UserCheck className="h-4 w-4 mr-2" />
+                                Activate
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                onClick={() => handleDeactivateUser(user)}
+                                className="text-red-600"
+                              >
+                                <UserX className="h-4 w-4 mr-2" />
+                                Deactivate
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -315,6 +523,119 @@ const UserManagement = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit User Modal */}
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                value={editForm.name}
+                onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="user_type" className="text-right">
+                Role
+              </Label>
+              <Select
+                value={editForm.user_type}
+                onValueChange={(value: 'student' | 'admin') =>
+                  setEditForm(prev => ({ ...prev, user_type: value }))
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="points" className="text-right">
+                Points
+              </Label>
+              <Input
+                id="points"
+                type="number"
+                min="0"
+                value={editForm.points}
+                onChange={(e) => setEditForm(prev => ({ ...prev, points: parseInt(e.target.value) || 0 }))}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateUser} disabled={actionLoading}>
+              {actionLoading ? 'Updating...' : 'Update User'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Role Modal */}
+      <Dialog open={roleModalOpen} onOpenChange={setRoleModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Change User Role</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Change the role for <strong>{selectedUser?.name}</strong> ({selectedUser?.email})
+            </p>
+            <div className="space-y-3">
+              <Button
+                variant={selectedUser?.user_type === 'student' ? 'default' : 'outline'}
+                className="w-full justify-start"
+                onClick={() => handleUpdateRole('student')}
+                disabled={actionLoading || selectedUser?.user_type === 'student'}
+              >
+                <UserCheck className="h-4 w-4 mr-2" />
+                Student
+              </Button>
+              <Button
+                variant={selectedUser?.user_type === 'admin' ? 'default' : 'outline'}
+                className="w-full justify-start"
+                onClick={() => handleUpdateRole('admin')}
+                disabled={actionLoading || selectedUser?.user_type === 'admin'}
+              >
+                <UserCheck className="h-4 w-4 mr-2" />
+                Admin
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRoleModalOpen(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
