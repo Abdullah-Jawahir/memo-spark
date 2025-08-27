@@ -25,6 +25,7 @@ export const API_ENDPOINTS = {
   },
   DECKS: {
     LIST: `${API_BASE_URL}/api/decks`,
+    GENERATE_MATERIALS: (deckId: string | number) => `${API_BASE_URL}/api/decks/${deckId}/generate-materials`,
   },
 } as const;
 
