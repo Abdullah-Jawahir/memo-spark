@@ -3,8 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, Target, TrendingUp, Clock, Plus, Search, LogOut, Loader2, RefreshCw } from 'lucide-react';
+import { BookOpen, Target, TrendingUp, Clock, Plus, Search, LogOut, Loader2, RefreshCw, User, Eye, EyeOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -77,6 +79,24 @@ const Dashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Profile modal states
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileData, setProfileData] = useState({
+    name: '',
+    email: ''
+  });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
 
   // Function to fetch dashboard data - only called explicitly
   const fetchDashboardData = async (forceRefresh = false) => {
@@ -330,6 +350,133 @@ const Dashboard = () => {
     }
   };
 
+  // Profile management functions
+  const openProfileModal = async () => {
+    setProfileModalOpen(true);
+    setProfileError(null);
+    setProfileSuccess(null);
+
+    // Pre-fill with current profile data
+    setProfileData({
+      name: profile?.full_name || dashboardData?.user?.name || '',
+      email: profile?.email || dashboardData?.user?.email || ''
+    });
+
+    // Reset password fields
+    setPasswordData({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+  };
+
+  const updateProfile = async () => {
+    if (!session?.access_token) return;
+
+    setProfileLoading(true);
+    setProfileError(null);
+    setProfileSuccess(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/profile/`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: profileData.name,
+          email: profileData.email
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+
+        // Handle Laravel validation errors
+        if (response.status === 422 && errorData?.errors) {
+          const errorMessages = Object.values(errorData.errors).flat();
+          throw new Error(errorMessages.join(', '));
+        }
+
+        throw new Error(errorData?.message || errorData?.error || 'Failed to update profile');
+      }
+
+      setProfileSuccess('Profile updated successfully!');
+      // Refresh dashboard data to show updated info
+      setTimeout(() => {
+        fetchDashboardData(true);
+      }, 1000);
+    } catch (error) {
+      setProfileError(error instanceof Error ? error.message : 'Failed to update profile');
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const updatePassword = async () => {
+    if (!session?.access_token) return;
+
+    // Validation
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      setProfileError('All password fields are required');
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setProfileError('New passwords do not match');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      setProfileError('New password must be at least 8 characters long');
+      return;
+    }
+
+    setProfileLoading(true);
+    setProfileError(null);
+    setProfileSuccess(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/profile/password`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          current_password: passwordData.currentPassword,
+          new_password: passwordData.newPassword,
+          new_password_confirmation: passwordData.confirmPassword
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+
+        // Handle Laravel validation errors
+        if (response.status === 422 && errorData?.errors) {
+          const errorMessages = Object.values(errorData.errors).flat();
+          throw new Error(errorMessages.join(', '));
+        }
+
+        throw new Error(errorData?.message || errorData?.error || 'Failed to update password');
+      }
+
+      setProfileSuccess('Password updated successfully!');
+      // Reset password fields
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } catch (error) {
+      setProfileError(error instanceof Error ? error.message : 'Failed to update password');
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
   return (
     <ProtectedRoute requiredRole="student">
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
@@ -438,6 +585,10 @@ const Dashboard = () => {
                         Create New Deck
                       </Button>
                     </Link>
+                    <Button variant="outline" onClick={openProfileModal} className="w-full sm:w-auto">
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
+                    </Button>
                     <Button variant="outline" onClick={signOut} className="w-full sm:w-auto">
                       <LogOut className="h-4 w-4 mr-2" />
                       Sign Out
@@ -664,6 +815,190 @@ const Dashboard = () => {
             </>
           )}
         </div>
+
+        {/* Profile Modal */}
+        <Dialog open={profileModalOpen} onOpenChange={setProfileModalOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Edit Profile</DialogTitle>
+              <DialogDescription>
+                Update your profile information and change your password securely.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              {/* Alert Messages */}
+              {profileError && (
+                <Alert className="border-red-200 bg-red-50 dark:bg-red-900/20">
+                  <AlertDescription className="text-red-800 dark:text-red-200">
+                    {profileError}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {profileSuccess && (
+                <Alert className="border-green-200 bg-green-50 dark:bg-green-900/20">
+                  <AlertDescription className="text-green-800 dark:text-green-200">
+                    {profileSuccess}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Profile Information Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Profile Information</h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="profile-name">Full Name</Label>
+                    <Input
+                      id="profile-name"
+                      type="text"
+                      value={profileData.name}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Enter your full name"
+                      disabled={profileLoading}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="profile-email">Email Address</Label>
+                    <Input
+                      id="profile-email"
+                      type="email"
+                      value={profileData.email}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="Enter your email address"
+                      disabled={profileLoading}
+                    />
+                  </div>
+
+                  <Button
+                    onClick={updateProfile}
+                    disabled={profileLoading || !profileData.name.trim() || !profileData.email.trim()}
+                    className="w-full"
+                  >
+                    {profileLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Updating Profile...
+                      </>
+                    ) : (
+                      'Update Profile'
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Password Change Section */}
+              <div className="space-y-4 border-t pt-6">
+                <h3 className="text-lg font-semibold">Change Password</h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="current-password">Current Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="current-password"
+                        type={showCurrentPassword ? "text" : "password"}
+                        value={passwordData.currentPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                        placeholder="Enter your current password"
+                        disabled={profileLoading}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        disabled={profileLoading}
+                      >
+                        {showCurrentPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="new-password">New Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="new-password"
+                        type={showNewPassword ? "text" : "password"}
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                        placeholder="Enter your new password (min. 8 characters)"
+                        disabled={profileLoading}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        disabled={profileLoading}
+                      >
+                        {showNewPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="confirm-password">Confirm New Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="confirm-password"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                        placeholder="Confirm your new password"
+                        disabled={profileLoading}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        disabled={profileLoading}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={updatePassword}
+                    disabled={profileLoading || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {profileLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Updating Password...
+                      </>
+                    ) : (
+                      'Change Password'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </ProtectedRoute>
   );
