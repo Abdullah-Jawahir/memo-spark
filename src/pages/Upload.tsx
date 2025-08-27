@@ -73,7 +73,7 @@ const Upload = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [guestLimitExceeded, setGuestLimitExceeded] = useState(false);
   const [deckName, setDeckName] = useState("");
-  const [cardTypes, setCardTypes] = useState<string[]>(["flashcard", "exercise"]); // default checked
+  const [cardTypes, setCardTypes] = useState<string[]>(["flashcard", "quiz", "exercise"]); // default all types checked
   const [difficulty, setDifficulty] = useState<string>("intermediate");
 
   interface Quiz {
