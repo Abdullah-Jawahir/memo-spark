@@ -207,6 +207,7 @@ const Upload = () => {
         generatedContentRef.current = content;
         setGeneratedCards(Array.isArray(content.flashcards) ? content.flashcards : []);
         localStorage.setItem('generatedContent', JSON.stringify(content));
+        localStorage.setItem('currentDeckName', deckName); // Store deck name for enrichment
         setUploadComplete(true);
         setProcessingStatus('completed');
       } else if (response.data.document_id) {
@@ -272,6 +273,7 @@ const Upload = () => {
         generatedContentRef.current = content;
         setGeneratedCards(Array.isArray(content.flashcards) ? content.flashcards : []);
         localStorage.setItem('generatedContent', JSON.stringify(content));
+        localStorage.setItem('currentDeckName', deckName); // Store deck name for enrichment
       } else if (response.data.status === 'failed') {
         setProcessingStatus('failed');
         setIsUploading(false);
@@ -487,6 +489,7 @@ const Upload = () => {
                           console.log('Saving to localStorage (from button):', content);
                           if (content && content.flashcards && content.flashcards.length > 0) {
                             localStorage.setItem('generatedContent', JSON.stringify(content));
+                            localStorage.setItem('currentDeckName', deckName); // Store deck name for enrichment
                             navigate('/study');
                           }
                         }}
