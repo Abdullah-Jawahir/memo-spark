@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, MoreVertical, UserCheck, UserX, Edit, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Search, MoreVertical, UserCheck, UserX, Edit, ChevronLeft, ChevronRight, X, AlertTriangle } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -101,6 +101,8 @@ const UserManagement = () => {
   // Modal states
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [roleModalOpen, setRoleModalOpen] = useState(false);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<'deactivate' | 'activate' | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -200,49 +202,25 @@ const UserManagement = () => {
     setRoleModalOpen(true);
   };
 
-  const handleDeactivateUser = async (user: User) => {
-    if (!session?.access_token) return;
-
-    if (!confirm(`Are you sure you want to deactivate ${user.name}?`)) {
-      return;
-    }
-
-    try {
-      setActionLoading(true);
-      const response = await fetch(`/api/admin/users/${user.id}/deactivate`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: `${user.name} has been deactivated.`,
-        });
-        fetchUsers(currentPage, searchTerm); // Refresh the list
-      } else {
-        throw new Error('Failed to deactivate user');
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to deactivate user.",
-        variant: "destructive",
-      });
-    } finally {
-      setActionLoading(false);
-    }
+  const handleDeactivateUser = (user: User) => {
+    setSelectedUser(user);
+    setConfirmAction('deactivate');
+    setConfirmModalOpen(true);
   };
 
-  const handleActivateUser = async (user: User) => {
-    if (!session?.access_token) return;
+  const handleActivateUser = (user: User) => {
+    setSelectedUser(user);
+    setConfirmAction('activate');
+    setConfirmModalOpen(true);
+  };
+
+  const executeUserAction = async () => {
+    if (!session?.access_token || !selectedUser || !confirmAction) return;
 
     try {
       setActionLoading(true);
-      const response = await fetch(`/api/admin/users/${user.id}/activate`, {
+      const endpoint = confirmAction === 'deactivate' ? 'deactivate' : 'activate';
+      const response = await fetch(`/api/admin/users/${selectedUser.id}/${endpoint}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -253,16 +231,17 @@ const UserManagement = () => {
       if (response.ok) {
         toast({
           title: "Success",
-          description: `${user.name} has been activated.`,
+          description: `${selectedUser.name} has been ${confirmAction}d.`,
         });
+        setConfirmModalOpen(false);
         fetchUsers(currentPage, searchTerm); // Refresh the list
       } else {
-        throw new Error('Failed to activate user');
+        throw new Error(`Failed to ${confirmAction} user`);
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to activate user.",
+        description: `Failed to ${confirmAction} user.`,
         variant: "destructive",
       });
     } finally {
@@ -632,6 +611,91 @@ const UserManagement = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setRoleModalOpen(false)}>
               Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Modal */}
+      <Dialog open={confirmModalOpen} onOpenChange={setConfirmModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              Confirm Action
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-1">
+                <div className={`p-2 rounded-full ${confirmAction === 'deactivate'
+                    ? 'bg-red-100 dark:bg-red-900'
+                    : 'bg-green-100 dark:bg-green-900'
+                  }`}>
+                  {confirmAction === 'deactivate' ? (
+                    <UserX className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  ) : (
+                    <UserCheck className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  )}
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-2">
+                  {confirmAction === 'deactivate' ? 'Deactivate User' : 'Activate User'}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Are you sure you want to {confirmAction} <strong>{selectedUser?.name}</strong>?
+                </p>
+                {confirmAction === 'deactivate' && (
+                  <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+                    <p className="text-sm text-orange-800 dark:text-orange-200">
+                      <strong>Warning:</strong> This will temporarily disable the user's account.
+                      You can reactivate it later if needed.
+                    </p>
+                  </div>
+                )}
+                {confirmAction === 'activate' && (
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                    <p className="text-sm text-green-800 dark:text-green-200">
+                      This will restore the user's account and set their points to 0.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmModalOpen(false)}
+              disabled={actionLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant={confirmAction === 'deactivate' ? 'destructive' : 'default'}
+              onClick={executeUserAction}
+              disabled={actionLoading}
+            >
+              {actionLoading ? (
+                <>
+                  {confirmAction === 'deactivate' ? 'Deactivating...' : 'Activating...'}
+                </>
+              ) : (
+                <>
+                  {confirmAction === 'deactivate' ? (
+                    <>
+                      <UserX className="h-4 w-4 mr-2" />
+                      Deactivate User
+                    </>
+                  ) : (
+                    <>
+                      <UserCheck className="h-4 w-4 mr-2" />
+                      Activate User
+                    </>
+                  )}
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
