@@ -82,6 +82,20 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
 
+      // Fix admin Supabase user ID if needed (call this first)
+      try {
+        await fetch('/api/fix-admin-supabase-id', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+      } catch (error) {
+        // Silently ignore errors from this endpoint
+        console.log('Admin ID fix endpoint not available or already fixed');
+      }
+
       // Fetch admin overview stats
       const statsResponse = await fetch('/api/admin/overview', {
         headers: {
