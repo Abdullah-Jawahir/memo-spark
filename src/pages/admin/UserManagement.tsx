@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, MoreVertical, UserCheck, UserX, Edit, ChevronLeft, ChevronRight, X, AlertTriangle } from 'lucide-react';
+import { Search, MoreVertical, UserCheck, UserX, Edit, ChevronLeft, ChevronRight, X, AlertTriangle, User, Eye, EyeOff, Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -24,6 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -33,6 +34,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -105,6 +107,24 @@ const UserManagement = () => {
   const [confirmAction, setConfirmAction] = useState<'deactivate' | 'activate' | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Admin profile modal states
+  const [adminProfileModalOpen, setAdminProfileModalOpen] = useState(false);
+  const [adminProfileLoading, setAdminProfileLoading] = useState(false);
+  const [adminProfileError, setAdminProfileError] = useState<string | null>(null);
+  const [adminProfileSuccess, setAdminProfileSuccess] = useState<string | null>(null);
+  const [adminProfileData, setAdminProfileData] = useState({
+    name: '',
+    email: ''
+  });
+  const [adminPasswordData, setAdminPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [showAdminCurrentPassword, setShowAdminCurrentPassword] = useState(false);
+  const [showAdminNewPassword, setShowAdminNewPassword] = useState(false);
+  const [showAdminConfirmPassword, setShowAdminConfirmPassword] = useState(false);
 
   // Form states for edit modal
   const [editForm, setEditForm] = useState({
@@ -343,6 +363,137 @@ const UserManagement = () => {
     return user.points === -1; // Our temporary way to mark deactivated users
   };
 
+  // Admin profile management functions
+  const openAdminProfileModal = async () => {
+    setAdminProfileModalOpen(true);
+    setAdminProfileError(null);
+    setAdminProfileSuccess(null);
+
+    // Pre-fill with current admin profile data (we could fetch this from API if needed)
+    setAdminProfileData({
+      name: '', // You could fetch current admin profile here
+      email: ''
+    });
+
+    // Reset password fields
+    setAdminPasswordData({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+  };
+
+  const updateAdminProfile = async () => {
+    if (!session?.access_token) return;
+
+    setAdminProfileLoading(true);
+    setAdminProfileError(null);
+    setAdminProfileSuccess(null);
+
+    try {
+      const response = await fetch('http://localhost:8000/api/admin/profile', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: adminProfileData.name,
+          email: adminProfileData.email
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+
+        // Handle Laravel validation errors
+        if (response.status === 422 && errorData?.errors) {
+          const errorMessages = Object.values(errorData.errors).flat();
+          throw new Error(errorMessages.join(', '));
+        }
+
+        throw new Error(errorData?.message || errorData?.error || 'Failed to update profile');
+      }
+
+      setAdminProfileSuccess('Profile updated successfully!');
+      toast({
+        title: "Success",
+        description: "Admin profile updated successfully",
+      });
+    } catch (error) {
+      setAdminProfileError(error instanceof Error ? error.message : 'Failed to update profile');
+    } finally {
+      setAdminProfileLoading(false);
+    }
+  };
+
+  const updateAdminPassword = async () => {
+    if (!session?.access_token) return;
+
+    // Validation
+    if (!adminPasswordData.currentPassword || !adminPasswordData.newPassword || !adminPasswordData.confirmPassword) {
+      setAdminProfileError('All password fields are required');
+      return;
+    }
+
+    if (adminPasswordData.newPassword !== adminPasswordData.confirmPassword) {
+      setAdminProfileError('New passwords do not match');
+      return;
+    }
+
+    if (adminPasswordData.newPassword.length < 8) {
+      setAdminProfileError('New password must be at least 8 characters long');
+      return;
+    }
+
+    setAdminProfileLoading(true);
+    setAdminProfileError(null);
+    setAdminProfileSuccess(null);
+
+    try {
+      const response = await fetch('http://localhost:8000/api/admin/profile/password', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          current_password: adminPasswordData.currentPassword,
+          new_password: adminPasswordData.newPassword,
+          new_password_confirmation: adminPasswordData.confirmPassword
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+
+        // Handle Laravel validation errors
+        if (response.status === 422 && errorData?.errors) {
+          const errorMessages = Object.values(errorData.errors).flat();
+          throw new Error(errorMessages.join(', '));
+        }
+
+        throw new Error(errorData?.message || errorData?.error || 'Failed to update password');
+      }
+
+      setAdminProfileSuccess('Password updated successfully!');
+      // Reset password fields
+      setAdminPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      toast({
+        title: "Success",
+        description: "Admin password updated successfully",
+      });
+    } catch (error) {
+      setAdminProfileError(error instanceof Error ? error.message : 'Failed to update password');
+    } finally {
+      setAdminProfileLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
       <div className="max-w-7xl mx-auto px-6 py-8">
@@ -352,9 +503,19 @@ const UserManagement = () => {
             <h1 className="text-3xl font-bold text-foreground mb-2">User Management</h1>
             <p className="text-muted-foreground">Manage and monitor platform users</p>
           </div>
-          <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
-            Add New User
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={openAdminProfileModal}
+              className="flex items-center gap-2"
+            >
+              <User className="h-4 w-4" />
+              Admin Profile
+            </Button>
+            <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
+              Add New User
+            </Button>
+          </div>
         </div>
 
         {/* Search and Filters */}
@@ -629,8 +790,8 @@ const UserManagement = () => {
             <div className="flex items-start gap-3">
               <div className="mt-1">
                 <div className={`p-2 rounded-full ${confirmAction === 'deactivate'
-                    ? 'bg-red-100 dark:bg-red-900'
-                    : 'bg-green-100 dark:bg-green-900'
+                  ? 'bg-red-100 dark:bg-red-900'
+                  : 'bg-green-100 dark:bg-green-900'
                   }`}>
                   {confirmAction === 'deactivate' ? (
                     <UserX className="h-5 w-5 text-red-600 dark:text-red-400" />
@@ -698,6 +859,190 @@ const UserManagement = () => {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Admin Profile Modal */}
+      <Dialog open={adminProfileModalOpen} onOpenChange={setAdminProfileModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Admin Profile Settings</DialogTitle>
+            <DialogDescription>
+              Update your admin profile information and change your password securely.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Alert Messages */}
+            {adminProfileError && (
+              <Alert className="border-red-200 bg-red-50 dark:bg-red-900/20">
+                <AlertDescription className="text-red-800 dark:text-red-200">
+                  {adminProfileError}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {adminProfileSuccess && (
+              <Alert className="border-green-200 bg-green-50 dark:bg-green-900/20">
+                <AlertDescription className="text-green-800 dark:text-green-200">
+                  {adminProfileSuccess}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Profile Information Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Profile Information</h3>
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="admin-profile-name">Full Name</Label>
+                  <Input
+                    id="admin-profile-name"
+                    type="text"
+                    value={adminProfileData.name}
+                    onChange={(e) => setAdminProfileData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter your full name"
+                    disabled={adminProfileLoading}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="admin-profile-email">Email Address</Label>
+                  <Input
+                    id="admin-profile-email"
+                    type="email"
+                    value={adminProfileData.email}
+                    onChange={(e) => setAdminProfileData(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="Enter your email address"
+                    disabled={adminProfileLoading}
+                  />
+                </div>
+
+                <Button
+                  onClick={updateAdminProfile}
+                  disabled={adminProfileLoading || !adminProfileData.name.trim() || !adminProfileData.email.trim()}
+                  className="w-full"
+                >
+                  {adminProfileLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Updating Profile...
+                    </>
+                  ) : (
+                    'Update Profile'
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Password Change Section */}
+            <div className="space-y-4 border-t pt-6">
+              <h3 className="text-lg font-semibold">Change Password</h3>
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="admin-current-password">Current Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="admin-current-password"
+                      type={showAdminCurrentPassword ? "text" : "password"}
+                      value={adminPasswordData.currentPassword}
+                      onChange={(e) => setAdminPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      placeholder="Enter your current password"
+                      disabled={adminProfileLoading}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowAdminCurrentPassword(!showAdminCurrentPassword)}
+                      disabled={adminProfileLoading}
+                    >
+                      {showAdminCurrentPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="admin-new-password">New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="admin-new-password"
+                      type={showAdminNewPassword ? "text" : "password"}
+                      value={adminPasswordData.newPassword}
+                      onChange={(e) => setAdminPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                      placeholder="Enter your new password (min. 8 characters)"
+                      disabled={adminProfileLoading}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowAdminNewPassword(!showAdminNewPassword)}
+                      disabled={adminProfileLoading}
+                    >
+                      {showAdminNewPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="admin-confirm-password">Confirm New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="admin-confirm-password"
+                      type={showAdminConfirmPassword ? "text" : "password"}
+                      value={adminPasswordData.confirmPassword}
+                      onChange={(e) => setAdminPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      placeholder="Confirm your new password"
+                      disabled={adminProfileLoading}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowAdminConfirmPassword(!showAdminConfirmPassword)}
+                      disabled={adminProfileLoading}
+                    >
+                      {showAdminConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={updateAdminPassword}
+                  disabled={adminProfileLoading || !adminPasswordData.currentPassword || !adminPasswordData.newPassword || !adminPasswordData.confirmPassword}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {adminProfileLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Updating Password...
+                    </>
+                  ) : (
+                    'Change Password'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
