@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, MoreVertical, UserCheck, UserX, Edit } from 'lucide-react';
+import { Search, MoreVertical, UserCheck, UserX, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -18,33 +18,157 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  user_type: 'student' | 'admin';
+  points: number;
+  created_at: string;
+  updated_at: string;
+  decks_count?: number;
+}
+
+interface PaginatedResponse {
+  data: User[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  from: number;
+  to: number;
+}
+
+// Shimmer loading component
+const Shimmer = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 bg-[length:200%_100%] animate-shimmer ${className}`} />
+);
+
+// User table row shimmer
+const UserRowSkeleton = () => (
+  <TableRow>
+    <TableCell>
+      <div>
+        <Shimmer className="h-4 w-32 mb-2 rounded" />
+        <Shimmer className="h-3 w-48 rounded" />
+      </div>
+    </TableCell>
+    <TableCell>
+      <Shimmer className="h-6 w-16 rounded-full" />
+    </TableCell>
+    <TableCell>
+      <Shimmer className="h-6 w-16 rounded-full" />
+    </TableCell>
+    <TableCell>
+      <Shimmer className="h-4 w-8 rounded" />
+    </TableCell>
+    <TableCell>
+      <Shimmer className="h-4 w-20 rounded" />
+    </TableCell>
+    <TableCell>
+      <Shimmer className="h-8 w-8 rounded" />
+    </TableCell>
+  </TableRow>
+);
 
 const UserManagement = () => {
+  const { session } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [users, setUsers] = useState<User[]>([]);
+  const [paginationData, setPaginationData] = useState<PaginatedResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const users = [
-    { id: 1, name: "Alex Johnson", email: "alex@example.com", role: "Student", status: "Active", decks: 12, joinDate: "2024-01-15" },
-    { id: 2, name: "Maria Garcia", email: "maria@example.com", role: "Educator", status: "Active", decks: 45, joinDate: "2024-02-10" },
-    { id: 3, name: "Dr. Chen", email: "chen@university.edu", role: "Admin", status: "Active", decks: 23, joinDate: "2024-01-08" },
-    { id: 4, name: "Sarah Wilson", email: "sarah@example.com", role: "Student", status: "Inactive", decks: 3, joinDate: "2024-03-01" },
-    { id: 5, name: "Raj Patel", email: "raj@example.com", role: "Student", status: "Active", decks: 8, joinDate: "2024-02-20" }
-  ];
+  const fetchUsers = async (page: number = 1, search: string = '') => {
+    if (!session?.access_token) {
+      toast({
+        title: "Authentication Error",
+        description: "Please log in again to access user data.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    try {
+      setLoading(true);
+
+      const params = new URLSearchParams({
+        page: page.toString(),
+        per_page: '15',
+      });
+
+      if (search.trim()) {
+        params.append('search', search.trim());
+      }
+
+      const response = await fetch(`/api/admin/users?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data: PaginatedResponse = await response.json();
+        setUsers(data.data);
+        setPaginationData(data);
+        setCurrentPage(data.current_page);
+      } else {
+        console.error('Failed to fetch users:', response.statusText);
+        toast({
+          title: "Error",
+          description: "Failed to load users.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load users.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers(1, searchTerm);
+  }, [session]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchTerm !== undefined) {
+        fetchUsers(1, searchTerm);
+      }
+    }, 500); // Debounce search
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  const handlePageChange = (page: number) => {
+    fetchUsers(page, searchTerm);
+  };
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'Admin': return 'bg-red-100 text-red-800';
-      case 'Educator': return 'bg-blue-100 text-blue-800';
+      case 'admin': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
+      case 'student': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100';
       default: return 'bg-card text-card-foreground';
     }
   };
 
   const getStatusColor = (status: string) => {
     return status === 'Active' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100' : 'bg-card text-card-foreground';
+  };
+
+  const capitalizeRole = (role: string) => {
+    return role === 'admin' ? 'Admin' : 'Student';
   };
 
   return (
@@ -83,7 +207,7 @@ const UserManagement = () => {
         {/* Users Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Users ({filteredUsers.length})</CardTitle>
+            <CardTitle>Users ({paginationData?.total || 0})</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
@@ -91,60 +215,103 @@ const UserManagement = () => {
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Points</TableHead>
                   <TableHead>Decks Created</TableHead>
                   <TableHead>Join Date</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id} className="hover:bg-muted">
-                    <TableCell>
-                      <div>
-                        <div className="font-medium text-foreground">{user.name}</div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getRoleColor(user.role)}>
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(user.status)}>
-                        {user.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{user.decks}</TableCell>
-                    <TableCell>{new Date(user.joinDate).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit User
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <UserCheck className="h-4 w-4 mr-2" />
-                            Activate
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
-                            <UserX className="h-4 w-4 mr-2" />
-                            Deactivate
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                {loading ? (
+                  // Shimmer loading for user rows
+                  Array.from({ length: 10 }).map((_, index) => (
+                    <UserRowSkeleton key={index} />
+                  ))
+                ) : users.length > 0 ? (
+                  users.map((user) => (
+                    <TableRow key={user.id} className="hover:bg-muted">
+                      <TableCell>
+                        <div>
+                          <div className="font-medium text-foreground">{user.name}</div>
+                          <div className="text-sm text-gray-500">{user.email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getRoleColor(user.user_type)}>
+                          {capitalizeRole(user.user_type)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-medium">{user.points || 0}</span>
+                      </TableCell>
+                      <TableCell>{user.decks_count || 0}</TableCell>
+                      <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit User
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <UserCheck className="h-4 w-4 mr-2" />
+                              Change Role
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-600">
+                              <UserX className="h-4 w-4 mr-2" />
+                              Deactivate
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      No users found
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
+
+            {/* Pagination */}
+            {paginationData && paginationData.last_page > 1 && (
+              <div className="flex items-center justify-between mt-6">
+                <div className="text-sm text-muted-foreground">
+                  Showing {paginationData.from} to {paginationData.to} of {paginationData.total} users
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage <= 1 || loading}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <span className="text-sm font-medium px-3">
+                    Page {currentPage} of {paginationData.last_page}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage >= paginationData.last_page || loading}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
