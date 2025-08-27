@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
   RotateCcw, Heart, X, Check, Volume2, BookOpen, Star, AlertCircle, UserPlus, Edit3,
-  Clock, RefreshCw, CheckSquare, Layers as LayersIcon, Pencil as PencilIcon
+  Clock, RefreshCw, CheckSquare, Layers as LayersIcon, Pencil as PencilIcon, CheckCircle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
@@ -106,6 +106,15 @@ const Study = () => {
   const [ratingInProgress, setRatingInProgress] = useState<'again' | 'hard' | 'good' | 'easy' | null>(null);
 
   const isGuestUser = !user && generatedContent !== null;
+
+  // Memoized completion status to avoid calling function during render
+  const isOverallComplete = useMemo(() => {
+    const flashcardsComplete = sessionComplete || flashcards.length === 0;
+    const quizzesComplete = quizCompleted || quizzes.length === 0;
+    const exercisesComplete = exerciseCompleted || exercises.length === 0;
+
+    return flashcardsComplete && quizzesComplete && exercisesComplete;
+  }, [sessionComplete, quizCompleted, exerciseCompleted, flashcards.length, quizzes.length, exercises.length]);
 
   const fetchMaterials = async (force = false) => {
     if (!session?.access_token) return;
@@ -308,7 +317,8 @@ const Study = () => {
     // Setup interval for overall study timer
     let timer: NodeJS.Timeout | null = null;
 
-    if (isStudying && !sessionComplete) {
+    // Continue timer until ALL activities are complete, not just flashcards
+    if (isStudying && !isOverallComplete) {
       timer = setInterval(() => {
         setOverallStudyTime(prevTime => prevTime + 1);
       }, 1000);
@@ -317,7 +327,14 @@ const Study = () => {
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [isStudying, sessionComplete]);
+  }, [isStudying, isOverallComplete]); // Watch all completion states
+
+  // Stop the overall timer when all activities are complete
+  useEffect(() => {
+    if (isOverallComplete && isStudying) {
+      setIsStudying(false); // Stop the overall timer
+    }
+  }, [isOverallComplete, isStudying]);
 
   // Initialize the study session when component mounts
   useEffect(() => {
@@ -354,6 +371,21 @@ const Study = () => {
     setExerciseCompleted(false);
     setShowExerciseAnswers(false);
   }, [exercises, tab]);
+
+  // Reset session stats when switching between content types
+  useEffect(() => {
+    // Reset session stats (correct/difficult counts) when switching tabs
+    // but keep the overall timer running
+    setSessionStats({
+      correct: 0,
+      difficult: 0,
+      timeSpent: studyTime // Keep current activity time
+    });
+
+    // Reset activity-specific timers but not the overall timer
+    setStudyTime(0);
+    setCardStudyStartTime(0);
+  }, [tab]);
 
   // Reset review state when flashcards change or when switching to review tab
   useEffect(() => {
@@ -497,8 +529,11 @@ const Study = () => {
       setIsFlipped(false);
       setCardStudyStartTime(studyTime); // Reset start time for next card
     } else {
+      // Flashcards are complete, but don't stop the overall timer
+      // Only mark flashcard activity as complete
+      // The overall timer continues until all activities are done or user leaves
       setSessionComplete(true);
-      setIsStudying(false); // Stop the timer
+      // Don't stop isStudying here - let overall session logic handle that
     }
 
     // Reset rating state
@@ -617,6 +652,7 @@ const Study = () => {
       }
     }, 100);
   };
+
   const handleExportProgress = () => {
     const data = {
       sessionStats,
@@ -700,6 +736,27 @@ const Study = () => {
               </Link>
             </AlertDescription>
           </Alert>
+        )}
+
+        {/* Overall Study Completion Banner */}
+        {isOverallComplete && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5 }}
+            className="mb-6 sm:mb-8"
+          >
+            <Alert className="border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 text-sm sm:text-base shadow-lg">
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+              <AlertDescription className="text-green-800">
+                <strong>🎉 Congratulations!</strong> You've completed all study activities for this session!
+                <div className="mt-2 text-sm">
+                  <span className="font-medium">Total Study Time: {formatTime(overallStudyTime)}</span>
+                </div>
+              </AlertDescription>
+            </Alert>
+          </motion.div>
         )}
 
         {/* Study Header */}
