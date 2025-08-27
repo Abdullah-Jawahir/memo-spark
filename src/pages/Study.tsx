@@ -17,7 +17,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import StudyTimer from '@/components/study/StudyTimer';
 import StudyStatsPanel from '@/components/study/StudyStatsPanel';
 import { startStudySession, recordFlashcardReview, getCurrentStudySession, clearCurrentStudySession } from '@/utils/studyTracking';
-import { API_ENDPOINTS } from '@/config/api';
+import { API_ENDPOINTS, fetchWithAuth } from '@/config/api';
 
 interface Flashcard {
   id: number;
@@ -188,6 +188,41 @@ const Study = () => {
     }
   };
 
+  // Function to enrich materials with database IDs
+  const enrichMaterialsWithIds = async (materials: GeneratedContent, deckName: string) => {
+    if (!user || !session?.access_token) {
+      return materials; // For guest users, return as-is
+    }
+
+    try {
+      const response = await fetchWithAuth(
+        API_ENDPOINTS.STUDY.ENRICH_MATERIALS,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            deck_name: deckName,
+            materials: materials
+          }),
+        },
+        session
+      );
+
+      if (response.success) {
+        return {
+          flashcards: response.materials.flashcards || [],
+          quizzes: response.materials.quizzes || [],
+          exercises: response.materials.exercises || [],
+        };
+      } else {
+        console.warn('Failed to enrich materials, using original data');
+        return materials;
+      }
+    } catch (error) {
+      console.error('Error enriching materials:', error);
+      return materials; // Return original materials if enrichment fails
+    }
+  };
+
   useEffect(() => {
     // Initial load only
     const data = localStorage.getItem('generatedContent');
@@ -197,25 +232,64 @@ const Study = () => {
       fetchMaterials(false);
     } else if (data) {
       const parsed: GeneratedContent = JSON.parse(data);
-      setGeneratedContent(parsed);
-      setFlashcards(parsed.flashcards || []);
-      setQuizzes(parsed.quizzes || []);
-      setExercises(parsed.exercises || []);
-      setSessionRatings(Array(parsed.flashcards?.length || 0).fill(null));
 
-      if (user && session && parsed.flashcards?.length) {
-        const legacyDeckId = searchParams.get('deck') || 'default-deck';
-        setIsStudying(true);
-        startStudySession(legacyDeckId, session)
-          .then(sessionData => { if (sessionData) setStudySession(sessionData); })
-          .catch(console.error);
-      } else if (!user && parsed.flashcards?.length) {
-        setIsStudying(true);
+      // Check if materials need to be enriched with IDs (for authenticated users)
+      if (user && session?.access_token) {
+        // Try to get deck name from localStorage or use a default
+        const deckNameFromStorage = localStorage.getItem('currentDeckName');
+        if (deckNameFromStorage) {
+          enrichMaterialsWithIds(parsed, deckNameFromStorage)
+            .then(enrichedMaterials => {
+              setGeneratedContent(enrichedMaterials);
+              setFlashcards(enrichedMaterials.flashcards || []);
+              setQuizzes(enrichedMaterials.quizzes || []);
+              setExercises(enrichedMaterials.exercises || []);
+              setSessionRatings(Array(enrichedMaterials.flashcards?.length || 0).fill(null));
+
+              if (enrichedMaterials.flashcards?.length) {
+                setIsStudying(true);
+                startStudySession(deckNameFromStorage, session)
+                  .then(sessionData => { if (sessionData) setStudySession(sessionData); })
+                  .catch(console.error);
+              }
+              setLastUpdated(new Date());
+            })
+            .catch(error => {
+              console.error('Failed to enrich materials, using original data:', error);
+              // Fallback to original materials
+              setupOriginalMaterials(parsed);
+            });
+        } else {
+          // No deck name available, use original materials
+          setupOriginalMaterials(parsed);
+        }
+      } else {
+        // Guest user or no session, use original materials
+        setupOriginalMaterials(parsed);
       }
-      setLastUpdated(new Date());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Helper function to setup original materials
+  const setupOriginalMaterials = (parsed: GeneratedContent) => {
+    setGeneratedContent(parsed);
+    setFlashcards(parsed.flashcards || []);
+    setQuizzes(parsed.quizzes || []);
+    setExercises(parsed.exercises || []);
+    setSessionRatings(Array(parsed.flashcards?.length || 0).fill(null));
+
+    if (user && session && parsed.flashcards?.length) {
+      const legacyDeckId = searchParams.get('deck') || 'default-deck';
+      setIsStudying(true);
+      startStudySession(legacyDeckId, session)
+        .then(sessionData => { if (sessionData) setStudySession(sessionData); })
+        .catch(console.error);
+    } else if (!user && parsed.flashcards?.length) {
+      setIsStudying(true);
+    }
+    setLastUpdated(new Date());
+  };
   const currentCardData = flashcards[currentCard];
   const progress = flashcards.length > 0 ? ((currentCard + 1) / flashcards.length) * 100 : 0;
 
@@ -614,7 +688,7 @@ const Study = () => {
         </div>
       </div>
 
-      <div className="max-w-full sm:max-w-4xl lg:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pt-20 sm:pt-24 mt-6 sm:mt-10">
+      <div className="max-w-full sm:max-w-4xl lg:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pt-20 sm:pt-24 mt-6 sm:mt-2">
         {/* Guest Warning Banner */}
         {isGuestUser && (
           <Alert className="mb-4 sm:mb-6 border-orange-200 bg-gradient-to-r from-orange-50 to-red-50 text-sm sm:text-base shadow-sm">
