@@ -58,13 +58,18 @@ const ActivityItemSkeleton = () => (
 );
 
 const AdminDashboard = () => {
-  const { profile, signOut, session } = useAuth();
+  const { profile, signOut, session, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchAdminData = async () => {
+    // Don't try to fetch data if auth is still loading
+    if (authLoading) {
+      return;
+    }
+
     if (!session?.access_token) {
       toast({
         title: "Authentication Error",
@@ -129,8 +134,17 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    fetchAdminData();
-  }, [session]);
+    // Only fetch admin data after auth loading is complete and we have a session
+    if (!authLoading && session?.access_token) {
+      fetchAdminData();
+    } else if (!authLoading && !session) {
+      // Auth loading is complete but no session found
+      setLoading(false);
+    } else if (authLoading) {
+      // Auth is still loading, keep our loading state true
+      setLoading(true);
+    }
+  }, [session, authLoading]);
 
   const statsCards = [
     {
@@ -191,7 +205,7 @@ const AdminDashboard = () => {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
-            {loading ? (
+            {(loading || authLoading) ? (
               // Shimmer loading for stats cards
               Array.from({ length: 4 }).map((_, index) => (
                 <StatsCardSkeleton key={index} />
@@ -259,7 +273,7 @@ const AdminDashboard = () => {
                       background: #64748b;
                     }
                   `}</style>
-                  {loading ? (
+                  {(loading || authLoading) ? (
                     // Shimmer loading for activity items
                     Array.from({ length: 5 }).map((_, index) => (
                       <ActivityItemSkeleton key={index} />
@@ -327,7 +341,7 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {loading ? (
+                {(loading || authLoading) ? (
                   // Shimmer loading for system overview
                   Array.from({ length: 3 }).map((_, index) => (
                     <div key={index} className="text-center">
