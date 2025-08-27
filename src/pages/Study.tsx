@@ -18,6 +18,7 @@ import StudyTimer from '@/components/study/StudyTimer';
 import StudyStatsPanel from '@/components/study/StudyStatsPanel';
 import { startStudySession, recordFlashcardReview, getCurrentStudySession, clearCurrentStudySession } from '@/utils/studyTracking';
 import { API_ENDPOINTS, fetchWithAuth } from '@/config/api';
+import { useToast } from '@/hooks/use-toast';
 
 interface Flashcard {
   id: number;
@@ -64,6 +65,7 @@ interface GeneratedContent {
 
 const Study = () => {
   const { user, session } = useAuth();
+  const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [currentCard, setCurrentCard] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -109,11 +111,21 @@ const Study = () => {
 
   // Memoized completion status to avoid calling function during render
   const isOverallComplete = useMemo(() => {
-    const flashcardsComplete = sessionComplete || flashcards.length === 0;
-    const quizzesComplete = quizCompleted || quizzes.length === 0;
-    const exercisesComplete = exerciseCompleted || exercises.length === 0;
+    // Only consider activities complete if they exist AND are completed
+    const flashcardsComplete = flashcards.length > 0 && sessionComplete;
+    const quizzesComplete = quizzes.length > 0 && quizCompleted;
+    const exercisesComplete = exercises.length > 0 && exerciseCompleted;
 
-    return flashcardsComplete && quizzesComplete && exercisesComplete;
+    // All existing activities must be completed
+    const hasContent = flashcards.length > 0 || quizzes.length > 0 || exercises.length > 0;
+    if (!hasContent) return false;
+
+    // Check completion based on what exists
+    if (flashcards.length > 0 && !sessionComplete) return false;
+    if (quizzes.length > 0 && !quizCompleted) return false;
+    if (exercises.length > 0 && !exerciseCompleted) return false;
+
+    return true;
   }, [sessionComplete, quizCompleted, exerciseCompleted, flashcards.length, quizzes.length, exercises.length]);
 
   const fetchMaterials = async (force = false) => {
@@ -756,6 +768,83 @@ const Study = () => {
                 </div>
               </AlertDescription>
             </Alert>
+          </motion.div>
+        )}
+
+        {/* Missing Materials Detection */}
+        {user && session && searchParams.get('deckId') && !isOverallComplete && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-6 sm:mb-8"
+          >
+            {(() => {
+              const missingTypes = [];
+              if (quizzes.length === 0) missingTypes.push('quiz');
+              if (exercises.length === 0) missingTypes.push('exercise');
+
+              if (missingTypes.length === 0) return null;
+
+              return (
+                <Alert className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 text-sm sm:text-base shadow-sm">
+                  <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                  <AlertDescription className="text-blue-800">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div>
+                        <strong>📚 Expand Your Study Options!</strong>
+                        <div className="mt-1 text-sm">
+                          Missing: {missingTypes.map(type => type === 'quiz' ? 'Quizzes' : 'Exercises').join(', ')}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          const deckId = searchParams.get('deckId');
+                          if (!deckId) return;
+
+                          try {
+                            toast({
+                              title: "Generating materials...",
+                              description: "This may take a few minutes. We'll let you know when it's ready!",
+                            });
+
+                            const response = await fetchWithAuth(
+                              API_ENDPOINTS.DECKS.GENERATE_MATERIALS(deckId),
+                              {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                  material_types: missingTypes
+                                })
+                              },
+                              session
+                            );
+
+                            if (response.success) {
+                              toast({
+                                title: "Material generation started!",
+                                description: "Refresh the page in a few minutes to see your new quizzes and exercises.",
+                                duration: 5000,
+                              });
+                            }
+                          } catch (error) {
+                            console.error('Failed to generate materials:', error);
+                            toast({
+                              title: "Generation failed",
+                              description: "Failed to generate materials. Please try again.",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white whitespace-nowrap"
+                      >
+                        Generate Now
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              );
+            })()}
           </motion.div>
         )}
 
