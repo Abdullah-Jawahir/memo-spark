@@ -34,7 +34,7 @@ const DemoAccountsPanel = ({ onDemoLogin, isLoading }: DemoAccountsPanelProps) =
           variant="outline"
           size="sm"
           className="w-full justify-start text-xs bg-white dark:bg-gray-900 dark:text-foreground dark:hover:bg-red-900/40 hover:bg-red-50 border border-red-200 dark:border-red-700"
-          onClick={() => onDemoLogin('admin@example.com', 'admindemo123')}
+          onClick={() => onDemoLogin('admin@example.com', 'admin1234')}
           disabled={isLoading}
         >
           <Shield className="h-3 w-3 mr-2" />
