@@ -21,6 +21,7 @@ export const API_ENDPOINTS = {
     STATS: `${API_BASE_URL}/api/study/stats`,
     RECENT_ACTIVITY: `${API_BASE_URL}/api/study/recent-activity`,
     DECK_MATERIALS: (deckId: string | number) => `${API_BASE_URL}/api/decks/${deckId}/materials`,
+    ENRICH_MATERIALS: `${API_BASE_URL}/api/study/enrich-materials`,
   },
   DECKS: {
     LIST: `${API_BASE_URL}/api/decks`,
