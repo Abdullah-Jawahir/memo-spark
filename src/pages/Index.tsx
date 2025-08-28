@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowDown, BookOpen, CircleCheck, FileText, Search, User } from 'lucide-react';
 import Header from '@/components/layout/Header';
+import { useTranslation } from 'react-i18next';
 import Footer from '@/components/layout/Footer';
 import FeatureCard from '@/components/landing/FeatureCard';
 import HeroSection from '@/components/landing/HeroSection';
@@ -13,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
   const [currentLanguage, setCurrentLanguage] = useState('en');
+  const { t } = useTranslation();
   const { user } = useAuth();
 
   const features = [
@@ -44,10 +46,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
-      <Header
-        currentLanguage={currentLanguage}
-        onLanguageChange={setCurrentLanguage}
-      />
+      <Header />
 
       <main>
         <HeroSection />
@@ -81,12 +80,12 @@ const Index = () => {
         <section className="py-20 px-6 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 dark:from-blue-900 dark:via-purple-900 dark:to-indigo-900">
           <div className="max-w-4xl mx-auto text-center text-white dark:text-foreground">
             <h2 className="text-4xl font-bold mb-6">
-              {user ? "Continue your learning journey" : "Ready to transform your learning?"}
+              {user ? t('cta.continue') : t('cta.ready')}
             </h2>
             <p className="text-xl mb-8 opacity-90 text-white dark:text-muted-foreground">
               {user
-                ? "Access your personalized flashcards and learning materials anytime, anywhere."
-                : "Join thousands of students already using MemoSpark to achieve their academic goals."
+                ? t('cta.access')
+                : t('cta.join')
               }
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -107,12 +106,12 @@ const Index = () => {
                 <>
                   <Link to="/register">
                     <Button size="lg" className="bg-card text-blue-600 hover:bg-muted px-8 py-3 text-lg font-semibold">
-                      Start Free Trial
+                      {t('cta.start')}
                     </Button>
                   </Link>
                   <Link to="/demo">
                     <Button size="lg" variant="outline" className="border-card text-card-foreground hover:bg-muted hover:text-primary px-8 py-3 text-lg font-semibold">
-                      Watch Demo
+                      {t('cta.demo')}
                     </Button>
                   </Link>
                 </>
