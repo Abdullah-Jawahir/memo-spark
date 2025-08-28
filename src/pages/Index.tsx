@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowDown, BookOpen, CircleCheck, FileText, Search, User } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import LanguageToggle from '@/components/common/LanguageToggle';
 import FeatureCard from '@/components/landing/FeatureCard';
 import HeroSection from '@/components/landing/HeroSection';
 import StatsSection from '@/components/landing/StatsSection';
@@ -45,7 +44,10 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
-      <Header currentLanguage={currentLanguage} />
+      <Header
+        currentLanguage={currentLanguage}
+        onLanguageChange={setCurrentLanguage}
+      />
 
       <main>
         <HeroSection />
@@ -121,10 +123,6 @@ const Index = () => {
       </main>
 
       <Footer />
-      <LanguageToggle
-        currentLanguage={currentLanguage}
-        onLanguageChange={setCurrentLanguage}
-      />
     </div>
   );
 };
