@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -108,6 +108,9 @@ const Study = () => {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [ratingInProgress, setRatingInProgress] = useState<'again' | 'hard' | 'good' | 'easy' | null>(null);
+
+  // Ref used to skip the automatic reset when a tab change is initiated by 'Study Again'
+  const skipResetOnTabChange = useRef(false);
 
   const isGuestUser = !user && generatedContent !== null;
 
@@ -389,6 +392,15 @@ const Study = () => {
   // Reset session stats when switching between content types, but preserve
   // counts when entering the review tab (we want to keep correct/difficult)
   useEffect(() => {
+    // If a caller explicitly set the skip flag (e.g. Study Again button), preserve counts
+    if (skipResetOnTabChange.current) {
+      // Ensure timeSpent stays in sync
+      setSessionStats(prev => ({ ...prev, timeSpent: studyTime }));
+      // Clear the flag for future tab changes
+      skipResetOnTabChange.current = false;
+      return;
+    }
+
     if (tab === 'review') {
       // When moving into the review flow, keep the existing correct/difficult
       // counts but ensure the displayed timeSpent matches the current studyTime.
@@ -1634,6 +1646,8 @@ const Study = () => {
                                   setSessionComplete(false);
                                   setIsFlipped(false);
                                   setCardStudyStartTime(studyTime);
+                                  // Prevent the tab-change effect from zeroing session counts
+                                  skipResetOnTabChange.current = true;
                                   setTab('flashcards');
                                 }
                               }}
