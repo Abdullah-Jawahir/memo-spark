@@ -386,10 +386,17 @@ const Study = () => {
     setShowExerciseAnswers(false);
   }, [exercises, tab]);
 
-  // Reset session stats when switching between content types
+  // Reset session stats when switching between content types, but preserve
+  // counts when entering the review tab (we want to keep correct/difficult)
   useEffect(() => {
-    // Reset session stats (correct/difficult counts) when switching tabs
-    // but keep the overall timer running
+    if (tab === 'review') {
+      // When moving into the review flow, keep the existing correct/difficult
+      // counts but ensure the displayed timeSpent matches the current studyTime.
+      setSessionStats(prev => ({ ...prev, timeSpent: studyTime }));
+      return;
+    }
+
+    // For other tab switches (flashcards, quiz, exercises) we reset per-activity stats
     setSessionStats({
       correct: 0,
       difficult: 0,
