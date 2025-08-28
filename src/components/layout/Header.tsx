@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,14 +8,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import ThemeSwitcher from './ThemeSwitcher';
 import LanguageToggle from '@/components/common/LanguageToggle';
 
-interface HeaderProps {
-  currentLanguage: string;
-  onLanguageChange: (language: string) => void;
-}
-
-const Header = ({ currentLanguage, onLanguageChange }: HeaderProps) => {
+const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
+  const { t } = useTranslation();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -37,16 +34,16 @@ const Header = ({ currentLanguage, onLanguageChange }: HeaderProps) => {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-center">
           <nav className="hidden lg:flex items-center space-x-8">
             <Link to="/features" className="text-muted-foreground hover:text-primary transition-colors font-medium">
-              Features
+              {t('nav.features')}
             </Link>
             <Link to="/pricing" className="text-muted-foreground hover:text-primary transition-colors font-medium">
-              Pricing
+              {t('nav.pricing')}
             </Link>
             <Link to="/about" className="text-muted-foreground hover:text-primary transition-colors font-medium">
-              About
+              {t('nav.about')}
             </Link>
             <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors font-medium">
-              Contact
+              {t('nav.contact')}
             </Link>
           </nav>
         </div>
@@ -54,10 +51,7 @@ const Header = ({ currentLanguage, onLanguageChange }: HeaderProps) => {
         {/* Profile / Auth pinned to right corner */}
         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-4">
           <div className="hidden md:block">
-            <LanguageToggle
-              currentLanguage={currentLanguage}
-              onLanguageChange={onLanguageChange}
-            />
+            <LanguageToggle />
           </div>
           <ThemeSwitcher />
 
@@ -113,10 +107,7 @@ const Header = ({ currentLanguage, onLanguageChange }: HeaderProps) => {
             <nav className="flex flex-col space-y-4 mt-4 px-2">
               {/* Theme Switcher and Language Toggle for Mobile */}
               <div className="flex justify-between items-center mb-2">
-                <LanguageToggle
-                  currentLanguage={currentLanguage}
-                  onLanguageChange={onLanguageChange}
-                />
+                <LanguageToggle />
                 <ThemeSwitcher />
               </div>
 
