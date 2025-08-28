@@ -1,0 +1,16 @@
+{
+  "nav": {
+    "features": "Features",
+    "pricing": "Pricing",
+    "about": "About",
+    "contact": "Contact"
+  },
+  "cta": {
+  "start": "Start Free Trial",
+  "demo": "Watch Demo",
+  "ready": "Ready to transform your learning?",
+  "join": "Join thousands of students already using MemoSpark to achieve their academic goals.",
+  "continue": "Continue your learning journey",
+  "access": "Access your personalized flashcards and learning materials anytime, anywhere."
+  }
+}
