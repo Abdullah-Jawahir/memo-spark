@@ -534,28 +534,61 @@ const Dashboard = () => {
 
           {/* Loading State */}
           {loading && (
-            <div className="flex flex-col items-center justify-center py-8 sm:py-12">
-              <Loader2 className="h-8 w-8 sm:h-12 sm:w-12 text-blue-600 animate-spin mb-4" />
-              <p className="text-base sm:text-lg text-muted-foreground text-center px-4">Loading your dashboard data...</p>
-              <div className="mt-4 p-3 sm:p-4 bg-card rounded border text-xs text-left w-full max-w-md mx-4">
-                <p className="font-semibold mb-2">Debug Info:</p>
-                <p>Session: {session ? 'Available' : 'Not available'}</p>
-                <p>Token: {session?.access_token ? 'Present' : 'Missing'}</p>
-                <p>API URL: {API_ENDPOINTS.DASHBOARD.MAIN}</p>
-                <p>Cache: {localStorage.getItem(DASHBOARD_DATA_KEY) ? 'Available' : 'Not available'}</p>
-                <div className="mt-2">
-                  <Button
-                    onClick={() => {
-                      // Force exit loading state
-                      setLoading(false);
-                      setError('Loading manually cancelled. Please refresh the page or try again.');
-                    }}
-                    variant="destructive"
-                    size="sm"
-                    className="w-full"
-                  >
-                    Cancel Loading
-                  </Button>
+            <div className="space-y-6 py-8 sm:py-12">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Header skeleton */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="h-10 w-10 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                    <div className="space-y-2">
+                      <div className="h-6 w-64 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                      <div className="h-4 w-32 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <div className="h-9 w-36 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                    <div className="h-9 w-36 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                  </div>
+                </div>
+
+                {/* Stats cards skeleton */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="p-4 sm:p-6 bg-card/50 rounded-lg">
+                      <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded mb-3 animate-pulse" />
+                      <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Main content skeleton */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+                  <div className="lg:col-span-2 space-y-3">
+                    {Array.from({ length: 3 }).map((_, idx) => (
+                      <div key={idx} className="p-4 sm:p-6 bg-card/50 rounded-lg">
+                        <div className="h-5 w-1/3 bg-gray-200 dark:bg-gray-700 rounded mb-3 animate-pulse" />
+                        <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded mb-2 animate-pulse" />
+                        <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="p-4 bg-card/50 rounded-lg">
+                      <div className="h-6 w-1/2 bg-gray-200 dark:bg-gray-700 rounded mb-3 animate-pulse" />
+                      <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded mb-2 animate-pulse" />
+                      <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                    </div>
+
+                    <div className="p-4 bg-card/50 rounded-lg">
+                      <div className="h-6 w-2/3 bg-gray-200 dark:bg-gray-700 rounded mb-3 animate-pulse" />
+                      <div className="space-y-2">
+                        <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                        <div className="h-4 w-5/6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
