@@ -16,6 +16,7 @@ import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
 import { AnimatePresence, motion } from 'framer-motion';
 import StudyTimer from '@/components/study/StudyTimer';
 import StudyStatsPanel from '@/components/study/StudyStatsPanel';
+import { useTranslation } from 'react-i18next';
 import { startStudySession, recordFlashcardReview, getCurrentStudySession, clearCurrentStudySession } from '@/utils/studyTracking';
 import { API_ENDPOINTS, fetchWithAuth } from '@/config/api';
 import { useToast } from '@/hooks/use-toast';
@@ -66,6 +67,7 @@ interface GeneratedContent {
 const Study = () => {
   const { user, session } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [currentCard, setCurrentCard] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -423,8 +425,8 @@ const Study = () => {
         <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
         <div className="max-w-full sm:max-w-4xl mx-auto px-6 py-16 text-center">
           <BookOpen className="h-16 w-16 text-blue-500 mx-auto mb-4 animate-pulse" />
-          <h1 className="text-2xl font-bold text-foreground mb-2">Loading study materials...</h1>
-          <p className="text-muted-foreground">Please wait while we fetch your deck content.</p>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{t('study.loading')}</h1>
+          <p className="text-muted-foreground">{t('study.please_wait')}</p>
         </div>
       </div>
     );
@@ -438,11 +440,11 @@ const Study = () => {
         <div className="max-w-full sm:max-w-4xl mx-auto px-6 py-8">
           <div className="text-center">
             <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-foreground mb-4">No Study Materials Found</h1>
-            <p className="text-muted-foreground mb-6">We couldn't find flashcards, quizzes, or exercises for this deck.</p>
+            <h1 className="text-2xl font-bold text-foreground mb-4">{t('study.no_materials')}</h1>
+            <p className="text-muted-foreground mb-6">{t('study.no_materials_desc')}</p>
             <Link to="/upload">
               <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
-                Upload Document
+                {t('hero.upload')}
               </Button>
             </Link>
           </div>
@@ -457,13 +459,11 @@ const Study = () => {
         <div className="max-w-full sm:max-w-4xl mx-auto px-6 py-8">
           <div className="text-center">
             <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-foreground mb-4">No Flashcards Available</h1>
-            <p className="text-muted-foreground mb-6">
-              No flashcards were generated from your uploaded document. Please try uploading a different document.
-            </p>
+            <h1 className="text-2xl font-bold text-foreground mb-4">{t('study.no_flashcards')}</h1>
+            <p className="text-muted-foreground mb-6">{t('study.no_flashcards_desc')}</p>
             <Link to="/upload">
               <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
-                Upload Document
+                {t('hero.upload')}
               </Button>
             </Link>
           </div>
