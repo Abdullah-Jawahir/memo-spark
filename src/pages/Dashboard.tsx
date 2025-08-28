@@ -481,6 +481,18 @@ const Dashboard = () => {
     <ProtectedRoute requiredRole="student">
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
         <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
+        {/* Logo pinned to left corner like main header */}
+        <div className="absolute left-4 top-4 z-50">
+          <Link to="/" className="flex items-center space-x-2 group">
+            <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg group-hover:scale-105 transition-transform">
+              <BookOpen className="h-6 w-6 text-white" />
+            </div>
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              MemoSpark
+            </span>
+          </Link>
+        </div>
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
           {/* Error State */}
@@ -600,16 +612,18 @@ const Dashboard = () => {
               {/* Header */}
               <div className="flex flex-col mb-6 sm:mb-8">
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 space-y-4 lg:space-y-0">
-                  <div>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
-                      <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                        Welcome back, {dashboardData?.user?.display_name || profile?.full_name || 'Student'}!
-                      </h1>
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 w-fit">
-                        {dashboardData?.user?.user_tag || 'Student'}
-                      </Badge>
+                  <div className="flex items-center space-x-4">
+                    <div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                          Welcome back, {dashboardData?.user?.display_name || profile?.full_name || 'Student'}!
+                        </h1>
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 w-fit">
+                          {dashboardData?.user?.user_tag || 'Student'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm sm:text-base text-muted-foreground">Ready to continue your learning journey?</p>
                     </div>
-                    <p className="text-sm sm:text-base text-muted-foreground">Ready to continue your learning journey?</p>
                   </div>
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
                     <Link to="/upload" className="w-full sm:w-auto">
