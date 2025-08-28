@@ -12,5 +12,50 @@
   "join": "Join thousands of students already using MemoSpark to achieve their academic goals.",
   "continue": "Continue your learning journey",
   "access": "Access your personalized flashcards and learning materials anytime, anywhere."
+  },
+  "hero": {
+    "badge_try": "Try out MemoSpark instantly—no sign-up needed!",
+    "tagline": "Transform any document into personalized flashcards instantly. Support for English, Sinhala, and Tamil with adaptive learning that grows with you.",
+    "try_now": "Try It Now - Free!",
+    "upload": "Upload Document",
+    "create_account": "Create Account",
+    "no_registration": "No registration required",
+    "upload_generate": "Upload & generate instantly",
+    "full_feature_access": "Full feature access",
+    "preview_title": "Interactive Dashboard Preview",
+    "preview_caption": "Beautiful, intuitive interface for effortless learning",
+    "preview_button_try": "Try Demo Now",
+    "preview_button_dashboard": "Go to Dashboard"
+  }
+  ,"footer": {
+    "description": "Empowering learners worldwide with AI-driven flashcards and multilingual support.",
+    "product": "Product",
+    "demo": "Demo",
+    "company": "Company",
+    "careers": "Careers",
+    "support": "Support",
+    "help": "Help Center",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "copy": "© {{year}} MemoSpark. All rights reserved."
+  },
+  "study": {
+    "loading": "Loading study materials...",
+  "no_materials": "No Study Materials Found",
+  "please_wait": "Please wait while we fetch your deck content.",
+  "no_materials_desc": "We couldn't find flashcards, quizzes, or exercises for this deck.",
+  "no_flashcards": "No Flashcards Available",
+  "no_flashcards_desc": "No flashcards were generated from your uploaded document. Please try uploading a different document.",
+    "study": "Study",
+    "your_session": "Your Study Session",
+    "uploaded_content": "Uploaded Content",
+    "study_time": "Study Time",
+    "keep_studying": "Keep studying to earn achievements!",
+    "congrats": "🎉 Congratulations! You've completed all study activities for this session!",
+    "total_study_time": "Total Study Time: {{time}}",
+    "expand_options": "📚 Expand Your Study Options!",
+    "create_account_to_save": "Create an account to save your study statistics and track long-term progress!",
+    "view_stats": "View Study Statistics",
+    "hide_stats": "Hide Study Statistics"
   }
 }
