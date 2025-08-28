@@ -1683,11 +1683,20 @@ const Study = () => {
                 const labels = ['Again', 'Hard', 'Good', 'Easy'];
                 const intervals = ['<1m', '6m', '10m', '4d'];
                 const Icon = icons[idx];
+
+                // explicit classes so Tailwind can pick them up (no dynamic interpolation)
+                const borderLight = ['border-red-200', 'border-orange-200', 'border-blue-200', 'border-green-200'];
+                const borderDark = ['dark:border-red-700', 'dark:border-orange-700', 'dark:border-blue-700', 'dark:border-green-700'];
+                const hoverLight = ['hover:!bg-red-50', 'hover:!bg-orange-50', 'hover:!bg-blue-50', 'hover:!bg-green-50'];
+                const hoverDark = ['dark:hover:!bg-red-800/30', 'dark:hover:!bg-orange-800/30', 'dark:hover:!bg-blue-800/30', 'dark:hover:!bg-green-800/30'];
+
+                const btnClasses = `flex flex-col items-center p-3 sm:p-4 h-auto ${borderLight[idx]} ${borderDark[idx]} ${hoverLight[idx]} ${hoverDark[idx]} transition-colors duration-150 text-xs sm:text-sm`;
+
                 return (
                   <Button
                     key={rating}
                     variant="outline"
-                    className={`flex flex-col items-center p-3 sm:p-4 h-auto border-${['red', 'orange', 'blue', 'green'][idx]}-200 hover:bg-${['red', 'orange', 'blue', 'green'][idx]}-50 text-xs sm:text-sm`}
+                    className={btnClasses}
                     onClick={() => handleNextCard(rating as 'again' | 'hard' | 'good' | 'easy')}
                     disabled={ratingInProgress !== null}
                   >
