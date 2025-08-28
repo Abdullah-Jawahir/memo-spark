@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import i18n from '@/i18n';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -8,8 +9,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 interface LanguageToggleProps {
-  currentLanguage: string;
-  onLanguageChange: (language: string) => void;
+  currentLanguage?: string;
+  onLanguageChange?: (language: string) => void;
 }
 
 const LanguageToggle = ({ currentLanguage, onLanguageChange }: LanguageToggleProps) => {
@@ -19,7 +20,8 @@ const LanguageToggle = ({ currentLanguage, onLanguageChange }: LanguageTogglePro
     { code: 'ta', name: 'தமிழ்', flag: '🇱🇰' }
   ];
 
-  const currentLang = languages.find(lang => lang.code === currentLanguage) || languages[0];
+  const activeLangCode = currentLanguage || i18n.language || 'en';
+  const currentLang = languages.find(lang => lang.code === activeLangCode) || languages[0];
 
   return (
     <div className="relative">
@@ -34,8 +36,8 @@ const LanguageToggle = ({ currentLanguage, onLanguageChange }: LanguageTogglePro
           {languages.map((language) => (
             <DropdownMenuItem
               key={language.code}
-              onClick={() => onLanguageChange(language.code)}
-              className={`cursor-pointer ${currentLanguage === language.code ? 'bg-blue-50' : ''}`}
+              onClick={() => { if (onLanguageChange) onLanguageChange(language.code); i18n.changeLanguage(language.code); }}
+              className={`cursor-pointer ${activeLangCode === language.code ? 'bg-blue-50' : ''}`}
             >
               <span className="mr-2">{language.flag}</span>
               {language.name}
