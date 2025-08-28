@@ -68,17 +68,17 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
-      <Header currentLanguage="en" />
-      
+      <Header />
+
       <div className="max-w-7xl mx-auto px-6 py-16">
         {/* Hero Section */}
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-            We're Here to 
+            We're Here to
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Help You</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Have questions, feedback, or ideas? We'd love to hear from you. 
+            Have questions, feedback, or ideas? We'd love to hear from you.
             Your input helps us build better learning experiences for everyone.
           </p>
         </div>
@@ -121,7 +121,7 @@ const Contact = () => {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="subject">Subject</Label>
                       <Input
@@ -134,7 +134,7 @@ const Contact = () => {
                         className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="message">Message</Label>
                       <Textarea
@@ -148,9 +148,9 @@ const Contact = () => {
                         className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
-                    
-                    <Button 
-                      type="submit" 
+
+                    <Button
+                      type="submit"
                       className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                     >
                       <Send className="h-4 w-4 mr-2" />
@@ -225,7 +225,7 @@ const Contact = () => {
         <div className="text-center mt-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-12 text-white">
           <h2 className="text-3xl font-bold mb-4">Let's Build the Future of Learning Together!</h2>
           <p className="text-xl opacity-90">
-            Your questions, ideas, and feedback matter to us. Every message helps us create 
+            Your questions, ideas, and feedback matter to us. Every message helps us create
             better learning experiences for students around the world.
           </p>
         </div>
