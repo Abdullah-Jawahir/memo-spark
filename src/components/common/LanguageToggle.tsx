@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 
 interface LanguageToggleProps {
@@ -22,7 +22,7 @@ const LanguageToggle = ({ currentLanguage, onLanguageChange }: LanguageTogglePro
   const currentLang = languages.find(lang => lang.code === currentLanguage) || languages[0];
 
   return (
-    <div className="fixed top-20 right-6 z-40">
+    <div className="relative">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="bg-card/80 backdrop-blur-sm border border-border hover:bg-muted">
