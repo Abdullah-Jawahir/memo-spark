@@ -37,7 +37,7 @@ const LanguageToggle = ({ currentLanguage, onLanguageChange }: LanguageTogglePro
             <DropdownMenuItem
               key={language.code}
               onClick={() => { if (onLanguageChange) onLanguageChange(language.code); i18n.changeLanguage(language.code); }}
-              className={`cursor-pointer ${activeLangCode === language.code ? 'bg-blue-50' : ''}`}
+              className={`cursor-pointer ${activeLangCode === language.code ? 'bg-muted text-foreground' : ''}`}
             >
               <span className="mr-2">{language.flag}</span>
               {language.name}
