@@ -464,6 +464,30 @@ const Study = () => {
     };
   }, [isStudying, isOverallComplete]); // Watch all completion states
 
+  // Track current activity time (resets on tab change by separate effect)
+  useEffect(() => {
+    let activityTimer: NodeJS.Timeout | null = null;
+
+    const isFlashcardsActive = tab === 'flashcards' && flashcards.length > 0 && !sessionComplete;
+    const isQuizActive = tab === 'quiz' && quizzes.length > 0 && !quizCompleted;
+    const isExercisesActive = tab === 'exercises' && exercises.length > 0 && !exerciseCompleted;
+
+    const isActivityRunning = isFlashcardsActive || isQuizActive || isExercisesActive;
+
+    if (isActivityRunning) {
+      // Ensure the overall session is considered active while any activity runs
+      if (!isStudying) setIsStudying(true);
+
+      activityTimer = setInterval(() => {
+        setStudyTime(prev => prev + 1);
+      }, 1000);
+    }
+
+    return () => {
+      if (activityTimer) clearInterval(activityTimer);
+    };
+  }, [tab, flashcards.length, quizzes.length, exercises.length, sessionComplete, quizCompleted, exerciseCompleted, isStudying]);
+
   // Stop the overall timer when all activities are complete
   useEffect(() => {
     if (isOverallComplete && isStudying) {
@@ -1332,22 +1356,6 @@ const Study = () => {
                         }} className="w-full sm:w-auto">
                           Retry Quiz
                         </Button>
-                        <Button variant="outline" onClick={() => {
-                          // Show quiz incorrect answers instead of going to flashcards review
-                          setTab('quiz');
-                          setIsQuizReviewMode(true); // Enable quiz review mode
-                          // Filter to show only incorrect answers
-                          const incorrectQuizzes = quizzes.filter((_, idx) => quizAnswers[idx] !== quizzes[idx]?.correct_answer_option);
-                          if (incorrectQuizzes.length > 0) {
-                            // Set the first incorrect quiz as the current one
-                            const firstIncorrectIndex = quizzes.findIndex((_, idx) => quizAnswers[idx] !== quizzes[idx]?.correct_answer_option);
-                            if (firstIncorrectIndex !== -1) {
-                              setQuizStep(firstIncorrectIndex);
-                            }
-                          }
-                        }} className="w-full sm:w-auto">
-                          Review Incorrect Answers
-                        </Button>
                       </div>
                     </div>
                   ) : (
@@ -1563,9 +1571,6 @@ const Study = () => {
                           setExerciseCompleted(false);
                         }}>
                           Retry Exercises
-                        </Button>
-                        <Button variant="outline" onClick={() => setTab('review')}>
-                          Review Difficult Cards
                         </Button>
                       </div>
                     </div>
