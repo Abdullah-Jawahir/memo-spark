@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
   RotateCcw, Heart, X, Check, Volume2, BookOpen, Star, AlertCircle, UserPlus, Edit3,
-  Clock, RefreshCw, CheckSquare, Layers as LayersIcon, Pencil as PencilIcon, CheckCircle
+  Clock, RefreshCw, CheckSquare, Layers as LayersIcon, Pencil as PencilIcon, CheckCircle, FileText
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { startStudySession, recordFlashcardReview, getCurrentStudySession, clearCurrentStudySession } from '@/utils/studyTracking';
 import { API_ENDPOINTS, fetchWithAuth } from '@/config/api';
 import { useToast } from '@/hooks/use-toast';
+import { downloadStudyProgressPDF } from '@/utils/pdfExport';
 
 interface Flashcard {
   id: number;
@@ -861,16 +862,35 @@ const Study = () => {
       sessionStats,
       sessionRatings,
       flashcards,
+      quizzes,
+      exercises,
       bookmarkedCards,
       time: new Date().toISOString(),
     };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'memo-spark-session.json';
-    a.click();
-    URL.revokeObjectURL(url);
+
+    // Generate filename with current date
+    const currentDate = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).replace(/\//g, '-');
+    const filename = `memo-spark-study-report-${currentDate}.pdf`;
+
+    // Show success message
+    const success = downloadStudyProgressPDF(data, filename);
+    if (success) {
+      toast({
+        title: "PDF Generated Successfully!",
+        description: "Your study progress report has been downloaded.",
+        variant: "default",
+      });
+    } else {
+      toast({
+        title: "PDF Generation Failed",
+        description: "There was an error generating your PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Helper to safely display any value as a string
@@ -1941,7 +1961,8 @@ const Study = () => {
             </Link>
           ) : (
             <Button variant="outline" onClick={handleExportProgress}>
-              Export Progress
+              <FileText className="h-4 w-4 mr-2" />
+              Export PDF Report
             </Button>
           )}
         </div>
