@@ -1222,44 +1222,54 @@ const Study = () => {
                   )}
                   {!sessionComplete && (
                     <Card
-                      className="h-auto sm:h-96 cursor-pointer transform-gpu transition-all duration-300 hover:scale-105 mt-2 sm:mt-0 min-h-[300px] sm:min-h-[384px]"
+                      className="h-auto sm:h-96 cursor-pointer transform-gpu transition-shadow duration-300 hover:shadow-xl mt-2 sm:mt-0 min-h-[300px] sm:min-h-[384px]"
                       onClick={handleCardFlip}
                     >
-                      <CardContent className="h-full flex flex-col justify-center items-center p-4 sm:p-8 text-center">
-                        {!isFlipped ? (
-                          <div className="space-y-4 w-full">
-                            <div className="text-sm text-muted-foreground mb-4">Question</div>
-                            <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-foreground leading-relaxed break-words">
-                              {currentCardData.question}
-                            </h2>
-                            <div className="mt-6 sm:mt-8">
-                              <p className="text-sm text-muted-foreground">Click to reveal answer</p>
-                            </div>
+                      <CardContent className="h-full p-0">
+                        <div className="h-full w-full p-4 sm:p-6">
+                          <div className="relative w-full h-[260px] sm:h-[320px] mx-auto [perspective:1200px]">
+                            <motion.div
+                              className="relative w-full h-full [transform-style:preserve-3d]"
+                              animate={{ rotateY: isFlipped ? 180 : 0 }}
+                              transition={{ duration: 0.6, ease: 'easeInOut' }}
+                            >
+                              {/* Front - Question */}
+                              <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/80 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center text-center p-5 sm:p-8 [backface-visibility:hidden]">
+                                <div className="text-sm text-muted-foreground mb-3">Question</div>
+                                <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-foreground leading-relaxed break-words">
+                                  {currentCardData.question}
+                                </h2>
+                                <div className="mt-6 sm:mt-8">
+                                  <p className="text-sm text-muted-foreground">Click to reveal answer</p>
+                                </div>
+                              </div>
+
+                              {/* Back - Answer */}
+                              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-blue-600/10 dark:from-purple-500/20 dark:to-blue-500/20 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center text-center p-5 sm:p-8 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                                <div className="text-sm text-muted-foreground mb-3">Answer</div>
+                                <h2 className="text-lg sm:text-xl lg:text-2xl font-medium text-foreground leading-relaxed break-words">
+                                  {currentCardData.answer}
+                                </h2>
+                                <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+                                  <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); handlePlayAudio(currentCardData.answer); }} className="w-full sm:w-auto">
+                                    <Volume2 className="h-4 w-4 mr-2" />
+                                    <span className="hidden sm:inline">Play Audio</span>
+                                    <span className="sm:hidden">Audio</span>
+                                  </Button>
+                                  <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); handleBookmark(currentCard); }} className="w-full sm:w-auto">
+                                    <Star className={`${bookmarkedCards.includes(currentCard) ? 'text-yellow-400 fill-yellow-400' : ''} h-4 w-4 mr-2`} />
+                                    {isGuestUser ? (
+                                      <span className="hidden sm:inline">Sign up to Bookmark</span>
+                                    ) : (
+                                      <span>{bookmarkedCards.includes(currentCard) ? 'Bookmarked' : 'Bookmark'}</span>
+                                    )}
+                                    {isGuestUser && <span className="sm:hidden">Sign up</span>}
+                                  </Button>
+                                </div>
+                              </div>
+                            </motion.div>
                           </div>
-                        ) : (
-                          <div className="space-y-4 w-full">
-                            <div className="text-sm text-muted-foreground mb-4">Answer</div>
-                            <h2 className="text-lg sm:text-xl lg:text-2xl font-medium text-foreground leading-relaxed break-words">
-                              {currentCardData.answer}
-                            </h2>
-                            <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4">
-                              <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); handlePlayAudio(currentCardData.answer); }} className="w-full sm:w-auto">
-                                <Volume2 className="h-4 w-4 mr-2" />
-                                <span className="hidden sm:inline">Play Audio</span>
-                                <span className="sm:hidden">Audio</span>
-                              </Button>
-                              <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); handleBookmark(currentCard); }} className="w-full sm:w-auto">
-                                <Star className={`h-4 w-4 mr-2 ${bookmarkedCards.includes(currentCard) ? 'text-yellow-400 fill-yellow-400' : ''}`} />
-                                {isGuestUser ? (
-                                  <span className="hidden sm:inline">Sign up to Bookmark</span>
-                                ) : (
-                                  <span>{bookmarkedCards.includes(currentCard) ? 'Bookmarked' : 'Bookmark'}</span>
-                                )}
-                                {isGuestUser && <span className="sm:hidden">Sign up</span>}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
+                        </div>
                       </CardContent>
                     </Card>
                   )}
