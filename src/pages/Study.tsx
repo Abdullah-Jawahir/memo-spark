@@ -95,6 +95,8 @@ const Study = () => {
   const [isLoadingMaterials, setIsLoadingMaterials] = useState(false);
   const [materialsNotFound, setMaterialsNotFound] = useState(false);
   const [reviewedDifficult, setReviewedDifficult] = useState<Set<number>>(new Set());
+  const [isLoadingFromStorage, setIsLoadingFromStorage] = useState(true); // Add this state for localStorage loading
+  const [isQuizReviewMode, setIsQuizReviewMode] = useState(false); // Add this state for quiz review mode
 
   // Study tracking specific state
   const [studyTime, setStudyTime] = useState(0);  // Time spent on current activity (flashcards, quiz, exercises)
@@ -212,7 +214,11 @@ const Study = () => {
 
       setGeneratedContent(parsed);
       setFlashcards(parsed.flashcards || []);
-      setQuizzes(parsed.quizzes || []);
+      const normalizedQuizzes = (parsed.quizzes || []).map((q: any) => ({
+        ...q,
+        correct_answer_option: q.correct_answer_option ?? q.correct_answer ?? q.answer ?? q.correctOption ?? q.correct ?? '',
+      }));
+      setQuizzes(normalizedQuizzes);
       setExercises(parsed.exercises || []);
       // Ensure sessionRatings matches the new flashcards length
       setSessionRatings(Array(parsed.flashcards?.length || 0).fill(null));
@@ -245,6 +251,8 @@ const Study = () => {
     } finally {
       setIsLoadingMaterials(false);
       setIsRefreshing(false);
+      // Ensure the overall loading gate is cleared after network fetch
+      setIsLoadingFromStorage(false);
     }
   };
 
@@ -289,7 +297,14 @@ const Study = () => {
     const deckId = searchParams.get('deckId');
     const deckName = searchParams.get('deck');
     if (deckId || deckName) {
-      fetchMaterials(false);
+      // If no session/token yet, avoid being stuck in loading
+      if (!session?.access_token) {
+        setIsLoadingFromStorage(false);
+        // Optional: mark as not found so the CTA displays if no local data
+        if (!data) setMaterialsNotFound(true);
+      } else {
+        fetchMaterials(false);
+      }
     } else if (data) {
       const parsed: GeneratedContent = JSON.parse(data);
 
@@ -329,7 +344,11 @@ const Study = () => {
 
               setGeneratedContent(enrichedMaterials);
               setFlashcards(enrichedMaterials.flashcards || []);
-              setQuizzes(enrichedMaterials.quizzes || []);
+              const normalizedEnrichedQuizzes = (enrichedMaterials.quizzes || []).map((q: any) => ({
+                ...q,
+                correct_answer_option: q.correct_answer_option ?? q.correct_answer ?? q.answer ?? q.correctOption ?? q.correct ?? '',
+              }));
+              setQuizzes(normalizedEnrichedQuizzes);
               setExercises(enrichedMaterials.exercises || []);
               setSessionRatings(Array(enrichedMaterials.flashcards?.length || 0).fill(null));
 
@@ -340,6 +359,7 @@ const Study = () => {
                   .catch(console.error);
               }
               setLastUpdated(new Date());
+              setIsLoadingFromStorage(false); // Set loading to false after data is loaded
             })
             .catch(error => {
               console.error('Failed to enrich materials, using original data:', error);
@@ -354,6 +374,9 @@ const Study = () => {
         // Guest user or no session, use original materials
         setupOriginalMaterials(parsed);
       }
+    } else {
+      // No data in localStorage, set loading to false
+      setIsLoadingFromStorage(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -391,7 +414,11 @@ const Study = () => {
 
     setGeneratedContent(parsed);
     setFlashcards(parsed.flashcards || []);
-    setQuizzes(parsed.quizzes || []);
+    const normalizedLocalQuizzes = (parsed.quizzes || []).map((q: any) => ({
+      ...q,
+      correct_answer_option: q.correct_answer_option ?? q.correct_answer ?? q.answer ?? q.correctOption ?? q.correct ?? '',
+    }));
+    setQuizzes(normalizedLocalQuizzes);
     setExercises(parsed.exercises || []);
     setSessionRatings(Array(parsed.flashcards?.length || 0).fill(null));
 
@@ -405,6 +432,7 @@ const Study = () => {
       setIsStudying(true);
     }
     setLastUpdated(new Date());
+    setIsLoadingFromStorage(false); // Set loading to false after setup is complete
   };
   const currentCardData = flashcards[currentCard];
   const progress = flashcards.length > 0 ? ((currentCard + 1) / flashcards.length) * 100 : 0;
@@ -469,6 +497,7 @@ const Study = () => {
     setQuizStep(0);
     setQuizAnswers(Array(quizzes.length).fill(null));
     setQuizCompleted(false);
+    setIsQuizReviewMode(false); // Reset quiz review mode
   }, [quizzes, tab]);
 
   // Reset exercise state when exercises change or tab switches
@@ -528,7 +557,7 @@ const Study = () => {
   }, [flashcards, sessionRatings, tab]); // Recalculate when tab changes or ratings update
 
   // Loading state while fetching materials
-  if (isLoadingMaterials) {
+  if (isLoadingMaterials || isLoadingFromStorage) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
         <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
@@ -1299,11 +1328,23 @@ const Study = () => {
                           setQuizStep(0);
                           setQuizAnswers(Array(quizzes.length).fill(null));
                           setQuizCompleted(false);
+                          setIsQuizReviewMode(false); // Reset quiz review mode
                         }} className="w-full sm:w-auto">
                           Retry Quiz
                         </Button>
                         <Button variant="outline" onClick={() => {
-                          setTab('review');
+                          // Show quiz incorrect answers instead of going to flashcards review
+                          setTab('quiz');
+                          setIsQuizReviewMode(true); // Enable quiz review mode
+                          // Filter to show only incorrect answers
+                          const incorrectQuizzes = quizzes.filter((_, idx) => quizAnswers[idx] !== quizzes[idx]?.correct_answer_option);
+                          if (incorrectQuizzes.length > 0) {
+                            // Set the first incorrect quiz as the current one
+                            const firstIncorrectIndex = quizzes.findIndex((_, idx) => quizAnswers[idx] !== quizzes[idx]?.correct_answer_option);
+                            if (firstIncorrectIndex !== -1) {
+                              setQuizStep(firstIncorrectIndex);
+                            }
+                          }
                         }} className="w-full sm:w-auto">
                           Review Incorrect Answers
                         </Button>
@@ -1338,6 +1379,19 @@ const Study = () => {
                               </li>
                             ))}
                           </ul>
+
+                          {/* Show correct answer in review mode */}
+                          {isQuizReviewMode && (
+                            <div className="mb-4 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                              <div className="flex items-center gap-2 mb-2">
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                <span className="font-medium text-green-800 dark:text-green-200">Correct Answer:</span>
+                              </div>
+                              <p className="text-green-700 dark:text-green-300 font-semibold">
+                                {quizzes[quizStep].correct_answer_option}
+                              </p>
+                            </div>
+                          )}
                           <div className="flex flex-col gap-2 sm:flex-row sm:justify-between w-full mt-3">
                             <Button
                               variant="outline"
