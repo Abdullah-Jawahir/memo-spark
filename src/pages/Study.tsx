@@ -109,6 +109,9 @@ const Study = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [ratingInProgress, setRatingInProgress] = useState<'again' | 'hard' | 'good' | 'easy' | null>(null);
 
+  // Track which deck is currently loaded to avoid carrying session stats between decks
+  const [currentDeckIdentifier, setCurrentDeckIdentifier] = useState<string | null>(null);
+
   // Ref used to skip the automatic reset when a tab change is initiated by 'Study Again'
   const skipResetOnTabChange = useRef(false);
 
@@ -177,10 +180,41 @@ const Study = () => {
         quizzes: data.quizzes || [],
         exercises: data.exercises || [],
       };
+      // Build an identifier for this deck (prefer id, fallback to name)
+      const deckIdentifier = idToUse || deckName || null;
+
+      // If the deck changed since last load, reset session-related state
+      if (currentDeckIdentifier !== deckIdentifier) {
+        // Reset session-level state so counts/time don't carry over
+        setCurrentCard(0);
+        setIsFlipped(false);
+        setSessionStats({ correct: 0, difficult: 0, timeSpent: 0 });
+        setSessionComplete(false);
+        setReviewedDifficult(new Set());
+        setStudyTime(0);
+        setOverallStudyTime(0);
+        setCardStudyStartTime(0);
+        setIsStudying(false);
+        setTimerKey(k => k + 1);
+        setOverallTimerKey(k => k + 1);
+        setBookmarkedCards([]);
+        setQuizStep(0);
+        setQuizAnswers([]);
+        setQuizCompleted(false);
+        setExerciseStep(0);
+        setExerciseAnswers([]);
+        setExerciseCompleted(false);
+        // Clear any persisted study session to avoid submitting reviews to the wrong session
+        try { localStorage.removeItem('memo-spark-current-study-session'); } catch (e) { /* ignore */ }
+        setStudySession(null);
+        setCurrentDeckIdentifier(deckIdentifier);
+      }
+
       setGeneratedContent(parsed);
       setFlashcards(parsed.flashcards || []);
       setQuizzes(parsed.quizzes || []);
       setExercises(parsed.exercises || []);
+      // Ensure sessionRatings matches the new flashcards length
       setSessionRatings(Array(parsed.flashcards?.length || 0).fill(null));
 
       if ((!parsed.flashcards || parsed.flashcards.length === 0) &&
@@ -266,6 +300,33 @@ const Study = () => {
         if (deckNameFromStorage) {
           enrichMaterialsWithIds(parsed, deckNameFromStorage)
             .then(enrichedMaterials => {
+              // If the deck changed, reset session state to avoid carrying stats
+              const deckIdentifier = deckNameFromStorage || searchParams.get('deckId') || 'enriched-generated';
+              if (currentDeckIdentifier !== deckIdentifier) {
+                setCurrentCard(0);
+                setIsFlipped(false);
+                setSessionStats({ correct: 0, difficult: 0, timeSpent: 0 });
+                setSessionComplete(false);
+                setReviewedDifficult(new Set());
+                setStudyTime(0);
+                setOverallStudyTime(0);
+                setCardStudyStartTime(0);
+                setIsStudying(false);
+                setTimerKey(k => k + 1);
+                setOverallTimerKey(k => k + 1);
+                setBookmarkedCards([]);
+                setQuizStep(0);
+                setQuizAnswers([]);
+                setQuizCompleted(false);
+                setExerciseStep(0);
+                setExerciseAnswers([]);
+                setExerciseCompleted(false);
+                // Clear persisted study session and in-memory session to avoid stale session_id
+                try { localStorage.removeItem('memo-spark-current-study-session'); } catch (e) { /* ignore */ }
+                setStudySession(null);
+                setCurrentDeckIdentifier(deckIdentifier);
+              }
+
               setGeneratedContent(enrichedMaterials);
               setFlashcards(enrichedMaterials.flashcards || []);
               setQuizzes(enrichedMaterials.quizzes || []);
@@ -299,6 +360,35 @@ const Study = () => {
 
   // Helper function to setup original materials
   const setupOriginalMaterials = (parsed: GeneratedContent) => {
+    // Determine an identifier for these locally stored materials
+    const deckIdentifier = searchParams.get('deckId') || searchParams.get('deck') || localStorage.getItem('currentDeckName') || 'local-generated';
+
+    // If we've switched decks, reset session state so stats/time don't carry over
+    if (currentDeckIdentifier !== deckIdentifier) {
+      setCurrentCard(0);
+      setIsFlipped(false);
+      setSessionStats({ correct: 0, difficult: 0, timeSpent: 0 });
+      setSessionComplete(false);
+      setReviewedDifficult(new Set());
+      setStudyTime(0);
+      setOverallStudyTime(0);
+      setCardStudyStartTime(0);
+      setIsStudying(false);
+      setTimerKey(k => k + 1);
+      setOverallTimerKey(k => k + 1);
+      setBookmarkedCards([]);
+      setQuizStep(0);
+      setQuizAnswers([]);
+      setQuizCompleted(false);
+      setExerciseStep(0);
+      setExerciseAnswers([]);
+      setExerciseCompleted(false);
+      // Clear persisted study session and in-memory session to avoid submitting reviews to a stale session
+      try { localStorage.removeItem('memo-spark-current-study-session'); } catch (e) { /* ignore */ }
+      setStudySession(null);
+      setCurrentDeckIdentifier(deckIdentifier);
+    }
+
     setGeneratedContent(parsed);
     setFlashcards(parsed.flashcards || []);
     setQuizzes(parsed.quizzes || []);
@@ -518,6 +608,37 @@ const Study = () => {
       const studyTimeForCard = studyTime - cardStudyStartTime;
 
       try {
+        // Ensure there's an active study session; start one on-demand if missing
+        const stored = getCurrentStudySession();
+        if (!stored || !stored.session_id) {
+          const idFromQuery = searchParams.get('deckId');
+          const nameFromQuery = searchParams.get('deck');
+          let deckToUse: string | null = idFromQuery || currentDeckIdentifier || nameFromQuery || null;
+
+          // If the identifier looks like a name (non-numeric), try to resolve it to an id
+          if (deckToUse && isNaN(Number(deckToUse))) {
+            try {
+              const listRes = await fetch(API_ENDPOINTS.DECKS.LIST, {
+                headers: { Authorization: `Bearer ${session?.access_token}` },
+              });
+              if (listRes.ok) {
+                const decks = await listRes.json();
+                const match = (decks || []).find((d: any) => d.name === deckToUse);
+                if (match?.id) deckToUse = String(match.id);
+              }
+            } catch (e) {
+              console.error('Failed to resolve deck id for on-demand session start', e);
+            }
+          }
+
+          try {
+            const newSession = await startStudySession(deckToUse || 'default-deck', session);
+            if (newSession) setStudySession(newSession);
+          } catch (e) {
+            console.error('Failed to start study session before recording review:', e);
+          }
+        }
+
         // Record the flashcard review using our utility
         const result = await recordFlashcardReview(
           currentCardData.id || `card-${currentCard}`,
@@ -527,16 +648,14 @@ const Study = () => {
         );
 
         // If we received session stats from the backend, use them to update our UI
-        if (result.success && result.sessionStats) {
-
-          // Update session stats with the values from the backend
+        if (result && result.success && result.sessionStats) {
           setSessionStats({
             correct: result.sessionStats.good_or_easy_count || 0,
             difficult: result.sessionStats.hard_count || 0,
-            timeSpent: studyTime // Keep the existing time
+            timeSpent: studyTime
           });
         } else {
-          // Fall back to the previous behavior if we don't have server stats
+          // Fall back to local updates if server stats aren't available
           if (rating === 'good' || rating === 'easy') {
             setSessionStats(prev => ({ ...prev, correct: prev.correct + 1 }));
           } else if (rating === 'hard') {
