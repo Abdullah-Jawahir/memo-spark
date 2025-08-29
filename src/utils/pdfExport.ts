@@ -358,9 +358,12 @@ export const generateStudyProgressPDF = (data: ExportData) => {
     yPos += 20;
 
     data.exercises.forEach((exercise, index) => {
-      // Estimate exercise height
+      // Estimate exercise height including answer
       const instructionHeight = Math.ceil((exercise.instruction.length / 80)) * 12;
-      const estimatedHeight = Math.max(80, 50 + instructionHeight);
+      const answerTextForHeight = typeof exercise.answer === 'string' ? exercise.answer :
+        Object.entries(exercise.answer).map(([key, value]) => `${key}: ${value}`).join(', ');
+      const answerHeight = Math.ceil((answerTextForHeight.length / 80)) * 12;
+      const estimatedHeight = Math.max(100, 60 + instructionHeight + answerHeight);
 
       checkNewPage(estimatedHeight);
 
@@ -393,6 +396,30 @@ export const generateStudyProgressPDF = (data: ExportData) => {
       doc.setFont('helvetica', 'normal');
       const instructionLines = doc.splitTextToSize(exercise.instruction, contentWidth - 50);
       doc.text(instructionLines, margin + 25, currentY + 12);
+      currentY += instructionLines.length * 6 + 15;
+
+      // Answer with better formatting
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(34, 197, 94); // Green color for answers
+      doc.text('Answer:', margin + 10, currentY);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+
+      // Handle different answer types
+      let answerText = '';
+      if (typeof exercise.answer === 'string') {
+        answerText = exercise.answer;
+      } else if (typeof exercise.answer === 'object') {
+        // For matching exercises or complex answers
+        answerText = Object.entries(exercise.answer)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join(', ');
+      }
+
+      const answerLines = doc.splitTextToSize(answerText, contentWidth - 50);
+      doc.text(answerLines, margin + 25, currentY + 12);
 
       yPos += estimatedHeight + 10;
     });
