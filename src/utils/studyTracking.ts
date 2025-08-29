@@ -31,9 +31,26 @@ export const startStudySession = async (deckId: string, session: Session | null)
       session
     );
 
+    // Backend may return session under different shapes. Accept both { session: {...} } and {...}
+    const sessionObj = data?.session || data;
+    if (!sessionObj || (!sessionObj.session_id && !sessionObj.sessionId && !sessionObj.id)) {
+      console.error('Unexpected start session response shape', data);
+      return null;
+    }
+
+    // Normalize session id fields if necessary
+    const normalizedSession = {
+      session_id: sessionObj.session_id || sessionObj.sessionId || sessionObj.id,
+      deck_id: sessionObj.deck_id || sessionObj.deckId || sessionObj.deck || deckId,
+      start_time: sessionObj.start_time || sessionObj.started_at || new Date().toISOString(),
+      cards_studied: sessionObj.cards_studied || sessionObj.cardsStudied || 0,
+      total_study_time: sessionObj.total_study_time || sessionObj.totalStudyTime || 0,
+      status: sessionObj.status || 'active',
+    } as StudySession;
+
     // Store session info for tracking
-    localStorage.setItem(CURRENT_STUDY_SESSION_KEY, JSON.stringify(data.session));
-    return data.session;
+    localStorage.setItem(CURRENT_STUDY_SESSION_KEY, JSON.stringify(normalizedSession));
+    return normalizedSession;
   } catch (error) {
     console.error('Error starting study session:', error);
     return null;
@@ -81,13 +98,16 @@ export const recordFlashcardReview = async (
     currentSession.total_study_time = (currentSession.total_study_time || 0) + studyTimeSeconds;
     localStorage.setItem(CURRENT_STUDY_SESSION_KEY, JSON.stringify(currentSession));
 
+    // Backend may return session stats under different keys
+    const sessionStats = response.session_stats || response.sessionStats || response.stats || null;
+
     return {
       success: true,
-      sessionStats: response.session_stats
+      sessionStats: sessionStats
     };
   } catch (error) {
     console.error('Error recording flashcard review:', error);
-    return false;
+    return { success: false };
   }
 };
 
