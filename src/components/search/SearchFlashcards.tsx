@@ -16,6 +16,7 @@ import SearchFlashcardsService, {
   SearchDetailsResponse
 } from '@/integrations/searchFlashcardsService';
 import { useToast } from '@/hooks/use-toast';
+import SearchFlashcardStats from './SearchFlashcardStats';
 
 interface SearchFlashcardsProps {
   className?: string;
@@ -216,7 +217,7 @@ const SearchFlashcards: React.FC<SearchFlashcardsProps> = ({ className = '' }) =
 
         // Navigate to study page with the generated flashcards
         if (response.data.result?.flashcards) {
-          navigateToStudyWithFlashcards(response.data.result.flashcards, response.data.topic);
+          navigateToStudyWithFlashcards(response.data.result.flashcards, response.data.topic, response.data.search_id);
         }
 
         setCurrentJobId(null);
@@ -244,7 +245,7 @@ const SearchFlashcards: React.FC<SearchFlashcardsProps> = ({ className = '' }) =
     }
   };
 
-  const navigateToStudyWithFlashcards = (flashcards: any[], topic: string) => {
+  const navigateToStudyWithFlashcards = (flashcards: any[], topic: string, searchId?: number) => {
     // Store flashcards in localStorage for the study page
     const studyData = {
       flashcards: flashcards.map((card, index) => ({
@@ -257,6 +258,7 @@ const SearchFlashcards: React.FC<SearchFlashcardsProps> = ({ className = '' }) =
       })),
       source: 'search_flashcards',
       topic: topic,
+      search_id: searchId, // Include search ID for study session tracking
       timestamp: new Date().toISOString()
     };
 
@@ -272,7 +274,7 @@ const SearchFlashcards: React.FC<SearchFlashcardsProps> = ({ className = '' }) =
     try {
       const response = await searchService.getSearchDetails(searchId, session);
       if (response.success && response.data.flashcards) {
-        navigateToStudyWithFlashcards(response.data.flashcards, response.data.topic);
+        navigateToStudyWithFlashcards(response.data.flashcards, response.data.topic, response.data.id);
       }
     } catch (error) {
       toast({
@@ -571,6 +573,9 @@ const SearchFlashcards: React.FC<SearchFlashcardsProps> = ({ className = '' }) =
           )}
         </CardContent>
       </Card>
+
+      {/* Search Flashcard Stats */}
+      <SearchFlashcardStats />
     </div>
   );
 };

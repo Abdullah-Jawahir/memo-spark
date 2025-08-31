@@ -36,6 +36,13 @@ export const API_ENDPOINTS = {
     SEARCH_DETAILS: (searchId: number) => `${API_BASE_URL}/api/search-flashcards/search/${searchId}`,
     RECENT: `${API_BASE_URL}/api/search-flashcards/recent`,
     STATS: `${API_BASE_URL}/api/search-flashcards/stats`,
+    STUDY: {
+      START_SESSION: `${API_BASE_URL}/api/search-flashcards/study/start-session`,
+      RECORD_INTERACTION: `${API_BASE_URL}/api/search-flashcards/study/record-interaction`,
+      COMPLETE_SESSION: `${API_BASE_URL}/api/search-flashcards/study/complete-session`,
+      SESSION_DETAILS: (sessionId: number) => `${API_BASE_URL}/api/search-flashcards/study/session/${sessionId}`,
+      STUDY_STATS: `${API_BASE_URL}/api/search-flashcards/study/stats`,
+    },
   },
 } as const;
 

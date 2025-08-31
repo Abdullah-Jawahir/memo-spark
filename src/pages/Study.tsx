@@ -17,7 +17,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import StudyTimer from '@/components/study/StudyTimer';
 import StudyStatsPanel from '@/components/study/StudyStatsPanel';
 import { useTranslation } from 'react-i18next';
-import { startStudySession, recordFlashcardReview, getCurrentStudySession, clearCurrentStudySession } from '@/utils/studyTracking';
+import { startStudySession, recordFlashcardReview, getCurrentStudySession, clearCurrentStudySession, startSearchStudySession, recordSearchStudyInteraction, completeSearchStudySession, getCurrentSearchStudySession, clearCurrentSearchStudySession } from '@/utils/studyTracking';
 import { API_ENDPOINTS, fetchWithAuth } from '@/config/api';
 import { useToast } from '@/hooks/use-toast';
 import { downloadStudyProgressPDF } from '@/utils/pdfExport';
@@ -319,9 +319,19 @@ const Study = () => {
           setCurrentDeckIdentifier(`search-${parsedSearchData.topic}`);
 
           // Start study session for search flashcards
-          if (session?.access_token) {
-            startStudySession(parsedSearchData.topic, session)
-              .then(sessionData => { if (sessionData) setStudySession(sessionData); })
+          if (session?.access_token && parsedSearchData.search_id) {
+            startSearchStudySession(parsedSearchData.search_id, parsedSearchData.flashcards.length, session)
+              .then(sessionData => {
+                if (sessionData) {
+                  setStudySession(sessionData);
+                  // Store search session info for later use
+                  localStorage.setItem('memo-spark-search-session-info', JSON.stringify({
+                    search_id: parsedSearchData.search_id,
+                    topic: parsedSearchData.topic,
+                    session_id: sessionData.session_id
+                  }));
+                }
+              })
               .catch(console.error);
           }
 
@@ -714,58 +724,108 @@ const Study = () => {
       const studyTimeForCard = studyTime - cardStudyStartTime;
 
       try {
-        // Ensure there's an active study session; start one on-demand if missing
-        const stored = getCurrentStudySession();
-        if (!stored || !stored.session_id) {
-          const idFromQuery = searchParams.get('deckId');
-          const nameFromQuery = searchParams.get('deck');
-          let deckToUse: string | null = idFromQuery || currentDeckIdentifier || nameFromQuery || null;
+        // Check if this is a search flashcard study session
+        const searchSessionInfo = localStorage.getItem('memo-spark-search-session-info');
+        const isSearchFlashcardSession = searchSessionInfo && currentDeckIdentifier?.startsWith('search-');
 
-          // If the identifier looks like a name (non-numeric), try to resolve it to an id
-          if (deckToUse && isNaN(Number(deckToUse))) {
-            try {
-              const listRes = await fetch(API_ENDPOINTS.DECKS.LIST, {
-                headers: { Authorization: `Bearer ${session?.access_token}` },
+        if (isSearchFlashcardSession) {
+          // Handle search flashcard study session
+          const searchInfo = JSON.parse(searchSessionInfo);
+          const currentSearchSession = getCurrentSearchStudySession();
+
+          if (!currentSearchSession) {
+            console.error('No active search study session found');
+          } else {
+            // Map rating to result format expected by search study sessions
+            let result: 'correct' | 'incorrect' | 'skipped';
+            if (rating === 'again' || rating === 'hard') {
+              result = 'incorrect';
+            } else if (rating === 'good' || rating === 'easy') {
+              result = 'correct';
+            } else {
+              result = 'skipped';
+            }
+
+            // Record the study interaction
+            const interactionResult = await recordSearchStudyInteraction(
+              currentCardData.id,
+              result,
+              studyTimeForCard,
+              1, // attempts
+              session
+            );
+
+            // Update session stats based on the result
+            if (interactionResult.success && interactionResult.sessionStats) {
+              setSessionStats({
+                correct: interactionResult.sessionStats.correct_answers || 0,
+                difficult: interactionResult.sessionStats.incorrect_answers || 0,
+                timeSpent: studyTime
               });
-              if (listRes.ok) {
-                const decks = await listRes.json();
-                const match = (decks || []).find((d: any) => d.name === deckToUse);
-                if (match?.id) deckToUse = String(match.id);
+            } else {
+              // Fall back to local updates
+              if (rating === 'good' || rating === 'easy') {
+                setSessionStats(prev => ({ ...prev, correct: prev.correct + 1 }));
+              } else if (rating === 'hard') {
+                setSessionStats(prev => ({ ...prev, difficult: prev.difficult + 1 }));
               }
+            }
+          }
+        } else {
+          // Handle regular deck study session
+          // Ensure there's an active study session; start one on-demand if missing
+          const stored = getCurrentStudySession();
+          if (!stored || !stored.session_id) {
+            const idFromQuery = searchParams.get('deckId');
+            const nameFromQuery = searchParams.get('deck');
+            let deckToUse: string | null = idFromQuery || currentDeckIdentifier || nameFromQuery || null;
+
+            // If the identifier looks like a name (non-numeric), try to resolve it to an id
+            if (deckToUse && isNaN(Number(deckToUse))) {
+              try {
+                const listRes = await fetch(API_ENDPOINTS.DECKS.LIST, {
+                  headers: { Authorization: `Bearer ${session?.access_token}` },
+                });
+                if (listRes.ok) {
+                  const decks = await listRes.json();
+                  const match = (decks || []).find((d: any) => d.name === deckToUse);
+                  if (match?.id) deckToUse = String(match.id);
+                }
+              } catch (e) {
+                console.error('Failed to resolve deck id for on-demand session start', e);
+              }
+            }
+
+            try {
+              const newSession = await startStudySession(deckToUse || 'default-deck', session);
+              if (newSession) setStudySession(newSession);
             } catch (e) {
-              console.error('Failed to resolve deck id for on-demand session start', e);
+              console.error('Failed to start study session before recording review:', e);
             }
           }
 
-          try {
-            const newSession = await startStudySession(deckToUse || 'default-deck', session);
-            if (newSession) setStudySession(newSession);
-          } catch (e) {
-            console.error('Failed to start study session before recording review:', e);
-          }
-        }
+          // Record the flashcard review using our utility
+          const result = await recordFlashcardReview(
+            currentCardData.id || `card-${currentCard}`,
+            rating,
+            studyTimeForCard,
+            session
+          );
 
-        // Record the flashcard review using our utility
-        const result = await recordFlashcardReview(
-          currentCardData.id || `card-${currentCard}`,
-          rating,
-          studyTimeForCard,
-          session
-        );
-
-        // If we received session stats from the backend, use them to update our UI
-        if (result && result.success && result.sessionStats) {
-          setSessionStats({
-            correct: result.sessionStats.good_or_easy_count || 0,
-            difficult: result.sessionStats.hard_count || 0,
-            timeSpent: studyTime
-          });
-        } else {
-          // Fall back to local updates if server stats aren't available
-          if (rating === 'good' || rating === 'easy') {
-            setSessionStats(prev => ({ ...prev, correct: prev.correct + 1 }));
-          } else if (rating === 'hard') {
-            setSessionStats(prev => ({ ...prev, difficult: prev.difficult + 1 }));
+          // If we received session stats from the backend, use them to update our UI
+          if (result && result.success && result.sessionStats) {
+            setSessionStats({
+              correct: result.sessionStats.good_or_easy_count || 0,
+              difficult: result.sessionStats.hard_count || 0,
+              timeSpent: studyTime
+            });
+          } else {
+            // Fall back to local updates if server stats aren't available
+            if (rating === 'good' || rating === 'easy') {
+              setSessionStats(prev => ({ ...prev, correct: prev.correct + 1 }));
+            } else if (rating === 'hard') {
+              setSessionStats(prev => ({ ...prev, difficult: prev.difficult + 1 }));
+            }
           }
         }
       } catch (error) {
@@ -788,7 +848,25 @@ const Study = () => {
       // Flashcards are complete, but don't stop the overall timer
       // Only mark flashcard activity as complete
       // The overall timer continues until all activities are done or user leaves
+
+      // Complete search study session if this is a search flashcard session
+      const searchSessionInfo = localStorage.getItem('memo-spark-search-session-info');
+      const isSearchFlashcardSession = searchSessionInfo && currentDeckIdentifier?.startsWith('search-');
+
+      if (isSearchFlashcardSession && session?.access_token) {
+        completeSearchStudySession(session)
+          .then(result => {
+            if (result.success) {
+              console.log('Search study session completed:', result.finalStats);
+              // Clear the search session info
+              localStorage.removeItem('memo-spark-search-session-info');
+            }
+          })
+          .catch(console.error);
+      }
+
       setSessionComplete(true);
+      setRatingInProgress(null);
       // Don't stop isStudying here - let overall session logic handle that
     }
 

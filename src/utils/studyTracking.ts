@@ -132,3 +132,189 @@ export const getCurrentStudySession = (): StudySession | null => {
 export const clearCurrentStudySession = (): void => {
   localStorage.removeItem(CURRENT_STUDY_SESSION_KEY);
 };
+
+// Search Flashcard Study Session Functions
+const CURRENT_SEARCH_STUDY_SESSION_KEY = 'memo-spark-current-search-study-session';
+
+export interface SearchStudySession {
+  session_id: number;
+  search_id: number;
+  topic: string;
+  total_flashcards: number;
+  started_at: string;
+}
+
+/**
+ * Start a new study session for search flashcards
+ */
+export const startSearchStudySession = async (
+  searchId: number,
+  totalFlashcards: number,
+  session: Session | null
+): Promise<SearchStudySession | null> => {
+  if (!session?.access_token) {
+    console.error('No access token available');
+    return null;
+  }
+
+  try {
+    const response = await fetchWithAuth(
+      `${API_ENDPOINTS.SEARCH_FLASHCARDS.STUDY.START_SESSION}`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          search_id: searchId,
+          total_flashcards: totalFlashcards
+        }),
+      },
+      session
+    );
+
+    if (!response.success || !response.data) {
+      console.error('Failed to start search study session:', response);
+      return null;
+    }
+
+    const sessionData = response.data;
+    const normalizedSession: SearchStudySession = {
+      session_id: sessionData.session_id,
+      search_id: sessionData.search_id,
+      topic: sessionData.topic,
+      total_flashcards: sessionData.total_flashcards,
+      started_at: sessionData.started_at
+    };
+
+    // Store session info for tracking
+    localStorage.setItem(CURRENT_SEARCH_STUDY_SESSION_KEY, JSON.stringify(normalizedSession));
+    return normalizedSession;
+  } catch (error) {
+    console.error('Error starting search study session:', error);
+    return null;
+  }
+};
+
+/**
+ * Record a search flashcard study interaction
+ */
+export const recordSearchStudyInteraction = async (
+  flashcardId: number,
+  result: 'correct' | 'incorrect' | 'skipped',
+  timeSpentSeconds: number,
+  attempts: number = 1,
+  session: Session | null
+): Promise<{ success: boolean; sessionStats?: any }> => {
+  if (!session?.access_token) {
+    console.error('No access token available');
+    return { success: false };
+  }
+
+  try {
+    const currentSession = JSON.parse(localStorage.getItem(CURRENT_SEARCH_STUDY_SESSION_KEY) || '{}');
+
+    if (!currentSession.session_id) {
+      console.error('No active search study session found');
+      return { success: false };
+    }
+
+    const response = await fetchWithAuth(
+      API_ENDPOINTS.SEARCH_FLASHCARDS.STUDY.RECORD_INTERACTION,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          study_session_id: currentSession.session_id,
+          flashcard_id: flashcardId,
+          result: result,
+          time_spent: timeSpentSeconds,
+          attempts: attempts
+        }),
+      },
+      session
+    );
+
+    if (!response.success) {
+      console.error('Failed to record search study interaction:', response);
+      return { success: false };
+    }
+
+    // Update session in local storage
+    localStorage.setItem(CURRENT_SEARCH_STUDY_SESSION_KEY, JSON.stringify(currentSession));
+
+    return {
+      success: true,
+      sessionStats: response.data.session_stats
+    };
+  } catch (error) {
+    console.error('Error recording search study interaction:', error);
+    return { success: false };
+  }
+};
+
+/**
+ * Complete a search flashcard study session
+ */
+export const completeSearchStudySession = async (
+  session: Session | null
+): Promise<{ success: boolean; finalStats?: any }> => {
+  if (!session?.access_token) {
+    console.error('No access token available');
+    return { success: false };
+  }
+
+  try {
+    const currentSession = JSON.parse(localStorage.getItem(CURRENT_SEARCH_STUDY_SESSION_KEY) || '{}');
+
+    if (!currentSession.session_id) {
+      console.error('No active search study session found');
+      return { success: false };
+    }
+
+    const response = await fetchWithAuth(
+      API_ENDPOINTS.SEARCH_FLASHCARDS.STUDY.COMPLETE_SESSION,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          study_session_id: currentSession.session_id
+        }),
+      },
+      session
+    );
+
+    if (!response.success) {
+      console.error('Failed to complete search study session:', response);
+      return { success: false };
+    }
+
+    // Clear the session from local storage
+    localStorage.removeItem(CURRENT_SEARCH_STUDY_SESSION_KEY);
+
+    return {
+      success: true,
+      finalStats: response.data.final_stats
+    };
+  } catch (error) {
+    console.error('Error completing search study session:', error);
+    return { success: false };
+  }
+};
+
+/**
+ * Get the current active search study session if any
+ */
+export const getCurrentSearchStudySession = (): SearchStudySession | null => {
+  try {
+    const sessionData = localStorage.getItem(CURRENT_SEARCH_STUDY_SESSION_KEY);
+    if (!sessionData) return null;
+
+    return JSON.parse(sessionData);
+  } catch (error) {
+    console.error('Error getting current search study session:', error);
+    return null;
+  }
+};
+
+/**
+ * Clear the current search study session
+ */
+export const clearCurrentSearchStudySession = (): void => {
+  localStorage.removeItem(CURRENT_SEARCH_STUDY_SESSION_KEY);
+};

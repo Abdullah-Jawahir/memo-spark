@@ -29,6 +29,7 @@ export interface JobStatusResponse {
     difficulty: string;
     count: number;
     user_id: string;
+    search_id?: number; // Add search_id field
     result?: {
       topic: string;
       description: string;
@@ -143,6 +144,75 @@ export interface SearchStatsResponse {
   };
 }
 
+export interface StudySessionRequest {
+  search_id: number;
+  total_flashcards: number;
+}
+
+export interface StudySessionResponse {
+  success: boolean;
+  message: string;
+  data: {
+    session_id: number;
+    search_id: number;
+    topic: string;
+    total_flashcards: number;
+    started_at: string;
+  };
+}
+
+export interface StudyInteractionRequest {
+  study_session_id: number;
+  flashcard_id: number;
+  result: 'correct' | 'incorrect' | 'skipped';
+  time_spent: number;
+  attempts?: number;
+}
+
+export interface StudyInteractionResponse {
+  success: boolean;
+  message: string;
+  data: {
+    record_id: number;
+    result: string;
+    time_spent: number;
+    attempts: number;
+    answered_at: string;
+    session_complete: boolean;
+    session_stats: {
+      studied_flashcards: number;
+      total_flashcards: number;
+      correct_answers: number;
+      incorrect_answers: number;
+      completion_percentage: number;
+      accuracy_percentage: number;
+    };
+  };
+}
+
+export interface StudyStatsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    total_sessions: number;
+    completed_sessions: number;
+    recent_sessions: number;
+    total_flashcards_studied: number;
+    overall_accuracy: number;
+    total_correct_answers: number;
+    total_incorrect_answers: number;
+    total_study_time_seconds: number;
+    total_study_time_formatted: string;
+    popular_topics: Array<{
+      topic: string;
+      sessions_count: number;
+      total_flashcards: number;
+      average_accuracy: number;
+    }>;
+    period_days: number;
+  };
+}
+
 export class SearchFlashcardsService {
   private baseURL: string;
 
@@ -215,6 +285,53 @@ export class SearchFlashcardsService {
   ): Promise<SearchStatsResponse> {
     const queryString = new URLSearchParams(params as Record<string, string>).toString();
     const url = `${API_ENDPOINTS.SEARCH_FLASHCARDS.STATS}?${queryString}`;
+    return fetchWithAuth(url, {}, session);
+  }
+
+  // Study Session Methods
+  async startStudySession(
+    request: StudySessionRequest,
+    session: { access_token: string } | null
+  ): Promise<StudySessionResponse> {
+    return fetchWithAuth(API_ENDPOINTS.SEARCH_FLASHCARDS.STUDY.START_SESSION, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }, session);
+  }
+
+  async recordStudyInteraction(
+    request: StudyInteractionRequest,
+    session: { access_token: string } | null
+  ): Promise<StudyInteractionResponse> {
+    return fetchWithAuth(API_ENDPOINTS.SEARCH_FLASHCARDS.STUDY.RECORD_INTERACTION, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }, session);
+  }
+
+  async completeStudySession(
+    studySessionId: number,
+    session: { access_token: string } | null
+  ): Promise<{ success: boolean; message: string; data: any }> {
+    return fetchWithAuth(API_ENDPOINTS.SEARCH_FLASHCARDS.STUDY.COMPLETE_SESSION, {
+      method: 'POST',
+      body: JSON.stringify({ study_session_id: studySessionId }),
+    }, session);
+  }
+
+  async getStudySessionDetails(
+    sessionId: number,
+    session: { access_token: string } | null
+  ): Promise<{ success: boolean; message: string; data: any }> {
+    return fetchWithAuth(API_ENDPOINTS.SEARCH_FLASHCARDS.STUDY.SESSION_DETAILS(sessionId), {}, session);
+  }
+
+  async getStudyStats(
+    params: { days?: number } = {},
+    session: { access_token: string } | null
+  ): Promise<StudyStatsResponse> {
+    const queryString = new URLSearchParams(params as Record<string, string>).toString();
+    const url = `${API_ENDPOINTS.SEARCH_FLASHCARDS.STUDY.STUDY_STATS}?${queryString}`;
     return fetchWithAuth(url, {}, session);
   }
 }
