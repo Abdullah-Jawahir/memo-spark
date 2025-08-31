@@ -13,6 +13,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
 import { API_ENDPOINTS, API_BASE_URL } from '@/config/api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import SearchFlashcards from '@/components/search/SearchFlashcards';
 
 // Type definitions based on the API response
 interface UserInfo {
@@ -359,7 +360,7 @@ const Dashboard = () => {
     // Pre-fill with current profile data
     setProfileData({
       name: profile?.full_name || dashboardData?.user?.name || '',
-      email: profile?.email || dashboardData?.user?.email || ''
+      email: dashboardData?.user?.email || ''
     });
 
     // Reset password fields
@@ -858,6 +859,11 @@ const Dashboard = () => {
                     </CardContent>
                   </Card>
                 </div>
+              </div>
+
+              {/* Search Flashcards Section */}
+              <div className="mt-8">
+                <SearchFlashcards />
               </div>
             </>
           )}

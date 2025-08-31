@@ -27,6 +27,16 @@ export const API_ENDPOINTS = {
     LIST: `${API_BASE_URL}/api/decks`,
     GENERATE_MATERIALS: (deckId: string | number) => `${API_BASE_URL}/api/decks/${deckId}/generate-materials`,
   },
+  SEARCH_FLASHCARDS: {
+    GENERATE: `${API_BASE_URL}/api/search-flashcards/generate`,
+    JOB_STATUS: (jobId: string) => `${API_BASE_URL}/api/search-flashcards/job/${jobId}/status`,
+    TOPICS: `${API_BASE_URL}/api/search-flashcards/topics`,
+    HEALTH: `${API_BASE_URL}/api/search-flashcards/health`,
+    HISTORY: `${API_BASE_URL}/api/search-flashcards/history`,
+    SEARCH_DETAILS: (searchId: number) => `${API_BASE_URL}/api/search-flashcards/search/${searchId}`,
+    RECENT: `${API_BASE_URL}/api/search-flashcards/recent`,
+    STATS: `${API_BASE_URL}/api/search-flashcards/stats`,
+  },
 } as const;
 
 // Helper function for authenticated API calls using fetch

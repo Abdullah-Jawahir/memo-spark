@@ -295,8 +295,52 @@ const Study = () => {
   useEffect(() => {
     // Initial load only
     const data = localStorage.getItem('generatedContent');
+    const searchFlashcardsData = localStorage.getItem('memo-spark-study-flashcards');
     const deckId = searchParams.get('deckId');
     const deckName = searchParams.get('deck');
+    const source = searchParams.get('source');
+
+    // Check for search flashcards first
+    if (source === 'search_flashcards' && searchFlashcardsData) {
+      try {
+        const parsedSearchData = JSON.parse(searchFlashcardsData);
+        if (parsedSearchData.flashcards && parsedSearchData.flashcards.length > 0) {
+          // Set up search flashcards
+          setGeneratedContent({
+            flashcards: parsedSearchData.flashcards,
+            quizzes: [],
+            exercises: []
+          });
+          setFlashcards(parsedSearchData.flashcards);
+          setQuizzes([]);
+          setExercises([]);
+          setSessionRatings(Array(parsedSearchData.flashcards.length).fill(null));
+          setIsStudying(true);
+          setCurrentDeckIdentifier(`search-${parsedSearchData.topic}`);
+
+          // Start study session for search flashcards
+          if (session?.access_token) {
+            startStudySession(parsedSearchData.topic, session)
+              .then(sessionData => { if (sessionData) setStudySession(sessionData); })
+              .catch(console.error);
+          }
+
+          setIsLoadingFromStorage(false);
+          setLastUpdated(new Date());
+
+          // Clean up search flashcards data after loading
+          setTimeout(() => {
+            localStorage.removeItem('memo-spark-study-flashcards');
+          }, 1000);
+
+          return; // Exit early since we loaded search flashcards
+        }
+      } catch (error) {
+        console.error('Failed to parse search flashcards data:', error);
+        localStorage.removeItem('memo-spark-study-flashcards');
+      }
+    }
+
     if (deckId || deckName) {
       // If no session/token yet, avoid being stuck in loading
       if (!session?.access_token) {
@@ -380,6 +424,14 @@ const Study = () => {
       setIsLoadingFromStorage(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Cleanup effect to remove search flashcards data when unmounting
+  useEffect(() => {
+    return () => {
+      // Clean up search flashcards data when component unmounts
+      localStorage.removeItem('memo-spark-study-flashcards');
+    };
   }, []);
 
   // Helper function to setup original materials
@@ -1067,11 +1119,21 @@ const Study = () => {
                 <BookOpen className="h-6 w-6 sm:h-7 sm:w-7 text-blue-600" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-center sm:text-left">
-                {user ? 'Your Study Session' : 'Uploaded Content'}
+                {currentDeckIdentifier?.startsWith('search-')
+                  ? `Studying: ${currentDeckIdentifier.replace('search-', '')}`
+                  : user
+                    ? 'Your Study Session'
+                    : 'Uploaded Content'
+                }
               </h1>
               {isGuestUser && (
                 <Badge variant="outline" className="text-orange-600 border-orange-300 mt-2 sm:mt-0 sm:ml-2">
                   Guest Mode
+                </Badge>
+              )}
+              {currentDeckIdentifier?.startsWith('search-') && (
+                <Badge variant="secondary" className="text-blue-600 border-blue-300 mt-2 sm:mt-0 sm:ml-2">
+                  AI Generated
                 </Badge>
               )}
             </div>
