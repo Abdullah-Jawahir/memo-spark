@@ -215,9 +215,30 @@ const SearchFlashcards: React.FC<SearchFlashcardsProps> = ({ className = '' }) =
           description: "Your flashcards are ready to study.",
         });
 
-        // Navigate to study page with the generated flashcards
-        if (response.data.result?.flashcards) {
-          navigateToStudyWithFlashcards(response.data.result.flashcards, response.data.topic, response.data.search_id);
+        // Fetch the search details to get the real database IDs
+        if (response.data.search_id) {
+          try {
+            const searchDetailsResponse = await searchService.getSearchDetails(response.data.search_id, session);
+            if (searchDetailsResponse.success && searchDetailsResponse.data.flashcards) {
+              navigateToStudyWithFlashcards(searchDetailsResponse.data.flashcards, response.data.topic, response.data.search_id);
+            } else {
+              // Fallback to using generated content if search details fetch fails
+              if (response.data.result?.flashcards) {
+                navigateToStudyWithFlashcards(response.data.result.flashcards, response.data.topic, response.data.search_id);
+              }
+            }
+          } catch (error) {
+            console.error('Failed to fetch search details, using generated content:', error);
+            // Fallback to using generated content
+            if (response.data.result?.flashcards) {
+              navigateToStudyWithFlashcards(response.data.result.flashcards, response.data.topic, response.data.search_id);
+            }
+          }
+        } else {
+          // Fallback to using generated content if no search_id
+          if (response.data.result?.flashcards) {
+            navigateToStudyWithFlashcards(response.data.result.flashcards, response.data.topic, response.data.search_id);
+          }
         }
 
         setCurrentJobId(null);
@@ -249,12 +270,12 @@ const SearchFlashcards: React.FC<SearchFlashcardsProps> = ({ className = '' }) =
     // Store flashcards in localStorage for the study page
     const studyData = {
       flashcards: flashcards.map((card, index) => ({
-        id: index + 1,
+        id: card.id || (index + 1), // Use real database ID if available, fallback to index
         question: card.question,
         answer: card.answer,
         difficulty: card.difficulty,
         subject: topic,
-        type: 'Q&A'
+        type: card.type || 'Q&A'
       })),
       source: 'search_flashcards',
       topic: topic,

@@ -211,25 +211,34 @@ export const recordSearchStudyInteraction = async (
   try {
     const currentSession = JSON.parse(localStorage.getItem(CURRENT_SEARCH_STUDY_SESSION_KEY) || '{}');
 
+    console.log('Current search study session:', currentSession);
+    console.log('Recording interaction for flashcard ID:', flashcardId);
+
     if (!currentSession.session_id) {
       console.error('No active search study session found');
       return { success: false };
     }
 
+    const requestBody = {
+      study_session_id: currentSession.session_id,
+      flashcard_id: flashcardId,
+      result: result,
+      time_spent: timeSpentSeconds,
+      attempts: attempts
+    };
+
+    console.log('Sending request body:', requestBody);
+
     const response = await fetchWithAuth(
       API_ENDPOINTS.SEARCH_FLASHCARDS.STUDY.RECORD_INTERACTION,
       {
         method: 'POST',
-        body: JSON.stringify({
-          study_session_id: currentSession.session_id,
-          flashcard_id: flashcardId,
-          result: result,
-          time_spent: timeSpentSeconds,
-          attempts: attempts
-        }),
+        body: JSON.stringify(requestBody),
       },
       session
     );
+
+    console.log('Response from record interaction:', response);
 
     if (!response.success) {
       console.error('Failed to record search study interaction:', response);
@@ -263,21 +272,29 @@ export const completeSearchStudySession = async (
   try {
     const currentSession = JSON.parse(localStorage.getItem(CURRENT_SEARCH_STUDY_SESSION_KEY) || '{}');
 
+    console.log('Completing search study session:', currentSession);
+
     if (!currentSession.session_id) {
       console.error('No active search study session found');
       return { success: false };
     }
 
+    const requestBody = {
+      study_session_id: currentSession.session_id
+    };
+
+    console.log('Sending complete session request:', requestBody);
+
     const response = await fetchWithAuth(
       API_ENDPOINTS.SEARCH_FLASHCARDS.STUDY.COMPLETE_SESSION,
       {
         method: 'POST',
-        body: JSON.stringify({
-          study_session_id: currentSession.session_id
-        }),
+        body: JSON.stringify(requestBody),
       },
       session
     );
+
+    console.log('Response from complete session:', response);
 
     if (!response.success) {
       console.error('Failed to complete search study session:', response);

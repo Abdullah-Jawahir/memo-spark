@@ -330,6 +330,14 @@ const Study = () => {
                     topic: parsedSearchData.topic,
                     session_id: sessionData.session_id
                   }));
+                  // Also store in the utility function's expected key
+                  localStorage.setItem('memo-spark-current-search-study-session', JSON.stringify({
+                    session_id: sessionData.session_id,
+                    search_id: parsedSearchData.search_id,
+                    topic: parsedSearchData.topic,
+                    total_flashcards: parsedSearchData.flashcards.length,
+                    started_at: new Date().toISOString()
+                  }));
                 }
               })
               .catch(console.error);
@@ -733,6 +741,10 @@ const Study = () => {
           const searchInfo = JSON.parse(searchSessionInfo);
           const currentSearchSession = getCurrentSearchStudySession();
 
+          console.log('Search flashcard session info:', searchInfo);
+          console.log('Current search session:', currentSearchSession);
+          console.log('Current card data:', currentCardData);
+
           if (!currentSearchSession) {
             console.error('No active search study session found');
           } else {
@@ -745,6 +757,13 @@ const Study = () => {
             } else {
               result = 'skipped';
             }
+
+            console.log('Recording interaction with:', {
+              flashcardId: currentCardData.id,
+              result: result,
+              timeSpent: studyTimeForCard,
+              rating: rating
+            });
 
             // Record the study interaction
             const interactionResult = await recordSearchStudyInteraction(
@@ -860,6 +879,8 @@ const Study = () => {
               console.log('Search study session completed:', result.finalStats);
               // Clear the search session info
               localStorage.removeItem('memo-spark-search-session-info');
+              // Also clear the utility function's localStorage key
+              localStorage.removeItem('memo-spark-current-search-study-session');
             }
           })
           .catch(console.error);
