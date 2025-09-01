@@ -135,11 +135,11 @@ const SearchFlashcardStats: React.FC<SearchFlashcardStatsProps> = ({ className =
                 </div>
 
                 {/* Overall Accuracy */}
-                <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-2 border-purple-200 dark:border-purple-800 rounded-xl hover:shadow-lg transition-all duration-200">
+                <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-cyan-100 dark:from-blue-900/20 dark:to-cyan-800/20 border-2 border-blue-200 dark:border-cyan-800 rounded-xl hover:shadow-lg transition-all duration-200">
                   <div className="flex items-center justify-center mb-2">
-                    <Award className="h-8 w-8 text-purple-600" />
+                    <Award className="h-8 w-8 text-blue-600" />
                   </div>
-                  <div className="text-2xl font-bold text-purple-600">{stats.overall_accuracy}%</div>
+                  <div className="text-2xl font-bold text-blue-600">{stats.overall_accuracy}%</div>
                   <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Overall Accuracy</div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {stats.total_correct_answers} correct
@@ -198,7 +198,7 @@ const SearchFlashcardStats: React.FC<SearchFlashcardStatsProps> = ({ className =
               )}
 
               {/* Recent Activity Summary */}
-              <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl">
+              <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-2 border-blue-200 dark:border-cyan-800 rounded-xl">
                 <div className="flex items-center gap-2 mb-3">
                   <Calendar className="h-5 w-5 text-blue-600" />
                   <h3 className="text-lg font-semibold text-foreground">Activity Summary</h3>
