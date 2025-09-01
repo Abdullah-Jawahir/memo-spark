@@ -125,7 +125,7 @@ const Search = () => {
 
   return (
     <ProtectedRoute requiredRole="student">
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
         {/* Fixed Header */}
         <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -144,10 +144,10 @@ const Search = () => {
 
               {/* Logo */}
               <Link to="/" className="flex items-center space-x-3 group">
-                <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl group-hover:scale-105 transition-transform shadow-lg">
+                <div className="p-2 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl group-hover:scale-105 transition-transform shadow-lg">
                   <BookOpen className="h-6 w-6 text-white" />
                 </div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                   MemoSpark
                 </span>
               </Link>
@@ -182,21 +182,21 @@ const Search = () => {
             <TabsList className="grid w-full grid-cols-3 mb-8 bg-card/50 backdrop-blur-sm h-12">
               <TabsTrigger
                 value="search"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white font-medium"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-600 data-[state=active]:text-white font-medium"
               >
                 <SearchIcon className="h-4 w-4 mr-2" />
                 Advanced Search
               </TabsTrigger>
               <TabsTrigger
                 value="recent"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white font-medium"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-600 data-[state=active]:text-white font-medium"
               >
                 <Clock className="h-4 w-4 mr-2" />
                 Recent Searches
               </TabsTrigger>
               <TabsTrigger
                 value="stats"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white font-medium"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-600 data-[state=active]:text-white font-medium"
               >
                 <TrendingUp className="h-4 w-4 mr-2" />
                 Study Statistics
@@ -220,7 +220,7 @@ const Search = () => {
               <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50">
                 <CardHeader>
                   <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
-                    <Target className="h-5 w-5 text-purple-600" />
+                    <Target className="h-5 w-5 text-blue-600" />
                     Suggested Topics
                   </CardTitle>
                 </CardHeader>
@@ -334,7 +334,7 @@ const Search = () => {
                               </p>
                             )}
                             <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="outline" className="text-xs bg-purple-50 dark:bg-purple-900/20 border-purple-300 dark:border-purple-700">
+                              <Badge variant="outline" className="text-xs bg-cyan-50 dark:bg-cyan-900/20 border-cyan-300 dark:border-cyan-700">
                                 {search.difficulty}
                               </Badge>
                               <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700">
