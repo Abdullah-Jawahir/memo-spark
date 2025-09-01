@@ -268,37 +268,39 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div
-                  className="space-y-4 max-h-52 overflow-y-auto pr-2"
+                  className="space-y-4 max-h-52 overflow-y-auto pr-2 custom-scrollbar"
                   style={{
                     scrollbarWidth: 'thin',
                     scrollbarColor: '#cbd5e1 #f1f5f9'
                   }}
                 >
-                  <style jsx>{`
-                    div::-webkit-scrollbar {
-                      width: 6px;
-                    }
-                    div::-webkit-scrollbar-track {
-                      background: #f1f5f9;
-                      border-radius: 3px;
-                    }
-                    div::-webkit-scrollbar-thumb {
-                      background: #cbd5e1;
-                      border-radius: 3px;
-                    }
-                    div::-webkit-scrollbar-thumb:hover {
-                      background: #94a3b8;
-                    }
-                    .dark div::-webkit-scrollbar-track {
-                      background: #1e293b;
-                    }
-                    .dark div::-webkit-scrollbar-thumb {
-                      background: #475569;
-                    }
-                    .dark div::-webkit-scrollbar-thumb:hover {
-                      background: #64748b;
-                    }
-                  `}</style>
+                  <style dangerouslySetInnerHTML={{
+                    __html: `
+                      .custom-scrollbar::-webkit-scrollbar {
+                        width: 6px;
+                      }
+                      .custom-scrollbar::-webkit-scrollbar-track {
+                        background: #f1f5f9;
+                        border-radius: 3px;
+                      }
+                      .custom-scrollbar::-webkit-scrollbar-thumb {
+                        background: #cbd5e1;
+                        border-radius: 3px;
+                      }
+                      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                        background: #94a3b8;
+                      }
+                      .dark .custom-scrollbar::-webkit-scrollbar-track {
+                        background: #1e293b;
+                      }
+                      .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+                        background: #475569;
+                      }
+                      .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                        background: #64748b;
+                      }
+                    `
+                  }} />
                   {(loading || authLoading) ? (
                     // Shimmer loading for activity items
                     Array.from({ length: 5 }).map((_, index) => (
