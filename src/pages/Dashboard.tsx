@@ -13,6 +13,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
 import { API_ENDPOINTS, API_BASE_URL } from '@/config/api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { SearchFlashcardsService } from '@/integrations/searchFlashcardsService';
+import { useToast } from '@/hooks/use-toast';
 
 // Type definitions based on the API response
 interface UserInfo {
@@ -100,6 +102,17 @@ const Dashboard = () => {
 
   // Search form state
   const [searchTopic, setSearchTopic] = useState('');
+  const [difficulty, setDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate');
+
+  // Flashcard generation state
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+  const [jobStatus, setJobStatus] = useState<string>('');
+  const [searchId, setSearchId] = useState<number | null>(null);
+
+  // Services
+  const searchService = new SearchFlashcardsService();
+  const { toast } = useToast();
 
   // Function to fetch dashboard data - only called explicitly
   const fetchDashboardData = async (forceRefresh = false) => {
@@ -267,6 +280,146 @@ const Dashboard = () => {
     // Always fetch fresh
     fetchDashboardData(true);
   }, [session?.access_token]);
+
+  // Job polling effect for flashcard generation
+  useEffect(() => {
+    if (!currentJobId || !session?.access_token) return;
+
+    const pollJob = async () => {
+      try {
+        const response = await searchService.checkJobStatus(currentJobId, session);
+
+        if (response.success) {
+          setJobStatus(response.data.status);
+
+          // Store search_id when available
+          if (response.data.search_id) {
+            setSearchId(response.data.search_id);
+          }
+
+          if (response.data.status === 'completed') {
+            setIsGenerating(false);
+            setCurrentJobId(null);
+
+            toast({
+              title: "Flashcards Generated!",
+              description: "Your flashcards are ready. Redirecting to study page...",
+            });
+
+            // Navigate to study page with search_id
+            setTimeout(() => {
+              if (searchId || response.data.search_id) {
+                const id = searchId || response.data.search_id;
+                navigate(`/study?source=search_flashcards&search_id=${id}`);
+              } else {
+                // Fallback navigation without search_id
+                navigate(`/study?source=search_flashcards`);
+              }
+            }, 1500);
+          } else if (response.data.status === 'failed') {
+            setIsGenerating(false);
+            setCurrentJobId(null);
+            setJobStatus('');
+            setSearchId(null);
+
+            toast({
+              title: "Generation Failed",
+              description: response.data.message || "Failed to generate flashcards. Please try again.",
+              variant: "destructive",
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error polling job status:', error);
+      }
+    };
+
+    // Poll every 3 seconds for job status
+    const interval = setInterval(pollJob, 3000);
+
+    // Initial poll
+    pollJob();
+
+    return () => clearInterval(interval);
+  }, [currentJobId, session?.access_token]);
+
+  // Handle flashcard generation
+  const handleGenerateFlashcards = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!searchTopic.trim()) {
+      toast({
+        title: "Topic Required",
+        description: "Please enter a topic for your flashcards.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!session?.access_token) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to generate flashcards.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+
+      const searchForm = {
+        topic: searchTopic,
+        difficulty: difficulty,
+        count: 10 // Default count as requested
+      };
+
+      const response = await searchService.generateFlashcards(searchForm, session);
+
+      if (response.success) {
+        if (response.data.job_id) {
+          // Job-based generation (async)
+          setCurrentJobId(response.data.job_id);
+          setJobStatus(response.data.status || 'queued');
+
+          toast({
+            title: "Generation Started",
+            description: "Your flashcards are being generated. This may take a few moments.",
+          });
+        }
+      } else {
+        setIsGenerating(false);
+        toast({
+          title: "Generation Failed",
+          description: response.message || "Failed to generate flashcards. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error generating flashcards:', error);
+      setIsGenerating(false);
+      toast({
+        title: "Error",
+        description: "Failed to generate flashcards. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getStatusMessage = () => {
+    switch (jobStatus) {
+      case 'queued':
+        return 'Your request is in queue...';
+      case 'processing':
+        return 'Generating your flashcards...';
+      case 'completed':
+        return 'Flashcards generated successfully!';
+      case 'failed':
+        return 'Generation failed. Please try again.';
+      default:
+        return '';
+    }
+  };
 
   // Fallback data for when API data is not available
   const fallbackStats = [
@@ -901,7 +1054,7 @@ const Dashboard = () => {
                     </CardHeader>
                     <CardContent>
                       {/* Compact Search Form */}
-                      <div className="space-y-4">
+                      <form onSubmit={handleGenerateFlashcards} className="space-y-4">
                         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
                           <div className="lg:col-span-2">
                             <Input
@@ -912,15 +1065,32 @@ const Dashboard = () => {
                             />
                           </div>
                           <div>
-                            <select className="w-full h-11 px-3 border border-input bg-background rounded-md text-sm">
+                            <select
+                              value={difficulty}
+                              onChange={(e) => setDifficulty(e.target.value as 'beginner' | 'intermediate' | 'advanced')}
+                              className="w-full h-11 px-3 border border-input bg-background rounded-md text-sm"
+                            >
                               <option value="beginner">Beginner</option>
                               <option value="intermediate">Intermediate</option>
                               <option value="advanced">Advanced</option>
                             </select>
                           </div>
-                          <Button className="h-11 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700">
-                            <Search className="h-4 w-4 mr-2" />
-                            Generate
+                          <Button
+                            type="submit"
+                            disabled={isGenerating}
+                            className="h-11 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+                          >
+                            {isGenerating ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                {getStatusMessage()}
+                              </>
+                            ) : (
+                              <>
+                                <Search className="h-4 w-4 mr-2" />
+                                Generate
+                              </>
+                            )}
                           </Button>
                         </div>
 
@@ -960,7 +1130,7 @@ const Dashboard = () => {
                             </Button>
                           </Link>
                         </div>
-                      </div>
+                      </form>
                     </CardContent>
                   </Card>
                 </div>
