@@ -407,6 +407,14 @@ const Study = () => {
       }
 
       if (parsedSearchData && parsedSearchData.flashcards && parsedSearchData.flashcards.length > 0) {
+        // Clear any previous search session data to ensure fresh start
+        try {
+          localStorage.removeItem('memo-spark-search-session-info');
+          localStorage.removeItem('memo-spark-current-search-study-session');
+        } catch (e) {
+          console.warn('Failed to clear previous search session data:', e);
+        }
+
         // Set up search flashcards
         setGeneratedContent({
           flashcards: parsedSearchData.flashcards,
@@ -419,6 +427,11 @@ const Study = () => {
         setSessionRatings(Array(parsedSearchData.flashcards.length).fill(null));
         setIsStudying(true);
         setCurrentDeckIdentifier(`search-${parsedSearchData.topic}`);
+
+        // Reset session stats for fresh start
+        setSessionStats({ correct: 0, difficult: 0, timeSpent: 0 });
+        setReviewedDifficult(new Set());
+        setDifficultCardIds(new Set());
 
         // Store search session info immediately (even without authentication)
         localStorage.setItem('memo-spark-search-session-info', JSON.stringify({
@@ -448,11 +461,9 @@ const Study = () => {
                   started_at: new Date().toISOString()
                 }));
 
-                // Load existing difficult cards for this search session
-                loadExistingDifficultCards(parsedSearchData.search_id);
-
-                // Load existing session stats for resume functionality
-                refreshDifficultCardsCount();
+                // DO NOT load existing difficult cards for fresh session
+                // Instead, keep the fresh stats we already set
+                console.log('Fresh search flashcard session started with clean stats');
               }
             })
             .catch(console.error);
@@ -468,11 +479,6 @@ const Study = () => {
             localStorage.removeItem('memo-spark-study-flashcards');
           }, 1000);
         }
-
-        // Refresh difficult cards count for search flashcards
-        setTimeout(async () => {
-          await refreshDifficultCardsCount();
-        }, 500);
 
         return true; // Return true to indicate search flashcards were loaded
       }
@@ -766,21 +772,32 @@ const Study = () => {
   useEffect(() => {
     // If a caller explicitly set the skip flag (e.g. Study Again button), preserve counts
     if (skipResetOnTabChange.current) {
-      // Ensure timeSpent stays in sync
-      setSessionStats(prev => ({ ...prev, timeSpent: studyTime }));
+      // Ensure timeSpent stays in sync but preserve correct/difficult counts
+      setSessionStats(prev => ({
+        correct: prev.correct, // Explicitly preserve correct count
+        difficult: prev.difficult, // Explicitly preserve difficult count
+        timeSpent: studyTime
+      }));
       // Clear the flag for future tab changes
       skipResetOnTabChange.current = false;
+      console.log('Tab change: Preserving session stats due to skipResetOnTabChange flag');
       return;
     }
 
     if (tab === 'review') {
       // When moving into the review flow, keep the existing correct/difficult
       // counts but ensure the displayed timeSpent matches the current studyTime.
-      setSessionStats(prev => ({ ...prev, timeSpent: studyTime }));
+      setSessionStats(prev => ({
+        correct: prev.correct, // Explicitly preserve correct count
+        difficult: prev.difficult, // Explicitly preserve difficult count  
+        timeSpent: studyTime
+      }));
+      console.log('Tab change: Entering review tab, preserving stats');
       return;
     }
 
     // For other tab switches (flashcards, quiz, exercises) we reset per-activity stats
+    console.log('Tab change: Resetting stats for tab:', tab);
     setSessionStats({
       correct: 0,
       difficult: 0,
@@ -2333,15 +2350,29 @@ const Study = () => {
                               variant="default"
                               size="sm"
                               onClick={() => {
+                                // Capture current session stats before tab change
+                                const currentStats = { ...sessionStats };
+
                                 // Jump to this card in flashcards tab using originalIndex
                                 setCurrentCard(card.originalIndex);
                                 setSessionComplete(false);
                                 setIsFlipped(false);
                                 setCardStudyStartTime(studyTime);
                                 setIsReStudyingFromReview(true); // Mark that we're re-studying from review
+
                                 // Prevent the tab-change effect from zeroing session counts
                                 skipResetOnTabChange.current = true;
+
+                                // Ensure stats are preserved immediately
+                                setSessionStats(prev => ({
+                                  correct: currentStats.correct,
+                                  difficult: currentStats.difficult,
+                                  timeSpent: studyTime
+                                }));
+
                                 setTab('flashcards');
+
+                                console.log('Study Again: Preserving stats:', currentStats);
                               }}
                             >
                               Study Again
