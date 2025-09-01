@@ -7,9 +7,54 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Users, Target, TrendingUp, Settings } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ArrowLeft, Users, Target, TrendingUp, Settings, Plus, Edit, Trash2, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+interface GoalType {
+  id: string;
+  name: string;
+  description: string;
+  unit: string;
+  category: 'study' | 'engagement' | 'achievement' | 'time';
+  is_active: boolean;
+  default_value: number;
+  min_value: number;
+  max_value: number;
+  created_at: string;
+}
+
+interface UserGoal {
+  id: string;
+  user_id: string;
+  goal_type_id: string;
+  target_value: number;
+  current_value: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  user: {
+    name: string;
+    email: string;
+    user_type: string;
+  };
+  goal_type: GoalType;
+}
+
+interface GoalTemplate {
+  id: string;
+  name: string;
+  description: string;
+  user_type: 'student' | 'admin' | 'all';
+  goal_types: Array<{
+    goal_type_id: string;
+    default_value: number;
+    goal_type: GoalType;
+  }>;
+}
 
 interface GoalOverview {
   total_users_with_goals: number;
@@ -48,6 +93,39 @@ const GoalSettings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<GoalOverview | null>(null);
   const [statistics, setStatistics] = useState<GoalStatistics | null>(null);
+
+  // New state for enhanced goal management
+  const [goalTypes, setGoalTypes] = useState<GoalType[]>([]);
+  const [userGoals, setUserGoals] = useState<UserGoal[]>([]);
+  const [goalTemplates, setGoalTemplates] = useState<GoalTemplate[]>([]);
+  const [selectedUser, setSelectedUser] = useState<string>('');
+  const [searchEmail, setSearchEmail] = useState('');
+  const [users, setUsers] = useState<Array<{ id: string, name: string, email: string, user_type: string }>>([]);
+
+  // Dialog states
+  const [isGoalTypeDialogOpen, setIsGoalTypeDialogOpen] = useState(false);
+  const [isUserGoalDialogOpen, setIsUserGoalDialogOpen] = useState(false);
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [editingGoalType, setEditingGoalType] = useState<GoalType | null>(null);
+  const [editingUserGoal, setEditingUserGoal] = useState<UserGoal | null>(null);
+
+  // Form states
+  const [newGoalType, setNewGoalType] = useState({
+    name: '',
+    description: '',
+    unit: '',
+    category: 'study' as 'study' | 'engagement' | 'achievement' | 'time',
+    default_value: 0,
+    min_value: 0,
+    max_value: 1000
+  });
+
+  const [newUserGoal, setNewUserGoal] = useState({
+    user_id: '',
+    goal_type_id: '',
+    target_value: 0
+  });
+
   const [defaultGoals, setDefaultGoals] = useState({
     student_default: 50,
     admin_default: 25
@@ -71,41 +149,219 @@ const GoalSettings: React.FC = () => {
         throw new Error('No authentication token');
       }
 
-      // Fetch overview data
-      const overviewResponse = await fetch('http://localhost:8000/api/admin/goals/overview', {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const headers = {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json'
+      };
 
-      if (!overviewResponse.ok) {
-        throw new Error('Failed to fetch overview data');
+      // Fetch all goal-related data in parallel
+      const [overviewRes, statisticsRes, goalTypesRes, userGoalsRes, usersRes] = await Promise.all([
+        fetch('http://localhost:8000/api/admin/goals/overview', { headers }),
+        fetch('http://localhost:8000/api/admin/goals/statistics', { headers }),
+        fetch('http://localhost:8000/api/admin/goal-types', { headers }),
+        fetch('http://localhost:8000/api/admin/user-goals', { headers }),
+        fetch('http://localhost:8000/api/admin/users', { headers })
+      ]);
+
+      if (!overviewRes.ok || !statisticsRes.ok) {
+        throw new Error('Failed to fetch basic goal data');
       }
 
-      const overviewData = await overviewResponse.json();
+      const [overviewData, statisticsData] = await Promise.all([
+        overviewRes.json(),
+        statisticsRes.json()
+      ]);
+
       setOverview(overviewData);
+      setStatistics(statisticsData);
 
-      // Fetch statistics data
-      const statisticsResponse = await fetch('http://localhost:8000/api/admin/goals/statistics', {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!statisticsResponse.ok) {
-        throw new Error('Failed to fetch statistics data');
+      // Handle optional new endpoints
+      if (goalTypesRes.ok) {
+        const goalTypesData = await goalTypesRes.json();
+        setGoalTypes(goalTypesData);
       }
 
-      const statisticsData = await statisticsResponse.json();
-      setStatistics(statisticsData);
+      if (userGoalsRes.ok) {
+        const userGoalsData = await userGoalsRes.json();
+        setUserGoals(userGoalsData);
+      }
+
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        // Handle Laravel pagination format
+        const usersArray = Array.isArray(usersData) ? usersData : (usersData.data || []);
+        setUsers(usersArray);
+      }
 
     } catch (error) {
       console.error('Error fetching goal data:', error);
       toast.error('Failed to load goal settings');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Goal Type Management Functions
+  const handleCreateGoalType = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('No authentication token');
+
+      const response = await fetch('http://localhost:8000/api/admin/goal-types', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newGoalType)
+      });
+
+      if (!response.ok) throw new Error('Failed to create goal type');
+
+      toast.success('Goal type created successfully');
+      setIsGoalTypeDialogOpen(false);
+      setNewGoalType({
+        name: '',
+        description: '',
+        unit: '',
+        category: 'study',
+        default_value: 0,
+        min_value: 0,
+        max_value: 1000
+      });
+      fetchGoalData();
+    } catch (error) {
+      console.error('Error creating goal type:', error);
+      toast.error('Failed to create goal type');
+    }
+  };
+
+  const handleUpdateGoalType = async () => {
+    if (!editingGoalType) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('No authentication token');
+
+      const response = await fetch(`http://localhost:8000/api/admin/goal-types/${editingGoalType.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newGoalType)
+      });
+
+      if (!response.ok) throw new Error('Failed to update goal type');
+
+      toast.success('Goal type updated successfully');
+      setIsGoalTypeDialogOpen(false);
+      setEditingGoalType(null);
+      fetchGoalData();
+    } catch (error) {
+      console.error('Error updating goal type:', error);
+      toast.error('Failed to update goal type');
+    }
+  };
+
+  const handleDeleteGoalType = async (goalTypeId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('No authentication token');
+
+      const response = await fetch(`http://localhost:8000/api/admin/goal-types/${goalTypeId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) throw new Error('Failed to delete goal type');
+
+      toast.success('Goal type deleted successfully');
+      fetchGoalData();
+    } catch (error) {
+      console.error('Error deleting goal type:', error);
+      toast.error('Failed to delete goal type');
+    }
+  };
+
+  // User Goal Management Functions
+  const handleCreateUserGoal = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('No authentication token');
+
+      const response = await fetch('http://localhost:8000/api/admin/user-goals', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newUserGoal)
+      });
+
+      if (!response.ok) throw new Error('Failed to create user goal');
+
+      toast.success('User goal created successfully');
+      setIsUserGoalDialogOpen(false);
+      setNewUserGoal({
+        user_id: '',
+        goal_type_id: '',
+        target_value: 0
+      });
+      fetchGoalData();
+    } catch (error) {
+      console.error('Error creating user goal:', error);
+      toast.error('Failed to create user goal');
+    }
+  };
+
+  const handleUpdateUserGoal = async (userGoalId: string, targetValue: number) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('No authentication token');
+
+      const response = await fetch(`http://localhost:8000/api/admin/user-goals/${userGoalId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ target_value: targetValue })
+      });
+
+      if (!response.ok) throw new Error('Failed to update user goal');
+
+      toast.success('User goal updated successfully');
+      fetchGoalData();
+    } catch (error) {
+      console.error('Error updating user goal:', error);
+      toast.error('Failed to update user goal');
+    }
+  };
+
+  const handleDeleteUserGoal = async (userGoalId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('No authentication token');
+
+      const response = await fetch(`http://localhost:8000/api/admin/user-goals/${userGoalId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) throw new Error('Failed to delete user goal');
+
+      toast.success('User goal deleted successfully');
+      fetchGoalData();
+    } catch (error) {
+      console.error('Error deleting user goal:', error);
+      toast.error('Failed to delete user goal');
     }
   };
 
@@ -168,7 +424,7 @@ const GoalSettings: React.FC = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Target className="h-4 w-4" />
             Overview
@@ -177,9 +433,17 @@ const GoalSettings: React.FC = () => {
             <TrendingUp className="h-4 w-4" />
             Statistics
           </TabsTrigger>
+          <TabsTrigger value="goal-types" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Goal Types
+          </TabsTrigger>
+          <TabsTrigger value="user-goals" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            User Goals
+          </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
-            Default Settings
+            Settings
           </TabsTrigger>
         </TabsList>
 
@@ -345,6 +609,410 @@ const GoalSettings: React.FC = () => {
               </Card>
             </>
           )}
+        </TabsContent>
+
+        <TabsContent value="goal-types" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold">Goal Types Management</h2>
+            <Dialog open={isGoalTypeDialogOpen} onOpenChange={setIsGoalTypeDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => {
+                  setEditingGoalType(null);
+                  setNewGoalType({
+                    name: '',
+                    description: '',
+                    unit: '',
+                    category: 'study',
+                    default_value: 0,
+                    min_value: 0,
+                    max_value: 1000
+                  });
+                }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Goal Type
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{editingGoalType ? 'Edit Goal Type' : 'Create New Goal Type'}</DialogTitle>
+                  <DialogDescription>
+                    Define a new type of goal that users can set for themselves.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="goal-name">Goal Name</Label>
+                    <Input
+                      id="goal-name"
+                      value={newGoalType.name}
+                      onChange={(e) => setNewGoalType(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="e.g., Daily Flashcards"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="goal-description">Description</Label>
+                    <Input
+                      id="goal-description"
+                      value={newGoalType.description}
+                      onChange={(e) => setNewGoalType(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="e.g., Number of flashcards to review daily"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="goal-unit">Unit</Label>
+                      <Input
+                        id="goal-unit"
+                        value={newGoalType.unit}
+                        onChange={(e) => setNewGoalType(prev => ({ ...prev, unit: e.target.value }))}
+                        placeholder="e.g., cards, minutes, points"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="goal-category">Category</Label>
+                      <Select value={newGoalType.category} onValueChange={(value) => setNewGoalType(prev => ({ ...prev, category: value as any }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="study">Study</SelectItem>
+                          <SelectItem value="engagement">Engagement</SelectItem>
+                          <SelectItem value="achievement">Achievement</SelectItem>
+                          <SelectItem value="time">Time</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="default-value">Default Value</Label>
+                      <Input
+                        id="default-value"
+                        type="number"
+                        value={newGoalType.default_value}
+                        onChange={(e) => setNewGoalType(prev => ({ ...prev, default_value: parseInt(e.target.value) || 0 }))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="min-value">Min Value</Label>
+                      <Input
+                        id="min-value"
+                        type="number"
+                        value={newGoalType.min_value}
+                        onChange={(e) => setNewGoalType(prev => ({ ...prev, min_value: parseInt(e.target.value) || 0 }))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="max-value">Max Value</Label>
+                      <Input
+                        id="max-value"
+                        type="number"
+                        value={newGoalType.max_value}
+                        onChange={(e) => setNewGoalType(prev => ({ ...prev, max_value: parseInt(e.target.value) || 1000 }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsGoalTypeDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={editingGoalType ? handleUpdateGoalType : handleCreateGoalType}>
+                    {editingGoalType ? 'Update' : 'Create'} Goal Type
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Available Goal Types</CardTitle>
+              <CardDescription>
+                Manage the different types of goals users can set for themselves.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Unit</TableHead>
+                    <TableHead>Default</TableHead>
+                    <TableHead>Range</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {goalTypes.map((goalType) => (
+                    <TableRow key={goalType.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{goalType.name}</div>
+                          <div className="text-sm text-muted-foreground">{goalType.description}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">{goalType.category}</Badge>
+                      </TableCell>
+                      <TableCell>{goalType.unit}</TableCell>
+                      <TableCell>{goalType.default_value}</TableCell>
+                      <TableCell>{goalType.min_value} - {goalType.max_value}</TableCell>
+                      <TableCell>
+                        <Badge variant={goalType.is_active ? "default" : "secondary"}>
+                          {goalType.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingGoalType(goalType);
+                              setNewGoalType({
+                                name: goalType.name,
+                                description: goalType.description,
+                                unit: goalType.unit,
+                                category: goalType.category,
+                                default_value: goalType.default_value,
+                                min_value: goalType.min_value,
+                                max_value: goalType.max_value
+                              });
+                              setIsGoalTypeDialogOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteGoalType(goalType.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="user-goals" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold">User Goals Management</h2>
+            <Dialog open={isUserGoalDialogOpen} onOpenChange={setIsUserGoalDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Assign Goal to User
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Assign Goal to User</DialogTitle>
+                  <DialogDescription>
+                    Set a specific goal for a user.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="user-select">Select User</Label>
+                    <Select value={newUserGoal.user_id} onValueChange={(value) => setNewUserGoal(prev => ({ ...prev, user_id: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a user" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.isArray(users) && users.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.name} ({user.email}) - {user.user_type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="goal-type-select">Select Goal Type</Label>
+                    <Select value={newUserGoal.goal_type_id} onValueChange={(value) => setNewUserGoal(prev => ({ ...prev, goal_type_id: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a goal type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {goalTypes.filter(gt => gt.is_active).map((goalType) => (
+                          <SelectItem key={goalType.id} value={goalType.id}>
+                            {goalType.name} ({goalType.unit})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="target-value">Target Value</Label>
+                    <Input
+                      id="target-value"
+                      type="number"
+                      value={newUserGoal.target_value}
+                      onChange={(e) => setNewUserGoal(prev => ({ ...prev, target_value: parseInt(e.target.value) || 0 }))}
+                      placeholder="Enter target value"
+                    />
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsUserGoalDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleCreateUserGoal}>
+                    Assign Goal
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <div className="flex gap-4 mb-6">
+            <div className="flex-1">
+              <Label htmlFor="search-email">Search by Email</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="search-email"
+                  placeholder="Enter user email to filter..."
+                  value={searchEmail}
+                  onChange={(e) => setSearchEmail(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="user-filter">Filter by User</Label>
+              <Select value={selectedUser} onValueChange={setSelectedUser}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="All users" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All users</SelectItem>
+                  {Array.isArray(users) && users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>User Goals</CardTitle>
+              <CardDescription>
+                View and manage goals assigned to users.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Goal Type</TableHead>
+                    <TableHead>Target</TableHead>
+                    <TableHead>Current</TableHead>
+                    <TableHead>Progress</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {userGoals
+                    .filter(goal => {
+                      if (selectedUser && goal.user_id !== selectedUser) return false;
+                      if (searchEmail && !goal.user.email.toLowerCase().includes(searchEmail.toLowerCase())) return false;
+                      return true;
+                    })
+                    .map((userGoal) => {
+                      const progress = userGoal.target_value > 0 ? (userGoal.current_value / userGoal.target_value) * 100 : 0;
+                      return (
+                        <TableRow key={userGoal.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{userGoal.user.name}</div>
+                              <div className="text-sm text-muted-foreground">{userGoal.user.email}</div>
+                              <Badge variant="outline" className="text-xs">{userGoal.user.user_type}</Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{userGoal.goal_type.name}</div>
+                              <div className="text-sm text-muted-foreground">{userGoal.goal_type.category}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{userGoal.target_value} {userGoal.goal_type.unit}</TableCell>
+                          <TableCell>{userGoal.current_value} {userGoal.goal_type.unit}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="w-20 bg-muted rounded-full h-2">
+                                <div
+                                  className="bg-primary h-2 rounded-full"
+                                  style={{ width: `${Math.min(progress, 100)}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm">{Math.round(progress)}%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={userGoal.is_active ? "default" : "secondary"}>
+                              {userGoal.is_active ? "Active" : "Inactive"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const newValue = prompt(`Update target for ${userGoal.goal_type.name}:`, userGoal.target_value.toString());
+                                  if (newValue && !isNaN(parseInt(newValue))) {
+                                    handleUpdateUserGoal(userGoal.id, parseInt(newValue));
+                                  }
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteUserGoal(userGoal.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
