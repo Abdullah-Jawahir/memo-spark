@@ -206,8 +206,8 @@ const Search = () => {
             <TabsContent value="search" className="space-y-6">
               <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50">
                 <CardHeader>
-                  <CardTitle className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-purple-600" />
+                  <CardTitle className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-blue-600" />
                     Generate Custom Flashcards
                   </CardTitle>
                 </CardHeader>
@@ -235,7 +235,7 @@ const Search = () => {
                         <Badge
                           key={index}
                           variant="secondary"
-                          className="cursor-pointer hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white transition-all duration-200 transform hover:scale-105"
+                          className="cursor-pointer hover:bg-gradient-to-r hover:from-blue-600 hover:to-cyan-600 hover:text-white transition-all duration-200 transform hover:scale-105"
                           onClick={() => handleTopicSuggestionClick(topic)}
                         >
                           {topic}
