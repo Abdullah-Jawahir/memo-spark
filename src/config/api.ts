@@ -43,6 +43,17 @@ export const API_ENDPOINTS = {
       SESSION_DETAILS: (sessionId: number) => `${API_BASE_URL}/api/search-flashcards/study/session/${sessionId}`,
       STUDY_STATS: `${API_BASE_URL}/api/search-flashcards/study/stats`,
     },
+    DIFFICULT_CARDS: {
+      MARK: `${API_BASE_URL}/api/search-flashcards/difficult/mark`,
+      MARK_REVIEWED: `${API_BASE_URL}/api/search-flashcards/difficult/reviewed`,
+      MARK_RE_RATED: `${API_BASE_URL}/api/search-flashcards/difficult/re-rated`,
+      GET_COUNT: `${API_BASE_URL}/api/search-flashcards/difficult/count`,
+    },
+    // New Review System (similar to regular flashcard reviews)
+    REVIEWS: {
+      RECORD_REVIEW: `${API_BASE_URL}/api/search-flashcards/record-review`,
+      GET_DIFFICULT_COUNT: `${API_BASE_URL}/api/search-flashcards/difficult/count-from-reviews`,
+    },
   },
 } as const;
 
