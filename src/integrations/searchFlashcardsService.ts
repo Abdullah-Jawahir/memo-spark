@@ -334,6 +334,94 @@ export class SearchFlashcardsService {
     const url = `${API_ENDPOINTS.SEARCH_FLASHCARDS.STUDY.STUDY_STATS}?${queryString}`;
     return fetchWithAuth(url, {}, session);
   }
+
+  // Difficult Cards Management
+  async markAsDifficult(
+    searchId: number,
+    flashcardId: number,
+    session: { access_token: string } | null
+  ): Promise<{ success: boolean; message: string; data?: any }> {
+    return fetchWithAuth(API_ENDPOINTS.SEARCH_FLASHCARDS.DIFFICULT_CARDS.MARK, {
+      method: 'POST',
+      body: JSON.stringify({
+        search_id: searchId,
+        flashcard_id: flashcardId
+      }),
+    }, session);
+  }
+
+  async markAsReviewed(
+    searchId: number,
+    flashcardId: number,
+    session: { access_token: string } | null
+  ): Promise<{ success: boolean; message: string; data?: any }> {
+    return fetchWithAuth(API_ENDPOINTS.SEARCH_FLASHCARDS.DIFFICULT_CARDS.MARK_REVIEWED, {
+      method: 'POST',
+      body: JSON.stringify({
+        search_id: searchId,
+        flashcard_id: flashcardId
+      }),
+    }, session);
+  }
+
+  async markAsReRated(
+    searchId: number,
+    flashcardId: number,
+    finalRating: 'again' | 'hard' | 'good' | 'easy',
+    session: { access_token: string } | null
+  ): Promise<{ success: boolean; message: string; data?: any }> {
+    return fetchWithAuth(API_ENDPOINTS.SEARCH_FLASHCARDS.DIFFICULT_CARDS.MARK_RE_RATED, {
+      method: 'POST',
+      body: JSON.stringify({
+        search_id: searchId,
+        flashcard_id: flashcardId,
+        final_rating: finalRating
+      }),
+    }, session);
+  }
+
+  async getDifficultCardsCount(
+    session: { access_token: string } | null,
+    searchId?: number
+  ): Promise<{ success: boolean; message: string; data?: { difficult_cards_count: number } }> {
+    const queryString = searchId ? `?search_id=${searchId}` : '';
+    const url = `${API_ENDPOINTS.SEARCH_FLASHCARDS.DIFFICULT_CARDS.GET_COUNT}${queryString}`;
+    return fetchWithAuth(url, {}, session);
+  }
+
+  // New Review-Based System (similar to regular flashcard reviews)
+  async recordReview(
+    searchId: number,
+    flashcardId: number,
+    rating: 'again' | 'hard' | 'good' | 'easy',
+    studyTime: number,
+    sessionId?: string,
+    session: { access_token: string } | null = null
+  ): Promise<{ success: boolean; message: string; data?: any }> {
+    return fetchWithAuth(API_ENDPOINTS.SEARCH_FLASHCARDS.REVIEWS.RECORD_REVIEW, {
+      method: 'POST',
+      body: JSON.stringify({
+        search_id: searchId,
+        flashcard_id: flashcardId,
+        rating: rating,
+        study_time: studyTime,
+        session_id: sessionId
+      }),
+    }, session);
+  }
+
+  async getDifficultCardsCountFromReviews(
+    session: { access_token: string } | null,
+    searchId: number,
+    sessionId?: string
+  ): Promise<{ success: boolean; message: string; data?: { difficult_cards_count: number } }> {
+    const params = new URLSearchParams({
+      search_id: searchId.toString(),
+      ...(sessionId && { session_id: sessionId })
+    });
+    const url = `${API_ENDPOINTS.SEARCH_FLASHCARDS.REVIEWS.GET_DIFFICULT_COUNT}?${params}`;
+    return fetchWithAuth(url, {}, session);
+  }
 }
 
 export default SearchFlashcardsService;
