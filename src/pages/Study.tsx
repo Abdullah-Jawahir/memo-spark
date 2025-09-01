@@ -2234,6 +2234,13 @@ const Study = () => {
                                     // Refresh the difficult cards count from the review system
                                     await refreshDifficultCardsCount();
 
+                                    // Also increment the correct count for marking as reviewed
+                                    setSessionStats(prev => ({
+                                      correct: prev.correct + 1, // Increment correct count
+                                      difficult: prev.difficult, // Will be updated by refreshDifficultCardsCount
+                                      timeSpent: prev.timeSpent
+                                    }));
+
                                     console.log('Search flashcard marked as reviewed successfully');
                                     toast({
                                       title: "Success",
@@ -2264,17 +2271,17 @@ const Study = () => {
                                       return updated;
                                     });
 
-                                    // Only update difficult count, don't increment correct count for mark reviewed
+                                    // Update both correct and difficult counts for mark reviewed
                                     if (result && result.success && result.sessionStats) {
                                       setSessionStats(prev => ({
-                                        correct: prev.correct, // Keep correct count unchanged
-                                        difficult: result.sessionStats.hard_count || 0, // Update only difficult count
+                                        correct: prev.correct + 1, // Increment correct count
+                                        difficult: result.sessionStats.hard_count || 0, // Update difficult count from backend
                                         timeSpent: prev.timeSpent // Keep time unchanged
                                       }));
                                     } else {
-                                      // Fallback: manually decrement difficult count only
+                                      // Fallback: manually increment correct and decrement difficult counts
                                       setSessionStats(prev => ({
-                                        correct: prev.correct, // Keep correct count unchanged
+                                        correct: prev.correct + 1, // Increment correct count
                                         difficult: Math.max(0, prev.difficult - 1), // Decrement difficult count
                                         timeSpent: prev.timeSpent // Keep time unchanged
                                       }));
@@ -2305,9 +2312,9 @@ const Study = () => {
                                   newSet.add(card.originalIndex);
                                   setReviewedDifficult(newSet);
 
-                                  // Manually decrement difficult count for guest users
+                                  // Manually increment correct and decrement difficult counts for guest users
                                   setSessionStats(prev => ({
-                                    correct: prev.correct, // Keep correct count unchanged
+                                    correct: prev.correct + 1, // Increment correct count
                                     difficult: Math.max(0, prev.difficult - 1), // Decrement difficult count
                                     timeSpent: prev.timeSpent // Keep time unchanged
                                   }));
