@@ -285,8 +285,12 @@ const SearchFlashcards: React.FC<SearchFlashcardsProps> = ({ className = '' }) =
 
     localStorage.setItem('memo-spark-study-flashcards', JSON.stringify(studyData));
 
-    // Navigate to study page
-    navigate('/study?source=search_flashcards');
+    // Navigate to study page with search_id as query parameter for session persistence
+    const queryParams = new URLSearchParams({ source: 'search_flashcards' });
+    if (searchId) {
+      queryParams.append('search_id', searchId.toString());
+    }
+    navigate(`/study?${queryParams.toString()}`);
   };
 
   const handleRecentSearchClick = async (searchId: number) => {
