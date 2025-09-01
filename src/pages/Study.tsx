@@ -21,6 +21,7 @@ import { startStudySession, recordFlashcardReview, getCurrentStudySession, clear
 import { API_ENDPOINTS, fetchWithAuth } from '@/config/api';
 import { useToast } from '@/hooks/use-toast';
 import { downloadStudyProgressPDF } from '@/utils/pdfExport';
+import SearchFlashcardsService from '@/integrations/searchFlashcardsService';
 
 interface Flashcard {
   id: number;
@@ -117,6 +118,68 @@ const Study = () => {
 
   // Ref used to skip the automatic reset when a tab change is initiated by 'Study Again'
   const skipResetOnTabChange = useRef(false);
+
+  // Track if current card is being re-studied from review tab (for search flashcards)
+  const [isReStudyingFromReview, setIsReStudyingFromReview] = useState(false);
+
+  // Track which cards were originally marked as difficult (for search flashcards)
+  const [difficultCardIds, setDifficultCardIds] = useState<Set<number>>(new Set());
+
+  // Helper function to refresh difficult cards count for search flashcards
+  const refreshDifficultCardsCount = async () => {
+    try {
+      const searchSessionInfo = localStorage.getItem('memo-spark-search-session-info');
+      const isSearchFlashcardSession = !!searchSessionInfo; // Simplified check
+
+      if (isSearchFlashcardSession && user && session) {
+        const searchInfo = JSON.parse(searchSessionInfo);
+        const searchService = new SearchFlashcardsService();
+
+        // Use the new review-based count method with session ID for accurate session stats
+        const countResponse = await searchService.getDifficultCardsCountFromReviews(
+          session,
+          searchInfo.search_id,
+          searchInfo.session_id?.toString() // Use search session ID and convert to string
+        );
+
+        if (countResponse.success && countResponse.data) {
+          setSessionStats(prev => ({
+            ...prev,
+            difficult: countResponse.data.difficult_cards_count
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to refresh difficult cards count:', error);
+    }
+  };
+
+  // Helper function to load existing difficult cards for a search session
+  const loadExistingDifficultCards = async (searchId: number) => {
+    try {
+      if (!session?.access_token) return;
+
+      // Initialize empty set for tracking - the review system handles difficult card logic
+      setDifficultCardIds(new Set());
+
+      // Get overall difficult count from review system (not session-specific for initial load)
+      const searchService = new SearchFlashcardsService();
+      const countResponse = await searchService.getDifficultCardsCountFromReviews(
+        session,
+        searchId
+        // Don't pass session_id here to get overall difficult count for this search
+      );
+
+      if (countResponse.success && countResponse.data) {
+        setSessionStats(prev => ({
+          ...prev,
+          difficult: countResponse.data.difficult_cards_count
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to load existing difficult cards:', error);
+    }
+  };
 
   const isGuestUser = !user && generatedContent !== null;
 
@@ -299,64 +362,137 @@ const Study = () => {
     const deckId = searchParams.get('deckId');
     const deckName = searchParams.get('deck');
     const source = searchParams.get('source');
+    const searchId = searchParams.get('search_id'); // Get search_id from URL for session persistence
 
-    // Check for search flashcards first
-    if (source === 'search_flashcards' && searchFlashcardsData) {
-      try {
-        const parsedSearchData = JSON.parse(searchFlashcardsData);
-        if (parsedSearchData.flashcards && parsedSearchData.flashcards.length > 0) {
-          // Set up search flashcards
-          setGeneratedContent({
-            flashcards: parsedSearchData.flashcards,
-            quizzes: [],
-            exercises: []
-          });
-          setFlashcards(parsedSearchData.flashcards);
-          setQuizzes([]);
-          setExercises([]);
-          setSessionRatings(Array(parsedSearchData.flashcards.length).fill(null));
-          setIsStudying(true);
-          setCurrentDeckIdentifier(`search-${parsedSearchData.topic}`);
+    // Async function to handle search flashcard restoration
+    const handleSearchFlashcardSession = async () => {
+      // Try to get search flashcards data from localStorage or existing session info
+      let parsedSearchData = null;
 
-          // Start study session for search flashcards
-          if (session?.access_token && parsedSearchData.search_id) {
-            startSearchStudySession(parsedSearchData.search_id, parsedSearchData.flashcards.length, session)
-              .then(sessionData => {
-                if (sessionData) {
-                  setStudySession(sessionData);
-                  // Store search session info for later use
-                  localStorage.setItem('memo-spark-search-session-info', JSON.stringify({
-                    search_id: parsedSearchData.search_id,
-                    topic: parsedSearchData.topic,
-                    session_id: sessionData.session_id
-                  }));
-                  // Also store in the utility function's expected key
-                  localStorage.setItem('memo-spark-current-search-study-session', JSON.stringify({
-                    session_id: sessionData.session_id,
-                    search_id: parsedSearchData.search_id,
-                    topic: parsedSearchData.topic,
-                    total_flashcards: parsedSearchData.flashcards.length,
-                    started_at: new Date().toISOString()
-                  }));
-                }
-              })
-              .catch(console.error);
+      if (searchFlashcardsData) {
+        try {
+          parsedSearchData = JSON.parse(searchFlashcardsData);
+        } catch (error) {
+          console.error('Failed to parse search flashcards data:', error);
+          localStorage.removeItem('memo-spark-study-flashcards');
+        }
+      }
+
+      // If no localStorage data but we have search_id, try to restore from previous session
+      if (!parsedSearchData && searchId && session?.access_token) {
+        try {
+          const searchService = new SearchFlashcardsService();
+          const searchDetailsResponse = await searchService.getSearchDetails(parseInt(searchId), session);
+          if (searchDetailsResponse.success && searchDetailsResponse.data.flashcards) {
+            parsedSearchData = {
+              flashcards: searchDetailsResponse.data.flashcards.map((card: any, index: number) => ({
+                id: card.id || (index + 1),
+                question: card.question,
+                answer: card.answer,
+                difficulty: card.difficulty,
+                subject: searchDetailsResponse.data.topic,
+                type: card.type || 'Q&A'
+              })),
+              source: 'search_flashcards',
+              topic: searchDetailsResponse.data.topic,
+              search_id: parseInt(searchId),
+              timestamp: new Date().toISOString()
+            };
+            // Store the restored data in localStorage for future use
+            localStorage.setItem('memo-spark-study-flashcards', JSON.stringify(parsedSearchData));
           }
+        } catch (error) {
+          console.error('Failed to restore search flashcard session:', error);
+        }
+      }
 
-          setIsLoadingFromStorage(false);
-          setLastUpdated(new Date());
+      if (parsedSearchData && parsedSearchData.flashcards && parsedSearchData.flashcards.length > 0) {
+        // Set up search flashcards
+        setGeneratedContent({
+          flashcards: parsedSearchData.flashcards,
+          quizzes: [],
+          exercises: []
+        });
+        setFlashcards(parsedSearchData.flashcards);
+        setQuizzes([]);
+        setExercises([]);
+        setSessionRatings(Array(parsedSearchData.flashcards.length).fill(null));
+        setIsStudying(true);
+        setCurrentDeckIdentifier(`search-${parsedSearchData.topic}`);
 
-          // Clean up search flashcards data after loading
+        // Store search session info immediately (even without authentication)
+        localStorage.setItem('memo-spark-search-session-info', JSON.stringify({
+          search_id: parsedSearchData.search_id,
+          topic: parsedSearchData.topic,
+          session_id: null // Will be updated when authenticated session starts
+        }));
+
+        // Start study session for search flashcards
+        if (session?.access_token && parsedSearchData.search_id) {
+          startSearchStudySession(parsedSearchData.search_id, parsedSearchData.flashcards.length, session)
+            .then(sessionData => {
+              if (sessionData) {
+                setStudySession(sessionData);
+                // Update search session info with session details
+                const existingInfo = JSON.parse(localStorage.getItem('memo-spark-search-session-info') || '{}');
+                localStorage.setItem('memo-spark-search-session-info', JSON.stringify({
+                  ...existingInfo,
+                  session_id: sessionData.session_id
+                }));
+                // Also store in the utility function's expected key
+                localStorage.setItem('memo-spark-current-search-study-session', JSON.stringify({
+                  session_id: sessionData.session_id,
+                  search_id: parsedSearchData.search_id,
+                  topic: parsedSearchData.topic,
+                  total_flashcards: parsedSearchData.flashcards.length,
+                  started_at: new Date().toISOString()
+                }));
+
+                // Load existing difficult cards for this search session
+                loadExistingDifficultCards(parsedSearchData.search_id);
+
+                // Load existing session stats for resume functionality
+                refreshDifficultCardsCount();
+              }
+            })
+            .catch(console.error);
+        }
+
+        setIsLoadingFromStorage(false);
+        setLastUpdated(new Date());
+
+        // Don't clean up search flashcards data when using query parameter persistence
+        // Only clean up if there's no search_id in URL (temporary sessions)
+        if (!searchId) {
           setTimeout(() => {
             localStorage.removeItem('memo-spark-study-flashcards');
           }, 1000);
+        }
 
+        // Refresh difficult cards count for search flashcards
+        setTimeout(async () => {
+          await refreshDifficultCardsCount();
+        }, 500);
+
+        return true; // Return true to indicate search flashcards were loaded
+      }
+
+      return false; // Return false if no search flashcards were loaded
+    };
+
+    // Check for search flashcards first
+    if (source === 'search_flashcards') {
+      handleSearchFlashcardSession().then(searchFlashcardsLoaded => {
+        if (searchFlashcardsLoaded) {
           return; // Exit early since we loaded search flashcards
         }
-      } catch (error) {
-        console.error('Failed to parse search flashcards data:', error);
-        localStorage.removeItem('memo-spark-study-flashcards');
-      }
+        // If we didn't load search flashcards, continue with regular flow
+        setIsLoadingFromStorage(false);
+      }).catch(error => {
+        console.error('Error handling search flashcard session:', error);
+        setIsLoadingFromStorage(false);
+      });
+      return; // Exit useEffect early for search flashcards
     }
 
     if (deckId || deckName) {
@@ -447,8 +583,20 @@ const Study = () => {
   // Cleanup effect to remove search flashcards data when unmounting
   useEffect(() => {
     return () => {
-      // Clean up search flashcards data when component unmounts
-      localStorage.removeItem('memo-spark-study-flashcards');
+      // Get current URL parameters to check if this is a persistent search session
+      const currentSearchParams = new URLSearchParams(window.location.search);
+      const isSearchFlashcardSession = currentSearchParams.get('source') === 'search_flashcards';
+      const hasSearchId = !!currentSearchParams.get('search_id');
+
+      // Only clean up localStorage if this is NOT a persistent search session
+      // Persistent sessions (with search_id) should maintain their localStorage for reload support
+      if (!isSearchFlashcardSession || !hasSearchId) {
+        // Clean up search flashcards data when component unmounts
+        localStorage.removeItem('memo-spark-study-flashcards');
+        // Also clean up session info for non-persistent sessions
+        localStorage.removeItem('memo-spark-search-session-info');
+        localStorage.removeItem('memo-spark-current-search-study-session');
+      }
     };
   }, []);
 
@@ -464,6 +612,8 @@ const Study = () => {
       setSessionStats({ correct: 0, difficult: 0, timeSpent: 0 });
       setSessionComplete(false);
       setReviewedDifficult(new Set());
+      setDifficultCardIds(new Set()); // Reset difficult cards tracking
+      setIsReStudyingFromReview(false); // Reset re-studying flag
       setStudyTime(0);
       setOverallStudyTime(0);
       setCardStudyStartTime(0);
@@ -553,6 +703,14 @@ const Study = () => {
         setStudyTime(prev => prev + 1);
       }, 1000);
     }
+
+    // Reset re-studying flag when switching away from flashcards tab (unless via Study Again button)
+    if (tab !== 'flashcards' && !skipResetOnTabChange.current) {
+      setIsReStudyingFromReview(false);
+    }
+
+    // Reset the skip flag after processing
+    skipResetOnTabChange.current = false;
 
     return () => {
       if (activityTimer) clearInterval(activityTimer);
@@ -734,62 +892,129 @@ const Study = () => {
       try {
         // Check if this is a search flashcard study session
         const searchSessionInfo = localStorage.getItem('memo-spark-search-session-info');
-        const isSearchFlashcardSession = searchSessionInfo && currentDeckIdentifier?.startsWith('search-');
+        const isSearchFlashcardSession = !!searchSessionInfo; // Simplified check
 
         if (isSearchFlashcardSession) {
-          // Handle search flashcard study session
+          // Handle search flashcard study session using new review-based system
           const searchInfo = JSON.parse(searchSessionInfo);
-          const currentSearchSession = getCurrentSearchStudySession();
 
           console.log('Search flashcard session info:', searchInfo);
-          console.log('Current search session:', currentSearchSession);
           console.log('Current card data:', currentCardData);
+          console.log('Recording review with rating:', rating);
 
-          if (!currentSearchSession) {
-            console.error('No active search study session found');
-          } else {
-            // Map rating to result format expected by search study sessions
-            let result: 'correct' | 'incorrect' | 'skipped';
-            if (rating === 'again' || rating === 'hard') {
-              result = 'incorrect';
-            } else if (rating === 'good' || rating === 'easy') {
-              result = 'correct';
-            } else {
-              result = 'skipped';
-            }
+          if (searchInfo.search_id) {
+            try {
+              const searchService = new SearchFlashcardsService();
 
-            console.log('Recording interaction with:', {
-              flashcardId: currentCardData.id,
-              result: result,
-              timeSpent: studyTimeForCard,
-              rating: rating
-            });
+              // Record the review in the new review system (similar to regular flashcards)
+              const reviewResult = await searchService.recordReview(
+                searchInfo.search_id,
+                currentCardData.id,
+                rating,
+                studyTimeForCard,
+                searchInfo.session_id?.toString(), // Use search session ID and convert to string
+                session
+              );
 
-            // Record the study interaction
-            const interactionResult = await recordSearchStudyInteraction(
-              currentCardData.id,
-              result,
-              studyTimeForCard,
-              1, // attempts
-              session
-            );
+              console.log('Review recorded successfully:', reviewResult);
 
-            // Update session stats based on the result
-            if (interactionResult.success && interactionResult.sessionStats) {
-              setSessionStats({
-                correct: interactionResult.sessionStats.correct_answers || 0,
-                difficult: interactionResult.sessionStats.incorrect_answers || 0,
-                timeSpent: studyTime
-              });
-            } else {
-              // Fall back to local updates
-              if (rating === 'good' || rating === 'easy') {
-                setSessionStats(prev => ({ ...prev, correct: prev.correct + 1 }));
-              } else if (rating === 'hard') {
-                setSessionStats(prev => ({ ...prev, difficult: prev.difficult + 1 }));
+              // Update session stats based on the review result
+              if (reviewResult.success && reviewResult.data?.session_stats) {
+                const stats = reviewResult.data.session_stats;
+                setSessionStats(prev => ({
+                  correct: stats.good_or_easy_count || 0,
+                  difficult: stats.hard_count || 0,
+                  timeSpent: studyTime
+                }));
+                console.log('Updated session stats from review:', stats);
+              } else {
+                // Fallback: Update local session stats
+                setSessionStats(prev => {
+                  const newStats = { ...prev, timeSpent: studyTime };
+                  if (rating === 'good' || rating === 'easy') {
+                    newStats.correct = prev.correct + 1;
+                  } else if (rating === 'hard') {
+                    newStats.difficult = prev.difficult + 1;
+                  }
+                  return newStats;
+                });
               }
+
+              // If this was a difficult card being re-rated from 'hard' to 'good'/'easy', 
+              // or marking as reviewed, remove it from local difficult tracking
+              if ((rating === 'good' || rating === 'easy') && difficultCardIds.has(currentCardData.id)) {
+                setDifficultCardIds(prev => {
+                  const newSet = new Set(prev);
+                  newSet.delete(currentCardData.id);
+                  return newSet;
+                });
+                setIsReStudyingFromReview(false);
+              }
+
+              // If rating is 'hard', add to local difficult tracking
+              if (rating === 'hard') {
+                setDifficultCardIds(prev => new Set(prev).add(currentCardData.id));
+              }
+
+            } catch (error) {
+              console.error('Failed to record search flashcard review:', error);
+              // Fallback: Update local session stats only
+              setSessionStats(prev => {
+                const newStats = { ...prev, timeSpent: studyTime };
+                if (rating === 'good' || rating === 'easy') {
+                  newStats.correct = prev.correct + 1;
+                } else if (rating === 'hard') {
+                  newStats.difficult = prev.difficult + 1;
+                }
+                return newStats;
+              });
             }
+          } else {
+            console.error('Search session info missing search_id:', searchInfo);
+            // Fallback: Update local session stats only for search flashcards without proper session info
+            setSessionStats(prev => {
+              const newStats = { ...prev, timeSpent: studyTime };
+              if (rating === 'good' || rating === 'easy') {
+                newStats.correct = prev.correct + 1;
+              } else if (rating === 'hard') {
+                newStats.difficult = prev.difficult + 1;
+              }
+              return newStats;
+            });
           }
+
+          // Handle card navigation for search flashcards
+          if (currentCard < flashcards.length - 1) {
+            setCurrentCard(currentCard + 1);
+            setIsFlipped(false);
+            setCardStudyStartTime(studyTime); // Reset start time for next card
+            setIsReStudyingFromReview(false); // Reset re-studying flag when moving to next card
+          } else {
+            // Flashcards are complete - handle search session completion
+            if (session?.access_token) {
+              completeSearchStudySession(session)
+                .then(result => {
+                  if (result.success) {
+                    console.log('Search study session completed:', result.finalStats);
+                    // Only clear localStorage if there's no search_id in URL (temporary sessions)
+                    // For persistent sessions with search_id, keep localStorage for reload support
+                    const searchId = new URLSearchParams(window.location.search).get('search_id');
+                    if (!searchId) {
+                      localStorage.removeItem('memo-spark-search-session-info');
+                      localStorage.removeItem('memo-spark-current-search-study-session');
+                    }
+                  }
+                })
+                .catch(console.error);
+            }
+
+            setSessionComplete(true);
+          }
+
+          // Reset rating state
+          setRatingInProgress(null);
+          // Early return to prevent fallthrough to regular flashcard handling
+          return;
         } else {
           // Handle regular deck study session
           // Ensure there's an active study session; start one on-demand if missing
@@ -863,6 +1088,7 @@ const Study = () => {
       setCurrentCard(currentCard + 1);
       setIsFlipped(false);
       setCardStudyStartTime(studyTime); // Reset start time for next card
+      setIsReStudyingFromReview(false); // Reset re-studying flag when moving to next card
     } else {
       // Flashcards are complete, but don't stop the overall timer
       // Only mark flashcard activity as complete
@@ -870,17 +1096,20 @@ const Study = () => {
 
       // Complete search study session if this is a search flashcard session
       const searchSessionInfo = localStorage.getItem('memo-spark-search-session-info');
-      const isSearchFlashcardSession = searchSessionInfo && currentDeckIdentifier?.startsWith('search-');
+      const isSearchFlashcardSession = !!searchSessionInfo; // Simplified check
 
       if (isSearchFlashcardSession && session?.access_token) {
         completeSearchStudySession(session)
           .then(result => {
             if (result.success) {
               console.log('Search study session completed:', result.finalStats);
-              // Clear the search session info
-              localStorage.removeItem('memo-spark-search-session-info');
-              // Also clear the utility function's localStorage key
-              localStorage.removeItem('memo-spark-current-search-study-session');
+              // Only clear localStorage if there's no search_id in URL (temporary sessions)
+              // For persistent sessions with search_id, keep localStorage for reload support
+              const searchId = new URLSearchParams(window.location.search).get('search_id');
+              if (!searchId) {
+                localStorage.removeItem('memo-spark-search-session-info');
+                localStorage.removeItem('memo-spark-current-search-study-session');
+              }
             }
           })
           .catch(console.error);
@@ -1383,7 +1612,11 @@ const Study = () => {
                             Go to Dashboard
                           </Button>
                         </Link>
-                        <Button variant="outline" onClick={() => setTab('review')} className="w-full sm:w-auto">
+                        <Button variant="outline" onClick={async () => {
+                          setTab('review');
+                          // Refresh difficult cards count when switching to review tab
+                          await refreshDifficultCardsCount();
+                        }} className="w-full sm:w-auto">
                           Review Difficult Cards
                         </Button>
                       </div>
@@ -1951,8 +2184,56 @@ const Study = () => {
                               variant="outline"
                               size="sm"
                               onClick={async () => {
-                                // Mark as reviewed: record an 'good' review quickly with 1s
-                                if (user && session && card.id !== undefined) {
+                                // Always check for search flashcard session and call correct API
+                                const searchSessionInfo = localStorage.getItem('memo-spark-search-session-info');
+                                const isSearchFlashcardSession = !!searchSessionInfo; // Simplified check - just check if search session exists
+
+                                if (isSearchFlashcardSession && user && session && card.id !== undefined) {
+                                  try {
+                                    const searchInfo = JSON.parse(searchSessionInfo);
+                                    const searchService = new SearchFlashcardsService();
+
+                                    // Record a 'good' review for this card to remove it from difficult status
+                                    // This simulates the user marking it as reviewed (equivalent to good rating)
+                                    await searchService.recordReview(
+                                      searchInfo.search_id,
+                                      card.id,
+                                      'good', // Mark as 'good' to remove from difficult cards
+                                      1, // minimal study time for review action
+                                      searchInfo.session_id?.toString(), // Use search session ID
+                                      session
+                                    );
+
+                                    // Update local state
+                                    const newSet = new Set(reviewedDifficult);
+                                    newSet.add(idx);
+                                    setReviewedDifficult(newSet);
+
+                                    // Remove from difficult cards set locally
+                                    setDifficultCardIds(prev => {
+                                      const newSet = new Set(prev);
+                                      newSet.delete(card.id);
+                                      return newSet;
+                                    });
+
+                                    // Refresh the difficult cards count from the review system
+                                    await refreshDifficultCardsCount();
+
+                                    console.log('Search flashcard marked as reviewed successfully');
+                                    toast({
+                                      title: "Success",
+                                      description: "Card marked as reviewed",
+                                    });
+                                  } catch (e) {
+                                    console.error('Failed to mark search flashcard as reviewed:', e);
+                                    toast({
+                                      title: "Error",
+                                      description: "Failed to mark card as reviewed",
+                                      variant: "destructive"
+                                    });
+                                  }
+                                } else if (user && session && card.id !== undefined) {
+                                  // Handle regular deck flashcard review
                                   try {
                                     const result = await recordFlashcardReview(card.id, 'good', 1, session);
                                     const newSet = new Set(reviewedDifficult);
@@ -1960,7 +2241,6 @@ const Study = () => {
                                     setReviewedDifficult(newSet);
 
                                     // Update session ratings to remove this card from difficult cards
-                                    // Find the original index of this card in the flashcards array
                                     const originalIndex = flashcards.findIndex(fc =>
                                       fc.question === card.question && fc.answer === card.answer
                                     );
@@ -2015,6 +2295,7 @@ const Study = () => {
                                   setSessionComplete(false);
                                   setIsFlipped(false);
                                   setCardStudyStartTime(studyTime);
+                                  setIsReStudyingFromReview(true); // Mark that we're re-studying from review
                                   // Prevent the tab-change effect from zeroing session counts
                                   skipResetOnTabChange.current = true;
                                   setTab('flashcards');
