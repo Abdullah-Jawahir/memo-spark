@@ -46,6 +46,7 @@ interface User {
   points: number;
   created_at: string;
   updated_at: string;
+  email_verified_at?: string | null;
   decks_count?: number;
 }
 
@@ -360,7 +361,8 @@ const UserManagement = () => {
   };
 
   const isUserDeactivated = (user: User) => {
-    return user.points === -1; // Our temporary way to mark deactivated users
+    // Check if email_verified_at is null (indicates deactivated status)
+    return user.email_verified_at === null;
   };
 
   // Admin profile management functions
@@ -391,7 +393,7 @@ const UserManagement = () => {
     setAdminProfileSuccess(null);
 
     try {
-      const response = await fetch('http://localhost:8000/api/admin/profile', {
+      const response = await fetch('/api/admin/profile', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -451,7 +453,7 @@ const UserManagement = () => {
     setAdminProfileSuccess(null);
 
     try {
-      const response = await fetch('http://localhost:8000/api/admin/profile/password', {
+      const response = await fetch('/api/admin/profile/password', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -576,7 +578,13 @@ const UserManagement = () => {
                       </TableCell>
                       <TableCell>
                         <span className="font-medium">
-                          {isUserDeactivated(user) ? 'Deactivated' : (user.points || 0)}
+                          {isUserDeactivated(user) ? (
+                            <Badge variant="destructive" className="text-xs">
+                              Deactivated
+                            </Badge>
+                          ) : (
+                            user.points || 0
+                          )}
                         </span>
                       </TableCell>
                       <TableCell>{user.decks_count || 0}</TableCell>
@@ -818,7 +826,7 @@ const UserManagement = () => {
                 {confirmAction === 'activate' && (
                   <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
                     <p className="text-sm text-green-800 dark:text-green-200">
-                      This will restore the user's account and set their points to 0.
+                      This will restore the user's account along with the points.
                     </p>
                   </div>
                 )}
