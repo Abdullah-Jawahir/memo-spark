@@ -98,6 +98,9 @@ const Dashboard = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
 
+  // Search form state
+  const [searchTopic, setSearchTopic] = useState('');
+
   // Function to fetch dashboard data - only called explicitly
   const fetchDashboardData = async (forceRefresh = false) => {
     // Only allow one fetch operation at a time
@@ -902,6 +905,8 @@ const Dashboard = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
                           <div className="lg:col-span-2">
                             <Input
+                              value={searchTopic}
+                              onChange={(e) => setSearchTopic(e.target.value)}
                               placeholder="Enter topic (e.g., Machine Learning, Python Programming)"
                               className="h-11"
                             />
@@ -927,6 +932,7 @@ const Dashboard = () => {
                               key={topic}
                               variant="secondary"
                               className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors text-xs"
+                              onClick={() => setSearchTopic(topic)}
                             >
                               {topic}
                             </Badge>
