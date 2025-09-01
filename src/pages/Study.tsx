@@ -792,22 +792,37 @@ const Study = () => {
     setCardStudyStartTime(0);
   }, [tab]);
 
-  // Reset review state when flashcards change or when switching to review tab
+  // Reset review state when flashcards change (but NOT when switching tabs)
   useEffect(() => {
-    if (tab === 'review') {
-      setReviewedDifficult(new Set()); // Reset reviewed state when entering review tab
-    }
-  }, [flashcards, tab]);
+    // Only reset reviewed state when flashcards actually change, not on tab switch
+    setReviewedDifficult(new Set());
+  }, [flashcards]); // Remove 'tab' dependency to prevent reset on tab switch
 
   // For Review tab: filter difficult cards using useMemo to recalculate when ratings change
   const difficultCards = useMemo(() => {
-    const filtered = flashcards.filter((_, idx) => {
-      // Only include cards that are currently marked as 'hard'
-      return sessionRatings[idx] === 'hard';
-    });
+    const searchSessionInfo = localStorage.getItem('memo-spark-search-session-info');
+    const isSearchFlashcardSession = !!searchSessionInfo;
 
-    return filtered;
-  }, [flashcards, sessionRatings, tab]); // Recalculate when tab changes or ratings update
+    if (isSearchFlashcardSession) {
+      // For search flashcards, use difficultCardIds and exclude reviewed cards
+      const filtered = flashcards
+        .map((card, originalIndex) => ({ ...card, originalIndex }))
+        .filter(cardWithIndex => {
+          // Include cards that are in difficultCardIds but haven't been reviewed
+          return difficultCardIds.has(cardWithIndex.id) && !reviewedDifficult.has(cardWithIndex.originalIndex);
+        });
+      return filtered;
+    } else {
+      // For regular flashcards, use sessionRatings and exclude reviewed cards
+      const filtered = flashcards
+        .map((card, originalIndex) => ({ ...card, originalIndex }))
+        .filter(cardWithIndex => {
+          // Only include cards that are currently marked as 'hard' and haven't been reviewed
+          return sessionRatings[cardWithIndex.originalIndex] === 'hard' && !reviewedDifficult.has(cardWithIndex.originalIndex);
+        });
+      return filtered;
+    }
+  }, [flashcards, sessionRatings, tab, difficultCardIds, reviewedDifficult]); // Include all dependencies
 
   // Loading state while fetching materials
   if (isLoadingMaterials || isLoadingFromStorage) {
@@ -2171,7 +2186,7 @@ const Study = () => {
                     </div>
                   ) : (
                     difficultCards.map((card, idx) => (
-                      <Card key={idx} className="mb-4 bg-card shadow-md">
+                      <Card key={`${card.originalIndex}-${card.id}`} className="mb-4 bg-card shadow-md">
                         <CardContent className="p-6 overflow-x-auto">
                           <div className="mb-2 flex items-center gap-2">
                             <Badge variant="outline">Difficult</Badge>
@@ -2204,9 +2219,9 @@ const Study = () => {
                                       session
                                     );
 
-                                    // Update local state
+                                    // Update local state using originalIndex
                                     const newSet = new Set(reviewedDifficult);
-                                    newSet.add(idx);
+                                    newSet.add(card.originalIndex);
                                     setReviewedDifficult(newSet);
 
                                     // Remove from difficult cards set locally
@@ -2222,7 +2237,7 @@ const Study = () => {
                                     console.log('Search flashcard marked as reviewed successfully');
                                     toast({
                                       title: "Success",
-                                      description: "Card marked as reviewed",
+                                      description: "Card marked as reviewed successfully!",
                                     });
                                   } catch (e) {
                                     console.error('Failed to mark search flashcard as reviewed:', e);
@@ -2236,70 +2251,90 @@ const Study = () => {
                                   // Handle regular deck flashcard review
                                   try {
                                     const result = await recordFlashcardReview(card.id, 'good', 1, session);
+
+                                    // Update local state using originalIndex
                                     const newSet = new Set(reviewedDifficult);
-                                    newSet.add(idx);
+                                    newSet.add(card.originalIndex);
                                     setReviewedDifficult(newSet);
 
                                     // Update session ratings to remove this card from difficult cards
-                                    const originalIndex = flashcards.findIndex(fc =>
-                                      fc.question === card.question && fc.answer === card.answer
-                                    );
-                                    if (originalIndex !== -1) {
-                                      setSessionRatings(prev => {
-                                        const updated = [...prev];
-                                        updated[originalIndex] = 'good'; // Update from 'hard' to 'good'
-                                        return updated;
-                                      });
-                                    }
-
-                                    // Update session stats if available
-                                    if (result.success && result.sessionStats) {
-                                      setSessionStats({
-                                        correct: result.sessionStats.good_or_easy_count || 0,
-                                        difficult: result.sessionStats.hard_count || 0,
-                                        timeSpent: studyTime
-                                      });
-                                    }
-                                  } catch (e) {
-                                    console.error('Failed to mark reviewed', e);
-                                  }
-                                } else {
-                                  // For guest users, just update the session ratings
-                                  const originalIndex = flashcards.findIndex(fc =>
-                                    fc.question === card.question && fc.answer === card.answer
-                                  );
-                                  if (originalIndex !== -1) {
                                     setSessionRatings(prev => {
                                       const updated = [...prev];
-                                      updated[originalIndex] = 'good'; // Update from 'hard' to 'good'
+                                      updated[card.originalIndex] = 'good'; // Update from 'hard' to 'good'
                                       return updated;
                                     });
+
+                                    // Only update difficult count, don't increment correct count for mark reviewed
+                                    if (result && result.success && result.sessionStats) {
+                                      setSessionStats(prev => ({
+                                        correct: prev.correct, // Keep correct count unchanged
+                                        difficult: result.sessionStats.hard_count || 0, // Update only difficult count
+                                        timeSpent: prev.timeSpent // Keep time unchanged
+                                      }));
+                                    } else {
+                                      // Fallback: manually decrement difficult count only
+                                      setSessionStats(prev => ({
+                                        correct: prev.correct, // Keep correct count unchanged
+                                        difficult: Math.max(0, prev.difficult - 1), // Decrement difficult count
+                                        timeSpent: prev.timeSpent // Keep time unchanged
+                                      }));
+                                    }
+
+                                    console.log('Regular flashcard marked as reviewed successfully');
+                                    toast({
+                                      title: "Success",
+                                      description: "Card marked as reviewed successfully!",
+                                    });
+                                  } catch (e) {
+                                    console.error('Failed to mark reviewed', e);
+                                    toast({
+                                      title: "Error",
+                                      description: "Failed to mark card as reviewed",
+                                      variant: "destructive"
+                                    });
                                   }
+                                } else {
+                                  // For guest users, just update the session ratings using originalIndex
+                                  setSessionRatings(prev => {
+                                    const updated = [...prev];
+                                    updated[card.originalIndex] = 'good'; // Update from 'hard' to 'good'
+                                    return updated;
+                                  });
+
                                   const newSet = new Set(reviewedDifficult);
-                                  newSet.add(idx);
+                                  newSet.add(card.originalIndex);
                                   setReviewedDifficult(newSet);
+
+                                  // Manually decrement difficult count for guest users
+                                  setSessionStats(prev => ({
+                                    correct: prev.correct, // Keep correct count unchanged
+                                    difficult: Math.max(0, prev.difficult - 1), // Decrement difficult count
+                                    timeSpent: prev.timeSpent // Keep time unchanged
+                                  }));
+
+                                  toast({
+                                    title: "Success",
+                                    description: "Card marked as reviewed successfully!",
+                                  });
                                 }
                               }}
-                              disabled={reviewedDifficult.has(idx)}
+                              disabled={reviewedDifficult.has(card.originalIndex)}
                             >
-                              {reviewedDifficult.has(idx) ? 'Reviewed' : 'Mark Reviewed'}
+                              {reviewedDifficult.has(card.originalIndex) ? 'Reviewed' : 'Mark Reviewed'}
                             </Button>
                             <Button
                               variant="default"
                               size="sm"
                               onClick={() => {
-                                // Jump to this card in flashcards tab
-                                const targetIndex = flashcards.findIndex(fc => fc.question === card.question && fc.answer === card.answer);
-                                if (targetIndex !== -1) {
-                                  setCurrentCard(targetIndex);
-                                  setSessionComplete(false);
-                                  setIsFlipped(false);
-                                  setCardStudyStartTime(studyTime);
-                                  setIsReStudyingFromReview(true); // Mark that we're re-studying from review
-                                  // Prevent the tab-change effect from zeroing session counts
-                                  skipResetOnTabChange.current = true;
-                                  setTab('flashcards');
-                                }
+                                // Jump to this card in flashcards tab using originalIndex
+                                setCurrentCard(card.originalIndex);
+                                setSessionComplete(false);
+                                setIsFlipped(false);
+                                setCardStudyStartTime(studyTime);
+                                setIsReStudyingFromReview(true); // Mark that we're re-studying from review
+                                // Prevent the tab-change effect from zeroing session counts
+                                skipResetOnTabChange.current = true;
+                                setTab('flashcards');
                               }}
                             >
                               Study Again
