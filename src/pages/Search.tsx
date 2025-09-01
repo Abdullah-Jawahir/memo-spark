@@ -21,7 +21,8 @@ const Search = () => {
   const navigate = useNavigate();
 
   // State for recent searches tab
-  const [recentSearches, setRecentSearches] = useState<any[]>([]);
+  const [allRecentSearches, setAllRecentSearches] = useState<any[]>([]);
+  const [filteredRecentSearches, setFilteredRecentSearches] = useState<any[]>([]);
   const [suggestedTopics, setSuggestedTopics] = useState<string[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(false);
   const [loadingTopics, setLoadingTopics] = useState(false);
@@ -58,9 +59,12 @@ const Search = () => {
 
     try {
       setLoadingRecent(true);
-      const response = await searchService.getRecentSearches({ limit: 10 }, session);
+      // Load more results for searching, limit to 50 to avoid performance issues
+      const response = await searchService.getRecentSearches({ limit: 50 }, session);
       if (response.success) {
-        setRecentSearches(response.data);
+        setAllRecentSearches(response.data);
+        // Initially show only first 10 when no search query
+        setFilteredRecentSearches(response.data.slice(0, 10));
       }
     } catch (error) {
       console.error('Failed to load recent searches:', error);
@@ -96,11 +100,28 @@ const Search = () => {
   };
 
   const handleQuickSearch = () => {
-    if (searchQuery.trim()) {
-      // Perform search logic here
-      console.log('Quick searching for:', searchQuery);
+    filterRecentSearches(searchQuery);
+  };
+
+  const filterRecentSearches = (query: string) => {
+    if (!query.trim()) {
+      // No search query - show first 10
+      setFilteredRecentSearches(allRecentSearches.slice(0, 10));
+    } else {
+      // Filter based on search query
+      const filtered = allRecentSearches.filter(search =>
+        search.topic.toLowerCase().includes(query.toLowerCase()) ||
+        (search.description && search.description.toLowerCase().includes(query.toLowerCase())) ||
+        search.difficulty.toLowerCase().includes(query.toLowerCase())
+      );
+      setFilteredRecentSearches(filtered);
     }
   };
+
+  // Effect to filter searches when search query changes
+  useEffect(() => {
+    filterRecentSearches(searchQuery);
+  }, [searchQuery, allRecentSearches]);
 
   return (
     <ProtectedRoute requiredRole="student">
@@ -236,22 +257,50 @@ const Search = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex gap-3">
-                    <Input
-                      type="text"
-                      placeholder="Search your previous topics..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="flex-1 bg-white dark:bg-gray-950 border-2 border-blue-200 dark:border-blue-800 focus:border-blue-500 dark:focus:border-blue-400"
-                      onKeyPress={(e) => e.key === 'Enter' && handleQuickSearch()}
-                    />
-                    <Button
-                      size="default"
-                      className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
-                      onClick={handleQuickSearch}
-                    >
-                      <SearchIcon className="h-4 w-4" />
-                    </Button>
+                  <div className="space-y-3">
+                    <div className="flex gap-3">
+                      <Input
+                        type="text"
+                        placeholder="Search your previous topics..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="flex-1 bg-white dark:bg-gray-950 border-2 border-blue-200 dark:border-blue-800 focus:border-blue-500 dark:focus:border-blue-400"
+                        onKeyPress={(e) => e.key === 'Enter' && handleQuickSearch()}
+                      />
+                      {searchQuery.trim() && (
+                        <Button
+                          variant="outline"
+                          size="default"
+                          onClick={() => setSearchQuery('')}
+                          className="border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                        >
+                          Clear
+                        </Button>
+                      )}
+                      <Button
+                        size="default"
+                        className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
+                        onClick={handleQuickSearch}
+                      >
+                        <SearchIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {/* Search Results Info */}
+                    {searchQuery.trim() && (
+                      <div className="text-sm text-muted-foreground">
+                        {filteredRecentSearches.length === 0 ? (
+                          <span>No searches found matching "{searchQuery}"</span>
+                        ) : (
+                          <span>
+                            {filteredRecentSearches.length} search{filteredRecentSearches.length !== 1 ? 'es' : ''} found
+                            {filteredRecentSearches.length < allRecentSearches.length &&
+                              ` (filtered from ${allRecentSearches.length} total)`
+                            }
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -269,9 +318,9 @@ const Search = () => {
                     <div className="flex items-center justify-center py-4">
                       <Loader2 className="h-4 w-4 animate-spin" />
                     </div>
-                  ) : recentSearches.length > 0 ? (
+                  ) : filteredRecentSearches.length > 0 ? (
                     <div className="space-y-3">
-                      {recentSearches.map((search) => (
+                      {filteredRecentSearches.map((search) => (
                         <div
                           key={search.id}
                           className="flex items-center justify-between p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 cursor-pointer transition-all duration-200 transform hover:scale-[1.02]"
@@ -320,8 +369,17 @@ const Search = () => {
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <BookOpen className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p className="text-lg font-medium">No recent searches yet</p>
-                      <p className="text-sm">Start by generating your first set of flashcards!</p>
+                      {searchQuery.trim() ? (
+                        <>
+                          <p className="text-lg font-medium">No searches found</p>
+                          <p className="text-sm">Try adjusting your search terms or create new flashcards!</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-lg font-medium">No recent searches yet</p>
+                          <p className="text-sm">Start by generating your first set of flashcards!</p>
+                        </>
+                      )}
                     </div>
                   )}
                 </CardContent>
