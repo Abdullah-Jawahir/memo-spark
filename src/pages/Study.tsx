@@ -382,10 +382,16 @@ const Study = () => {
       }
 
       // If no localStorage data but we have search_id, try to restore from previous session
-      if (!parsedSearchData && searchId && session?.access_token) {
+      if (!parsedSearchData && searchId) {
+        if (!session?.access_token) {
+          // Don't set loading to false yet, we need to wait for session
+          return false;
+        }
+
         try {
           const searchService = new SearchFlashcardsService();
           const searchDetailsResponse = await searchService.getSearchDetails(parseInt(searchId), session);
+
           if (searchDetailsResponse.success && searchDetailsResponse.data.flashcards) {
             parsedSearchData = {
               flashcards: searchDetailsResponse.data.flashcards.map((card: any, index: number) => ({
@@ -436,6 +442,9 @@ const Study = () => {
         setReviewedDifficult(new Set());
         setDifficultCardIds(new Set());
 
+        setIsLoadingFromStorage(false);
+        setLastUpdated(new Date());
+
         // Store search session info immediately (even without authentication)
         localStorage.setItem('memo-spark-search-session-info', JSON.stringify({
           search_id: parsedSearchData.search_id,
@@ -471,9 +480,6 @@ const Study = () => {
             .catch(console.error);
         }
 
-        setIsLoadingFromStorage(false);
-        setLastUpdated(new Date());
-
         // Don't clean up search flashcards data when using query parameter persistence
         // Only clean up if there's no search_id in URL (temporary sessions)
         if (!searchId) {
@@ -485,6 +491,7 @@ const Study = () => {
         return true; // Return true to indicate search flashcards were loaded
       }
 
+      setIsLoadingFromStorage(false);
       return false; // Return false if no search flashcards were loaded
     };
 
@@ -495,7 +502,7 @@ const Study = () => {
           return; // Exit early since we loaded search flashcards
         }
         // If we didn't load search flashcards, continue with regular flow
-        setIsLoadingFromStorage(false);
+        // setIsLoadingFromStorage(false) is already called inside handleSearchFlashcardSession
       }).catch(error => {
         console.error('Error handling search flashcard session:', error);
         setIsLoadingFromStorage(false);
@@ -586,7 +593,7 @@ const Study = () => {
       setIsLoadingFromStorage(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [session]); // Add session dependency to re-run when authentication is available
 
   // Cleanup effect to remove search flashcards data when unmounting
   useEffect(() => {
