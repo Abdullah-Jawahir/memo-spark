@@ -98,7 +98,7 @@ const GoalSettings: React.FC = () => {
   const [goalTypes, setGoalTypes] = useState<GoalType[]>([]);
   const [userGoals, setUserGoals] = useState<UserGoal[]>([]);
   const [goalTemplates, setGoalTemplates] = useState<GoalTemplate[]>([]);
-  const [selectedUser, setSelectedUser] = useState<string>('');
+  const [selectedUser, setSelectedUser] = useState<string>('all');
   const [searchEmail, setSearchEmail] = useState('');
   const [users, setUsers] = useState<Array<{ id: string, name: string, email: string, user_type: string }>>([]);
 
@@ -909,7 +909,7 @@ const GoalSettings: React.FC = () => {
                   <SelectValue placeholder="All users" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All users</SelectItem>
+                  <SelectItem value="all">All users</SelectItem>
                   {Array.isArray(users) && users.map((user) => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.name}
@@ -943,7 +943,7 @@ const GoalSettings: React.FC = () => {
                 <TableBody>
                   {userGoals
                     .filter(goal => {
-                      if (selectedUser && goal.user_id !== selectedUser) return false;
+                      if (selectedUser && selectedUser !== "all" && goal.user_id !== selectedUser) return false;
                       if (searchEmail && !goal.user.email.toLowerCase().includes(searchEmail.toLowerCase())) return false;
                       return true;
                     })
