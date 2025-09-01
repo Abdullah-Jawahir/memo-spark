@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, BookOpen, TrendingUp, Settings, LogOut, UserPlus } from 'lucide-react';
+import { Users, BookOpen, TrendingUp, Settings, LogOut, UserPlus, Target } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Link } from 'react-router-dom';
@@ -345,18 +345,24 @@ const AdminDashboard = () => {
                       User Management
                     </Button>
                   </Link>
-                  <Button variant="outline" className="w-full justify-start h-12 text-sm">
-                    <BookOpen className="h-4 w-4 mr-3" />
-                    Content Moderation
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start h-12 text-sm">
-                    <TrendingUp className="h-4 w-4 mr-3" />
-                    Analytics Dashboard
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start h-12 text-sm">
-                    <Settings className="h-4 w-4 mr-3" />
-                    System Settings
-                  </Button>
+                  <Link to="/admin/goals">
+                    <Button variant="outline" className="w-full justify-start h-12 text-sm">
+                      <Target className="h-4 w-4 mr-3" />
+                      Goal Settings
+                    </Button>
+                  </Link>
+                  <Link to="/admin/analytics">
+                    <Button variant="outline" className="w-full justify-start h-12 text-sm">
+                      <TrendingUp className="h-4 w-4 mr-3" />
+                      Analytics Dashboard
+                    </Button>
+                  </Link>
+                  <Link to="/admin/settings">
+                    <Button variant="outline" className="w-full justify-start h-12 text-sm">
+                      <Settings className="h-4 w-4 mr-3" />
+                      System Settings
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
