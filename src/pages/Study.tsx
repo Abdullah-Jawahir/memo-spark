@@ -784,29 +784,53 @@ const Study = () => {
       return;
     }
 
-    if (tab === 'review') {
-      // When moving into the review flow, keep the existing correct/difficult
+    // Preserve stats when switching between flashcards and review tabs
+    if (tab === 'review' || tab === 'flashcards') {
+      // When moving into the review flow or back to flashcards, keep the existing correct/difficult
       // counts but ensure the displayed timeSpent matches the current studyTime.
       setSessionStats(prev => ({
         correct: prev.correct, // Explicitly preserve correct count
         difficult: prev.difficult, // Explicitly preserve difficult count  
         timeSpent: studyTime
       }));
-      console.log('Tab change: Entering review tab, preserving stats');
+      console.log('Tab change: Preserving stats for flashcards/review tab:', tab);
       return;
     }
 
-    // For other tab switches (flashcards, quiz, exercises) we reset per-activity stats
-    console.log('Tab change: Resetting stats for tab:', tab);
-    setSessionStats({
-      correct: 0,
-      difficult: 0,
-      timeSpent: studyTime // Keep current activity time
-    });
+    // Only reset stats for quiz/exercises tabs that have actual content
+    if (tab === 'quiz' && quizzes.length > 0) {
+      console.log('Tab change: Resetting stats for quiz tab with content');
+      setSessionStats({
+        correct: 0,
+        difficult: 0,
+        timeSpent: studyTime // Keep current activity time
+      });
+      // Reset activity-specific timers but not the overall timer
+      setStudyTime(0);
+      setCardStudyStartTime(0);
+      return;
+    }
 
-    // Reset activity-specific timers but not the overall timer
-    setStudyTime(0);
-    setCardStudyStartTime(0);
+    if (tab === 'exercises' && exercises.length > 0) {
+      console.log('Tab change: Resetting stats for exercises tab with content');
+      setSessionStats({
+        correct: 0,
+        difficult: 0,
+        timeSpent: studyTime // Keep current activity time
+      });
+      // Reset activity-specific timers but not the overall timer
+      setStudyTime(0);
+      setCardStudyStartTime(0);
+      return;
+    }
+
+    // For empty quiz/exercises tabs, preserve stats but update time
+    console.log('Tab change: Preserving stats for empty content tab:', tab);
+    setSessionStats(prev => ({
+      correct: prev.correct,
+      difficult: prev.difficult,
+      timeSpent: studyTime
+    }));
   }, [tab]);
 
   // Reset review state when flashcards change (but NOT when switching tabs)
