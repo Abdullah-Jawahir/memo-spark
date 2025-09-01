@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
   RotateCcw, Heart, X, Check, Volume2, BookOpen, Star, AlertCircle, UserPlus, Edit3,
-  Clock, RefreshCw, CheckSquare, Layers as LayersIcon, Pencil as PencilIcon, CheckCircle, FileText
+  Clock, RefreshCw, CheckSquare, Layers as LayersIcon, Pencil as PencilIcon, CheckCircle, FileText, Loader2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
@@ -124,6 +124,9 @@ const Study = () => {
 
   // Track which cards were originally marked as difficult (for search flashcards)
   const [difficultCardIds, setDifficultCardIds] = useState<Set<number>>(new Set());
+
+  // Track which cards are currently being marked as reviewed (loading state)
+  const [markingReviewed, setMarkingReviewed] = useState<Set<number>>(new Set());
 
   // Helper function to refresh difficult cards count for search flashcards
   const refreshDifficultCardsCount = async () => {
@@ -2234,135 +2237,152 @@ const Study = () => {
                               variant="outline"
                               size="sm"
                               onClick={async () => {
-                                // Always check for search flashcard session and call correct API
-                                const searchSessionInfo = localStorage.getItem('memo-spark-search-session-info');
-                                const isSearchFlashcardSession = !!searchSessionInfo; // Simplified check - just check if search session exists
+                                // Set loading state for this specific card
+                                setMarkingReviewed(prev => new Set(prev).add(card.originalIndex));
 
-                                if (isSearchFlashcardSession && user && session && card.id !== undefined) {
-                                  try {
-                                    const searchInfo = JSON.parse(searchSessionInfo);
-                                    const searchService = new SearchFlashcardsService();
+                                try {
+                                  // Always check for search flashcard session and call correct API
+                                  const searchSessionInfo = localStorage.getItem('memo-spark-search-session-info');
+                                  const isSearchFlashcardSession = !!searchSessionInfo; // Simplified check - just check if search session exists
 
-                                    // Record a 'good' review for this card to remove it from difficult status
-                                    // This simulates the user marking it as reviewed (equivalent to good rating)
-                                    await searchService.recordReview(
-                                      searchInfo.search_id,
-                                      card.id,
-                                      'good', // Mark as 'good' to remove from difficult cards
-                                      1, // minimal study time for review action
-                                      searchInfo.session_id?.toString(), // Use search session ID
-                                      session
-                                    );
+                                  if (isSearchFlashcardSession && user && session && card.id !== undefined) {
+                                    try {
+                                      const searchInfo = JSON.parse(searchSessionInfo);
+                                      const searchService = new SearchFlashcardsService();
 
-                                    // Update local state using originalIndex
-                                    const newSet = new Set(reviewedDifficult);
-                                    newSet.add(card.originalIndex);
-                                    setReviewedDifficult(newSet);
+                                      // Record a 'good' review for this card to remove it from difficult status
+                                      // This simulates the user marking it as reviewed (equivalent to good rating)
+                                      await searchService.recordReview(
+                                        searchInfo.search_id,
+                                        card.id,
+                                        'good', // Mark as 'good' to remove from difficult cards
+                                        1, // minimal study time for review action
+                                        searchInfo.session_id?.toString(), // Use search session ID
+                                        session
+                                      );
 
-                                    // Remove from difficult cards set locally
-                                    setDifficultCardIds(prev => {
-                                      const newSet = new Set(prev);
-                                      newSet.delete(card.id);
-                                      return newSet;
-                                    });
+                                      // Update local state using originalIndex
+                                      const newSet = new Set(reviewedDifficult);
+                                      newSet.add(card.originalIndex);
+                                      setReviewedDifficult(newSet);
 
-                                    // Refresh the difficult cards count from the review system
-                                    await refreshDifficultCardsCount();
+                                      // Remove from difficult cards set locally
+                                      setDifficultCardIds(prev => {
+                                        const newSet = new Set(prev);
+                                        newSet.delete(card.id);
+                                        return newSet;
+                                      });
 
-                                    // Also increment the correct count for marking as reviewed
-                                    setSessionStats(prev => ({
-                                      correct: prev.correct + 1, // Increment correct count
-                                      difficult: prev.difficult, // Will be updated by refreshDifficultCardsCount
-                                      timeSpent: prev.timeSpent
-                                    }));
+                                      // Refresh the difficult cards count from the review system
+                                      await refreshDifficultCardsCount();
 
-                                    console.log('Search flashcard marked as reviewed successfully');
-                                    toast({
-                                      title: "Success",
-                                      description: "Card marked as reviewed successfully!",
-                                    });
-                                  } catch (e) {
-                                    console.error('Failed to mark search flashcard as reviewed:', e);
-                                    toast({
-                                      title: "Error",
-                                      description: "Failed to mark card as reviewed",
-                                      variant: "destructive"
-                                    });
-                                  }
-                                } else if (user && session && card.id !== undefined) {
-                                  // Handle regular deck flashcard review
-                                  try {
-                                    const result = await recordFlashcardReview(card.id, 'good', 1, session);
+                                      // Also increment the correct count for marking as reviewed
+                                      setSessionStats(prev => ({
+                                        correct: prev.correct + 1, // Increment correct count
+                                        difficult: prev.difficult, // Will be updated by refreshDifficultCardsCount
+                                        timeSpent: prev.timeSpent
+                                      }));
 
-                                    // Update local state using originalIndex
-                                    const newSet = new Set(reviewedDifficult);
-                                    newSet.add(card.originalIndex);
-                                    setReviewedDifficult(newSet);
+                                      toast({
+                                        title: "Success",
+                                        description: "Card marked as reviewed successfully!",
+                                      });
+                                    } catch (e) {
+                                      console.error('Failed to mark search flashcard as reviewed:', e);
+                                      toast({
+                                        title: "Error",
+                                        description: "Failed to mark card as reviewed",
+                                        variant: "destructive"
+                                      });
+                                    }
+                                  } else if (user && session && card.id !== undefined) {
+                                    // Handle regular deck flashcard review
+                                    try {
+                                      const result = await recordFlashcardReview(card.id, 'good', 1, session);
 
-                                    // Update session ratings to remove this card from difficult cards
+                                      // Update local state using originalIndex
+                                      const newSet = new Set(reviewedDifficult);
+                                      newSet.add(card.originalIndex);
+                                      setReviewedDifficult(newSet);
+
+                                      // Update session ratings to remove this card from difficult cards
+                                      setSessionRatings(prev => {
+                                        const updated = [...prev];
+                                        updated[card.originalIndex] = 'good'; // Update from 'hard' to 'good'
+                                        return updated;
+                                      });
+
+                                      // Update both correct and difficult counts for mark reviewed
+                                      if (result && result.success && result.sessionStats) {
+                                        setSessionStats(prev => ({
+                                          correct: prev.correct + 1, // Increment correct count
+                                          difficult: result.sessionStats.hard_count || 0, // Update difficult count from backend
+                                          timeSpent: prev.timeSpent // Keep time unchanged
+                                        }));
+                                      } else {
+                                        // Fallback: manually increment correct and decrement difficult counts
+                                        setSessionStats(prev => ({
+                                          correct: prev.correct + 1, // Increment correct count
+                                          difficult: Math.max(0, prev.difficult - 1), // Decrement difficult count
+                                          timeSpent: prev.timeSpent // Keep time unchanged
+                                        }));
+                                      }
+
+                                      toast({
+                                        title: "Success",
+                                        description: "Card marked as reviewed successfully!",
+                                      });
+                                    } catch (e) {
+                                      console.error('Failed to mark reviewed', e);
+                                      toast({
+                                        title: "Error",
+                                        description: "Failed to mark card as reviewed",
+                                        variant: "destructive"
+                                      });
+                                    }
+                                  } else {
+                                    // For guest users, just update the session ratings using originalIndex
                                     setSessionRatings(prev => {
                                       const updated = [...prev];
                                       updated[card.originalIndex] = 'good'; // Update from 'hard' to 'good'
                                       return updated;
                                     });
 
-                                    // Update both correct and difficult counts for mark reviewed
-                                    if (result && result.success && result.sessionStats) {
-                                      setSessionStats(prev => ({
-                                        correct: prev.correct + 1, // Increment correct count
-                                        difficult: result.sessionStats.hard_count || 0, // Update difficult count from backend
-                                        timeSpent: prev.timeSpent // Keep time unchanged
-                                      }));
-                                    } else {
-                                      // Fallback: manually increment correct and decrement difficult counts
-                                      setSessionStats(prev => ({
-                                        correct: prev.correct + 1, // Increment correct count
-                                        difficult: Math.max(0, prev.difficult - 1), // Decrement difficult count
-                                        timeSpent: prev.timeSpent // Keep time unchanged
-                                      }));
-                                    }
+                                    const newSet = new Set(reviewedDifficult);
+                                    newSet.add(card.originalIndex);
+                                    setReviewedDifficult(newSet);
 
-                                    console.log('Regular flashcard marked as reviewed successfully');
+                                    // Manually increment correct and decrement difficult counts for guest users
+                                    setSessionStats(prev => ({
+                                      correct: prev.correct + 1, // Increment correct count
+                                      difficult: Math.max(0, prev.difficult - 1), // Decrement difficult count
+                                      timeSpent: prev.timeSpent // Keep time unchanged
+                                    }));
+
                                     toast({
                                       title: "Success",
                                       description: "Card marked as reviewed successfully!",
                                     });
-                                  } catch (e) {
-                                    console.error('Failed to mark reviewed', e);
-                                    toast({
-                                      title: "Error",
-                                      description: "Failed to mark card as reviewed",
-                                      variant: "destructive"
-                                    });
                                   }
-                                } else {
-                                  // For guest users, just update the session ratings using originalIndex
-                                  setSessionRatings(prev => {
-                                    const updated = [...prev];
-                                    updated[card.originalIndex] = 'good'; // Update from 'hard' to 'good'
-                                    return updated;
-                                  });
-
-                                  const newSet = new Set(reviewedDifficult);
-                                  newSet.add(card.originalIndex);
-                                  setReviewedDifficult(newSet);
-
-                                  // Manually increment correct and decrement difficult counts for guest users
-                                  setSessionStats(prev => ({
-                                    correct: prev.correct + 1, // Increment correct count
-                                    difficult: Math.max(0, prev.difficult - 1), // Decrement difficult count
-                                    timeSpent: prev.timeSpent // Keep time unchanged
-                                  }));
-
-                                  toast({
-                                    title: "Success",
-                                    description: "Card marked as reviewed successfully!",
+                                } finally {
+                                  // Remove loading state after operation completes
+                                  setMarkingReviewed(prev => {
+                                    const newSet = new Set(prev);
+                                    newSet.delete(card.originalIndex);
+                                    return newSet;
                                   });
                                 }
                               }}
-                              disabled={reviewedDifficult.has(card.originalIndex)}
+                              disabled={reviewedDifficult.has(card.originalIndex) || markingReviewed.has(card.originalIndex)}
                             >
-                              {reviewedDifficult.has(card.originalIndex) ? 'Reviewed' : 'Mark Reviewed'}
+                              {markingReviewed.has(card.originalIndex) ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                  Marking...
+                                </>
+                              ) : (
+                                reviewedDifficult.has(card.originalIndex) ? 'Reviewed' : 'Mark Reviewed'
+                              )}
                             </Button>
                             <Button
                               variant="default"
