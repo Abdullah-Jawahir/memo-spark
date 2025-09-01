@@ -892,7 +892,7 @@ const Dashboard = () => {
                   {/* Search Section - Full Width */}
                   <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50">
                     <CardHeader className="pb-4">
-                      <CardTitle className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                      <CardTitle className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                         Search & Explore Flashcards
                       </CardTitle>
                     </CardHeader>
@@ -913,7 +913,7 @@ const Dashboard = () => {
                               <option value="advanced">Advanced</option>
                             </select>
                           </div>
-                          <Button className="h-11 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                          <Button className="h-11 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700">
                             <Search className="h-4 w-4 mr-2" />
                             Generate
                           </Button>
