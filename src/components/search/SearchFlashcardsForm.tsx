@@ -115,9 +115,31 @@ const SearchFlashcardsForm: React.FC<SearchFlashcardsFormProps> = ({ className =
             description: "Your flashcards have been generated successfully.",
           });
 
-          // Navigate to the generated flashcards
+          // Verify the search details are available before navigating
           if (response.data.search_id) {
-            navigate(`/flashcards/search/${response.data.search_id}`);
+            const verifyAndNavigate = async () => {
+              try {
+                // Wait a moment and then verify the data is available
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                const searchDetails = await searchService.getSearchDetails(response.data.search_id, session);
+
+                if (searchDetails.success && searchDetails.data.flashcards.length > 0) {
+                  navigate(`/study?source=search_flashcards&search_id=${response.data.search_id}`);
+                } else {
+                  // If data is not ready, wait a bit more and try again
+                  setTimeout(() => {
+                    navigate(`/study?source=search_flashcards&search_id=${response.data.search_id}`);
+                  }, 2000);
+                }
+              } catch (error) {
+                console.error('Error verifying search details:', error);
+                // Navigate anyway - the Study page will handle the loading
+                navigate(`/study?source=search_flashcards&search_id=${response.data.search_id}`);
+              }
+            };
+
+            verifyAndNavigate();
           }
         } else if (newStatus === 'failed') {
           console.log(`Job ${currentJobId} failed`);
