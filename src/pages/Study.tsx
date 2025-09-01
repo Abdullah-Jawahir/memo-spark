@@ -1394,27 +1394,6 @@ const Study = () => {
           </Alert>
         )}
 
-        {/* Overall Study Completion Banner */}
-        {isOverallComplete && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.5 }}
-            className="mb-6 sm:mb-8"
-          >
-            <Alert className="border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 text-sm sm:text-base shadow-lg">
-              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-              <AlertDescription className="text-green-800">
-                <strong>🎉 Congratulations!</strong> You've completed all study activities for this session!
-                <div className="mt-2 text-sm">
-                  <span className="font-medium">Total Study Time: {formatTime(overallStudyTime)}</span>
-                </div>
-              </AlertDescription>
-            </Alert>
-          </motion.div>
-        )}
-
         {/* Missing Materials Detection */}
         {user && session && searchParams.get('deckId') && !isOverallComplete && (
           <motion.div
