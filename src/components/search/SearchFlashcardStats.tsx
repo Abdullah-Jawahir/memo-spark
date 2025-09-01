@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, BookOpen, Target, Clock, TrendingUp, BarChart3, Calendar, Award } from 'lucide-react';
+import { Loader2, BookOpen, Target, Clock, TrendingUp, BarChart3, Calendar, Award, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import SearchFlashcardsService from '@/integrations/searchFlashcardsService';
 import { useToast } from '@/hooks/use-toast';
@@ -17,12 +17,14 @@ const SearchFlashcardStats: React.FC<SearchFlashcardStatsProps> = ({ className =
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [timeRange, setTimeRange] = useState(30);
+  const [difficultCardsCount, setDifficultCardsCount] = useState(0);
 
   const searchService = new SearchFlashcardsService();
 
   useEffect(() => {
     if (session?.access_token) {
       loadStats();
+      loadDifficultCardsCount();
     }
   }, [session, timeRange]);
 
@@ -44,6 +46,19 @@ const SearchFlashcardStats: React.FC<SearchFlashcardStatsProps> = ({ className =
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDifficultCardsCount = async () => {
+    if (!session?.access_token) return;
+
+    try {
+      const response = await searchService.getDifficultCardsCount(session);
+      if (response.success && response.data) {
+        setDifficultCardsCount(response.data.difficult_cards_count);
+      }
+    } catch (error) {
+      console.error('Failed to load difficult cards count:', error);
     }
   };
 
@@ -107,7 +122,7 @@ const SearchFlashcardStats: React.FC<SearchFlashcardStatsProps> = ({ className =
             </div>
           ) : stats ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 {/* Total Sessions */}
                 <div className="text-center p-4 border rounded-lg">
                   <div className="flex items-center justify-center mb-2">
@@ -155,6 +170,20 @@ const SearchFlashcardStats: React.FC<SearchFlashcardStatsProps> = ({ className =
                   <div className="text-sm text-muted-foreground">Total Study Time</div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {stats.period_days} days
+                  </div>
+                </div>
+
+                {/* Difficult Cards */}
+                <div className="text-center p-4 border rounded-lg">
+                  <div className="flex items-center justify-center mb-2">
+                    <AlertCircle className="h-8 w-8 text-red-600" />
+                  </div>
+                  <div className="text-2xl font-bold text-red-600">
+                    {difficultCardsCount}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Difficult Cards</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Need Review
                   </div>
                 </div>
               </div>
