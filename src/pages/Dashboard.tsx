@@ -13,7 +13,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
 import { API_ENDPOINTS, API_BASE_URL } from '@/config/api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import SearchFlashcards from '@/components/search/SearchFlashcards';
 
 // Type definitions based on the API response
 interface UserInfo {
@@ -481,20 +480,43 @@ const Dashboard = () => {
   return (
     <ProtectedRoute requiredRole="student">
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
-        <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
-        {/* Logo pinned to left corner like main header */}
-        <div className="absolute left-4 top-4 z-50">
-          <Link to="/" className="flex items-center space-x-2 group">
-            <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg group-hover:scale-105 transition-transform">
-              <BookOpen className="h-6 w-6 text-white" />
+        {/* Fixed Header */}
+        <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between">
+              {/* Logo */}
+              <Link to="/" className="flex items-center space-x-3 group">
+                <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl group-hover:scale-105 transition-transform shadow-lg">
+                  <BookOpen className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  MemoSpark
+                </span>
+              </Link>
+
+              {/* Header Actions */}
+              <div className="flex items-center space-x-3">
+                <ThemeSwitcher />
+                <Link to="/upload">
+                  <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Deck
+                  </Button>
+                </Link>
+                <Button variant="outline" size="sm" onClick={openProfileModal}>
+                  <User className="h-4 w-4 mr-2" />
+                  Profile
+                </Button>
+                <Button variant="outline" size="sm" onClick={signOut}>
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              MemoSpark
-            </span>
-          </Link>
+          </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-6">
 
           {/* Error State */}
           {error && (
@@ -610,87 +632,53 @@ const Dashboard = () => {
           {/* Content - only show when not loading */}
           {!loading && (
             <>
-              {/* Header */}
-              <div className="flex flex-col mb-6 sm:mb-8">
-                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 space-y-4 lg:space-y-0">
-                  <div className="flex items-center space-x-4">
-                    <div>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
-                        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                          Welcome back, {dashboardData?.user?.display_name || profile?.full_name || 'Student'}!
-                        </h1>
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 w-fit">
-                          {dashboardData?.user?.user_tag || 'Student'}
-                        </Badge>
-                      </div>
-                      <p className="text-sm sm:text-base text-muted-foreground">Ready to continue your learning journey?</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
-                    <Link to="/upload" className="w-full sm:w-auto">
-                      <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 w-full sm:w-auto">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create New Deck
-                      </Button>
-                    </Link>
-                    <Button variant="outline" onClick={openProfileModal} className="w-full sm:w-auto">
-                      <User className="h-4 w-4 mr-2" />
-                      Profile
-                    </Button>
-                    <Button variant="outline" onClick={signOut} className="w-full sm:w-auto">
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Sign Out
-                    </Button>
+              {/* Welcome Section */}
+              <div className="mb-8">
+                <div className="text-center mb-6">
+                  <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
+                    Welcome back, {dashboardData?.user?.display_name || profile?.full_name || 'Student'}! 👋
+                  </h1>
+                  <p className="text-lg text-muted-foreground mb-4">Ready to continue your learning journey?</p>
+                  <div className="flex justify-center">
+                    <Badge variant="secondary" className="bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/50 dark:to-purple-900/50 text-blue-800 dark:text-blue-200 px-4 py-1 text-sm font-medium">
+                      {dashboardData?.user?.user_tag || 'Student'}
+                    </Badge>
                   </div>
                 </div>
 
-                {/* Data refresh info */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-card/50 rounded-lg p-3 space-y-2 sm:space-y-0">
-                  <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4 mr-2 opacity-70" />
-                    Last updated: {formatLastUpdated()}
-                  </div>
+                {/* Data refresh info - more subtle */}
+                <div className="flex items-center justify-center text-sm text-muted-foreground bg-card/30 rounded-full px-4 py-2 w-fit mx-auto">
+                  <Clock className="h-4 w-4 mr-2 opacity-70" />
+                  Last updated: {formatLastUpdated()}
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => fetchDashboardData(true)}
                     disabled={isRefreshing}
-                    className="text-sm"
+                    className="ml-3 h-6 px-2"
                   >
                     {isRefreshing ? (
-                      <>
-                        <Loader2 className="h-3 w-3 mr-2 animate-spin" />
-                        Refreshing...
-                      </>
+                      <Loader2 className="h-3 w-3 animate-spin" />
                     ) : (
-                      <>
-                        <svg
-                          className="h-3 w-3 mr-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        Refresh Data
-                      </>
+                      <RefreshCw className="h-3 w-3" />
                     )}
                   </Button>
                 </div>
               </div>
 
-              {/* Stats Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+              {/* Stats Cards - Enhanced Design */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
                 {studyStats.map((stat, index) => (
-                  <Card key={index} className="hover:shadow-lg transition-shadow">
-                    <CardContent className="p-4 sm:p-6">
+                  <Card key={index} className="relative overflow-hidden hover:shadow-xl transition-all duration-300 group border-0 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 group-hover:from-blue-500/10 group-hover:to-purple-500/10 transition-all duration-300" />
+                    <CardContent className="p-6 relative">
                       <div className="flex items-center justify-between">
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 truncate">{stat.label}</p>
-                          <p className="text-xl sm:text-2xl font-bold text-foreground truncate">{stat.value}</p>
+                          <p className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wide">{stat.label}</p>
+                          <p className="text-3xl font-bold text-foreground">{stat.value}</p>
                         </div>
-                        <div className={`p-2 sm:p-3 rounded-full bg-card flex-shrink-0 ${stat.color}`}>
-                          <stat.icon className="h-5 w-5 sm:h-6 sm:w-6" />
+                        <div className={`p-3 rounded-2xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-700 dark:to-gray-800 shadow-lg group-hover:scale-110 transition-transform duration-300 ${stat.color}`}>
+                          <stat.icon className="h-6 w-6" />
                         </div>
                       </div>
                     </CardContent>
@@ -698,104 +686,148 @@ const Dashboard = () => {
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-                {/* Recent Decks */}
-                <div className="lg:col-span-2">
-                  <Card>
-                    <CardHeader>
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-2 sm:space-y-0">
-                        <CardTitle className="text-lg sm:text-xl">Recent Study Decks</CardTitle>
-                        <div className="flex items-center space-x-2 w-full sm:w-auto">
-                          <div className="relative flex-1 sm:flex-none">
-                            <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
-                            <Input placeholder="Search decks..." className="pl-10 w-full sm:w-64" />
+              {/* Main Content Grid */}
+              <div className="space-y-8">
+                {/* Top Row - Recent Decks and Today's Goal */}
+                <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+                  {/* Recent Decks - Takes 3 columns */}
+                  <div className="xl:col-span-3">
+                    <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50">
+                      <CardHeader className="pb-4">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+                          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                            Recent Study Decks
+                          </CardTitle>
+                          <div className="flex items-center space-x-3 w-full sm:w-auto">
+                            <div className="relative flex-1 sm:flex-none">
+                              <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
+                              <Input
+                                placeholder="Search decks..."
+                                className="pl-10 w-full sm:w-64 border-0 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 transition-colors"
+                              />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {recentDecks.length === 0 ? (
-                        <div className="text-center py-6 sm:py-8">
-                          <BookOpen className="h-10 w-10 sm:h-12 sm:w-12 text-gray-300 mx-auto mb-3" />
-                          <p className="text-base sm:text-lg font-medium text-foreground">No study decks yet</p>
-                          <p className="text-sm text-muted-foreground mb-4 px-4">Create your first deck to start learning</p>
-                          <Link to="/upload" className="inline-block">
-                            <Button size="sm" className="w-full sm:w-auto">
-                              <Plus className="h-4 w-4 mr-1" /> Create New Deck
-                            </Button>
-                          </Link>
-                        </div>
-                      ) : (
-                        <div className="space-y-3 sm:space-y-4">
-                          {recentDecks.map((deck, index) => (
-                            <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 bg-card rounded-lg hover:bg-muted transition-colors space-y-3 sm:space-y-0">
-                              <div className="flex-1 min-w-0 w-full sm:w-auto">
-                                <h3 className="font-semibold text-foreground mb-1 truncate">{deck.name}</h3>
-                                <div className="flex flex-wrap items-center space-x-2 sm:space-x-4 text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-0">
-                                  <span>{deck.card_count} cards</span>
-                                  <span>•</span>
-                                  <span>{deck.last_studied}</span>
-                                </div>
-                                <div className="mt-2">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs text-muted-foreground">Progress</span>
-                                    <span className="text-xs text-foreground">{deck.progress}%</span>
+                      </CardHeader>
+                      <CardContent>
+                        {recentDecks.length === 0 ? (
+                          <div className="text-center py-12">
+                            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/50 dark:to-purple-900/50 rounded-full flex items-center justify-center">
+                              <BookOpen className="h-12 w-12 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <h3 className="text-xl font-semibold text-foreground mb-2">No study decks yet</h3>
+                            <p className="text-muted-foreground mb-6 max-w-md mx-auto">Create your first deck to start your learning journey and track your progress</p>
+                            <Link to="/upload">
+                              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                                <Plus className="h-4 w-4 mr-2" /> Create Your First Deck
+                              </Button>
+                            </Link>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {recentDecks.map((deck, index) => (
+                              <div key={index} className="group p-5 bg-gradient-to-r from-white to-gray-50/80 dark:from-gray-700/50 dark:to-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700 hover:shadow-lg transition-all duration-300">
+                                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between space-y-4 lg:space-y-0">
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="font-bold text-lg text-foreground mb-2 group-hover:text-blue-600 transition-colors">{deck.name}</h3>
+                                    <div className="flex flex-wrap items-center space-x-4 text-sm text-muted-foreground mb-3">
+                                      <div className="flex items-center">
+                                        <BookOpen className="h-4 w-4 mr-1" />
+                                        <span>{deck.card_count} cards</span>
+                                      </div>
+                                      <div className="flex items-center">
+                                        <Clock className="h-4 w-4 mr-1" />
+                                        <span>{deck.last_studied}</span>
+                                      </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-sm font-medium text-muted-foreground">Progress</span>
+                                        <span className="text-sm font-bold text-foreground">{deck.progress}%</span>
+                                      </div>
+                                      <Progress value={deck.progress} className="h-2 bg-gray-200 dark:bg-gray-700" />
+                                    </div>
                                   </div>
-                                  <Progress value={deck.progress} className="h-1.5 sm:h-2" />
+                                  <Link to={deck.id ? `/study?deckId=${deck.id}` : `/study?deck=${encodeURIComponent(deck.name)}`} className="lg:ml-6">
+                                    <Button className="w-full lg:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg">
+                                      <Target className="h-4 w-4 mr-2" />
+                                      Study Now
+                                    </Button>
+                                  </Link>
                                 </div>
                               </div>
-                              <Link to={deck.id ? `/study?deckId=${deck.id}` : `/study?deck=${encodeURIComponent(deck.name)}`} className="w-full sm:w-auto sm:ml-4">
-                                <Button variant="outline" className="w-full sm:w-auto">
-                                  Study
-                                </Button>
-                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Today's Goal - Takes 1 column */}
+                  <div className="xl:col-span-1">
+                    <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50 h-full">
+                      <CardHeader className="pb-4">
+                        <CardTitle className="text-xl font-bold text-center bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                          Today's Goal
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="flex flex-col justify-center">
+                        {dashboardData?.todays_goal ? (
+                          <div className="text-center space-y-6">
+                            <div className="relative">
+                              <div className="text-4xl font-bold text-blue-600 mb-2">
+                                {dashboardData.todays_goal.studied}/{dashboardData.todays_goal.goal}
+                              </div>
+                              <p className="text-sm text-muted-foreground">{dashboardData.todays_goal.goal_description}</p>
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+
+                            <div className="space-y-3">
+                              <Progress
+                                value={dashboardData.todays_goal.progress_percentage}
+                                className={`h-3 ${dashboardData.todays_goal.is_completed ? "bg-green-200" : ""}`}
+                              />
+                              <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>Progress</span>
+                                <span>{dashboardData.todays_goal.progress_percentage}%</span>
+                              </div>
+                            </div>
+
+                            <div className={`p-4 rounded-xl ${dashboardData.todays_goal.is_completed
+                              ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+                              : "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
+                              }`}>
+                              <p className={`text-sm font-medium ${dashboardData.todays_goal.is_completed
+                                ? "text-green-800 dark:text-green-200"
+                                : "text-blue-800 dark:text-blue-200"
+                                }`}>
+                                {dashboardData.todays_goal.is_completed
+                                  ? "🎉 Daily goal completed!"
+                                  : dashboardData.todays_goal.message}
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center py-8">
+                            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-full flex items-center justify-center">
+                              <Target className="h-8 w-8 text-gray-400" />
+                            </div>
+                            <p className="text-muted-foreground">No active goal found</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
 
-                {/* Study Goals & Achievements */}
-                <div className="space-y-4 sm:space-y-6">
-                  {/* Today's Goal */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg sm:text-xl">Today's Goal</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {dashboardData?.todays_goal ? (
-                        <div className="text-center">
-                          <div className="mb-3 sm:mb-4">
-                            <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-1">
-                              {dashboardData.todays_goal.studied}/{dashboardData.todays_goal.goal}
-                            </div>
-                            <p className="text-xs sm:text-sm text-muted-foreground">{dashboardData.todays_goal.goal_description}</p>
-                          </div>
-                          <Progress
-                            value={dashboardData.todays_goal.progress_percentage}
-                            className={`mb-3 sm:mb-4 ${dashboardData.todays_goal.is_completed ? "bg-green-200" : ""}`}
-                          />
-                          <p className="text-xs sm:text-sm text-muted-foreground">
-                            {dashboardData.todays_goal.is_completed
-                              ? "Daily goal completed! 🎉"
-                              : dashboardData.todays_goal.message}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="text-center py-4 sm:py-6">
-                          <p className="text-sm sm:text-base text-muted-foreground">No active goal found</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  {/* Achievements */}
-                  <Card>
-                    <CardHeader>
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
-                        <CardTitle className="text-lg sm:text-xl">Recent Achievements</CardTitle>
+                {/* Bottom Section - Better Organized */}
+                <div className="space-y-8">
+                  {/* Achievements Row */}
+                  <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50">
+                    <CardHeader className="pb-4">
+                      <div className="flex justify-between items-center">
+                        <CardTitle className="text-xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
+                          Recent Achievements
+                        </CardTitle>
                         <Button
                           variant="outline"
                           size="sm"
@@ -803,23 +835,23 @@ const Dashboard = () => {
                             localStorage.removeItem(DASHBOARD_ACHIEVEMENTS_KEY);
                             fetchDashboardData(true);
                           }}
-                          className="w-full sm:w-auto"
+                          className="border-0 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
-                          <RefreshCw className="w-4 h-4 mr-2" />
-                          <span className="hidden sm:inline">Refresh</span>
+                          <RefreshCw className="w-4 h-4" />
                         </Button>
                       </div>
                     </CardHeader>
                     <CardContent>
-
                       {achievements.length === 0 ? (
-                        <div className="text-center py-4 sm:py-6">
-                          <p className="text-sm sm:text-base text-muted-foreground">Keep studying to earn achievements!</p>
+                        <div className="text-center py-8">
+                          <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-yellow-100 to-orange-100 dark:from-yellow-900/50 dark:to-orange-900/50 rounded-full flex items-center justify-center">
+                            <span className="text-2xl">🏆</span>
+                          </div>
+                          <p className="text-muted-foreground">Keep studying to earn achievements!</p>
                         </div>
                       ) : (
-                        <div className="space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-80 overflow-y-auto">
                           {achievements.map((achievement, index) => {
-                            // Map text-based icons to emojis
                             const getIconDisplay = (icon: string) => {
                               const iconMap: { [key: string]: string } = {
                                 'lightning-bolt': '⚡',
@@ -833,21 +865,19 @@ const Dashboard = () => {
                             };
 
                             return (
-                              <div key={index} className="flex items-start sm:items-center space-x-3">
-                                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-100 rounded-full flex items-center justify-center text-base sm:text-lg flex-shrink-0">
+                              <div key={index} className="flex items-start space-x-3 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl border border-yellow-200/50 dark:border-yellow-800/50">
+                                <div className="w-10 h-10 bg-gradient-to-br from-yellow-100 to-orange-100 dark:from-yellow-800 dark:to-orange-800 rounded-full flex items-center justify-center text-lg flex-shrink-0">
                                   {getIconDisplay(achievement.icon)}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-foreground text-sm sm:text-base truncate">{achievement.title}</p>
-                                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{achievement.description}</p>
+                                  <p className="font-semibold text-foreground text-sm truncate">{achievement.title}</p>
+                                  <p className="text-xs text-muted-foreground line-clamp-2">{achievement.description}</p>
                                   {achievement.earned_at && (
                                     <p className="text-xs text-muted-foreground mt-1">
                                       {new Date(achievement.earned_at).toLocaleDateString()}
                                     </p>
                                   )}
-                                </div>
-                                <div className="text-right flex-shrink-0">
-                                  <Badge variant="secondary" className="text-xs">
+                                  <Badge variant="secondary" className="bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 mt-2 text-xs">
                                     {achievement.points || 0} pts
                                   </Badge>
                                 </div>
@@ -858,12 +888,76 @@ const Dashboard = () => {
                       )}
                     </CardContent>
                   </Card>
-                </div>
-              </div>
 
-              {/* Search Flashcards Section */}
-              <div className="mt-8">
-                <SearchFlashcards />
+                  {/* Search Section - Full Width */}
+                  <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                        Search & Explore Flashcards
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {/* Compact Search Form */}
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                          <div className="lg:col-span-2">
+                            <Input
+                              placeholder="Enter topic (e.g., Machine Learning, Python Programming)"
+                              className="h-11"
+                            />
+                          </div>
+                          <div>
+                            <select className="w-full h-11 px-3 border border-input bg-background rounded-md text-sm">
+                              <option value="beginner">Beginner</option>
+                              <option value="intermediate">Intermediate</option>
+                              <option value="advanced">Advanced</option>
+                            </select>
+                          </div>
+                          <Button className="h-11 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                            <Search className="h-4 w-4 mr-2" />
+                            Generate
+                          </Button>
+                        </div>
+
+                        {/* Quick Action Links */}
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          <p className="text-sm text-muted-foreground mr-2">Quick topics:</p>
+                          {['Mathematics', 'Physics', 'Chemistry', 'Biology', 'Computer Science', 'History'].map((topic) => (
+                            <Badge
+                              key={topic}
+                              variant="secondary"
+                              className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors text-xs"
+                            >
+                              {topic}
+                            </Badge>
+                          ))}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
+                          <Link to="/search" className="flex-1">
+                            <Button variant="outline" className="w-full h-10">
+                              <Search className="h-4 w-4 mr-2" />
+                              Advanced Search
+                            </Button>
+                          </Link>
+                          <Link to="/search?tab=recent" className="flex-1">
+                            <Button variant="outline" className="w-full h-10">
+                              <Clock className="h-4 w-4 mr-2" />
+                              Recent Searches
+                            </Button>
+                          </Link>
+                          <Link to="/search?tab=stats" className="flex-1">
+                            <Button variant="outline" className="w-full h-10">
+                              <TrendingUp className="h-4 w-4 mr-2" />
+                              Study Statistics
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             </>
           )}
@@ -958,6 +1052,7 @@ const Dashboard = () => {
                         onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
                         placeholder="Enter your current password"
                         disabled={profileLoading}
+                        className="pr-10"
                       />
                       <Button
                         type="button"
@@ -986,6 +1081,7 @@ const Dashboard = () => {
                         onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
                         placeholder="Enter your new password (min. 8 characters)"
                         disabled={profileLoading}
+                        className="pr-10"
                       />
                       <Button
                         type="button"
@@ -1014,6 +1110,7 @@ const Dashboard = () => {
                         onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                         placeholder="Confirm your new password"
                         disabled={profileLoading}
+                        className="pr-10"
                       />
                       <Button
                         type="button"
