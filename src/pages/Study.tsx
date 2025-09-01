@@ -463,7 +463,6 @@ const Study = () => {
 
                 // DO NOT load existing difficult cards for fresh session
                 // Instead, keep the fresh stats we already set
-                console.log('Fresh search flashcard session started with clean stats');
               }
             })
             .catch(console.error);
@@ -780,7 +779,6 @@ const Study = () => {
       }));
       // Clear the flag for future tab changes
       skipResetOnTabChange.current = false;
-      console.log('Tab change: Preserving session stats due to skipResetOnTabChange flag');
       return;
     }
 
@@ -793,13 +791,11 @@ const Study = () => {
         difficult: prev.difficult, // Explicitly preserve difficult count  
         timeSpent: studyTime
       }));
-      console.log('Tab change: Preserving stats for flashcards/review tab:', tab);
       return;
     }
 
     // Only reset stats for quiz/exercises tabs that have actual content
     if (tab === 'quiz' && quizzes.length > 0) {
-      console.log('Tab change: Resetting stats for quiz tab with content');
       setSessionStats({
         correct: 0,
         difficult: 0,
@@ -812,7 +808,6 @@ const Study = () => {
     }
 
     if (tab === 'exercises' && exercises.length > 0) {
-      console.log('Tab change: Resetting stats for exercises tab with content');
       setSessionStats({
         correct: 0,
         difficult: 0,
@@ -825,7 +820,6 @@ const Study = () => {
     }
 
     // For empty quiz/exercises tabs, preserve stats but update time
-    console.log('Tab change: Preserving stats for empty content tab:', tab);
     setSessionStats(prev => ({
       correct: prev.correct,
       difficult: prev.difficult,
