@@ -225,7 +225,7 @@ const SearchFlashcardsForm: React.FC<SearchFlashcardsFormProps> = ({ className =
             placeholder="e.g., Machine Learning, Python Programming, Quantum Physics"
             value={searchForm.topic}
             onChange={(e) => setSearchForm(prev => ({ ...prev, topic: e.target.value }))}
-            className="bg-white dark:bg-gray-950 border-2 border-purple-200 dark:border-purple-800 focus:border-purple-500 dark:focus:border-purple-400"
+            className="bg-white dark:bg-gray-950 border-2 border-blue-200 dark:border-cyan-800 focus:border-blue-500 dark:focus:border-cyan-400"
             disabled={isGenerating}
             required
           />
@@ -239,7 +239,7 @@ const SearchFlashcardsForm: React.FC<SearchFlashcardsFormProps> = ({ className =
             placeholder="Add more context about what you want to learn..."
             value={searchForm.description}
             onChange={(e) => setSearchForm(prev => ({ ...prev, description: e.target.value }))}
-            className="bg-white dark:bg-gray-950 border-2 border-purple-200 dark:border-purple-800 focus:border-purple-500 dark:focus:border-purple-400 min-h-[80px]"
+            className="bg-white dark:bg-gray-950 border-2 border-blue-200 dark:border-cyan-800 focus:border-blue-500 dark:focus:border-cyan-400 min-h-[80px]"
             disabled={isGenerating}
           />
         </div>
@@ -253,13 +253,13 @@ const SearchFlashcardsForm: React.FC<SearchFlashcardsFormProps> = ({ className =
               onValueChange={(value) => setSearchForm(prev => ({ ...prev, difficulty: value as 'beginner' | 'intermediate' | 'advanced' }))}
               disabled={isGenerating}
             >
-              <SelectTrigger className="bg-white dark:bg-gray-950 border-2 border-purple-200 dark:border-purple-800 focus:border-purple-500 dark:focus:border-purple-400">
+              <SelectTrigger className="bg-white dark:bg-gray-950 border-2 border-blue-200 dark:border-cyan-800 focus:border-blue-500 dark:focus:border-cyan-400">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-white dark:bg-gray-950 border-purple-200 dark:border-purple-800">
-                <SelectItem value="beginner" className="hover:bg-purple-50 dark:hover:bg-purple-900/20">Beginner</SelectItem>
-                <SelectItem value="intermediate" className="hover:bg-purple-50 dark:hover:bg-purple-900/20">Intermediate</SelectItem>
-                <SelectItem value="advanced" className="hover:bg-purple-50 dark:hover:bg-purple-900/20">Advanced</SelectItem>
+              <SelectContent className="bg-white dark:bg-gray-950 border-blue-200 dark:border-cyan-800">
+                <SelectItem value="beginner" className="hover:bg-blue-50 dark:hover:bg-cyan-900/20">Beginner</SelectItem>
+                <SelectItem value="intermediate" className="hover:bg-blue-50 dark:hover:bg-cyan-900/20">Intermediate</SelectItem>
+                <SelectItem value="advanced" className="hover:bg-blue-50 dark:hover:bg-cyan-900/20">Advanced</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -272,14 +272,14 @@ const SearchFlashcardsForm: React.FC<SearchFlashcardsFormProps> = ({ className =
               onValueChange={(value) => setSearchForm(prev => ({ ...prev, count: parseInt(value) }))}
               disabled={isGenerating}
             >
-              <SelectTrigger className="bg-white dark:bg-gray-950 border-2 border-purple-200 dark:border-purple-800 focus:border-purple-500 dark:focus:border-purple-400">
+              <SelectTrigger className="bg-white dark:bg-gray-950 border-2 border-blue-200 dark:border-cyan-800 focus:border-blue-500 dark:focus:border-cyan-400">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-white dark:bg-gray-950 border-purple-200 dark:border-purple-800">
-                <SelectItem value="5" className="hover:bg-purple-50 dark:hover:bg-purple-900/20">5 cards</SelectItem>
-                <SelectItem value="10" className="hover:bg-purple-50 dark:hover:bg-purple-900/20">10 cards</SelectItem>
-                <SelectItem value="15" className="hover:bg-purple-50 dark:hover:bg-purple-900/20">15 cards</SelectItem>
-                <SelectItem value="20" className="hover:bg-purple-50 dark:hover:bg-purple-900/20">20 cards</SelectItem>
+              <SelectContent className="bg-white dark:bg-gray-950 border-blue-200 dark:border-cyan-800">
+                <SelectItem value="5" className="hover:bg-blue-50 dark:hover:bg-cyan-900/20">5 cards</SelectItem>
+                <SelectItem value="10" className="hover:bg-blue-50 dark:hover:bg-cyan-900/20">10 cards</SelectItem>
+                <SelectItem value="15" className="hover:bg-blue-50 dark:hover:bg-cyan-900/20">15 cards</SelectItem>
+                <SelectItem value="20" className="hover:bg-blue-50 dark:hover:bg-cyan-900/20">20 cards</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -308,7 +308,7 @@ const SearchFlashcardsForm: React.FC<SearchFlashcardsFormProps> = ({ className =
         <Button
           type="submit"
           disabled={isGenerating || !searchForm.topic.trim()}
-          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 transition-all duration-200 transform hover:scale-[1.02] disabled:scale-100"
+          className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold py-3 transition-all duration-200 transform hover:scale-[1.02] disabled:scale-100"
         >
           {isGenerating ? (
             <>
