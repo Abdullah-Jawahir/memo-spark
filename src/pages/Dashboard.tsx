@@ -967,7 +967,9 @@ const Dashboard = () => {
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="h-[400px] overflow-hidden">
-                        <div className="h-full overflow-y-auto scrollbar-thin pr-2">
+                        <div
+                          className="h-full overflow-y-auto pr-2 scrollbar-gradient"
+                        >
                           {dashboardData?.todays_goal ? (
                             <div className="space-y-4">
                               {/* Primary Goal (Daily Flashcards) */}
