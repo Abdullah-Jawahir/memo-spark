@@ -1318,10 +1318,18 @@ const Study = () => {
     // Set loading state for the specific button clicked
     setRatingInProgress(rating);
 
-    // Save the rating in our session state
+    // Save the rating in our session state, but handle re-studying from review carefully
     setSessionRatings(prev => {
       const updated = [...prev];
-      updated[currentCard] = rating;
+      // When re-studying from review, only update the rating if it's an improvement (good/easy)
+      // For 'again' or 'hard' during re-study, keep the original 'hard' rating
+      if (isReStudyingFromReview && (rating === 'again' || rating === 'hard')) {
+        // Keep the existing rating (should be 'hard') to maintain card in review list
+        // Don't update the sessionRatings array
+      } else {
+        // Normal flow or improvement during re-study
+        updated[currentCard] = rating;
+      }
       return updated;
     });
 
@@ -1393,20 +1401,33 @@ const Study = () => {
                 });
               }
 
-              // If this was a difficult card being re-rated from 'hard' to 'good'/'easy', 
-              // or marking as reviewed, remove it from local difficult tracking
-              if ((rating === 'good' || rating === 'easy') && difficultCardIds.has(currentCardData.id)) {
-                setDifficultCardIds(prev => {
-                  const newSet = new Set(prev);
-                  newSet.delete(currentCardData.id);
-                  return newSet;
-                });
-                setIsReStudyingFromReview(false);
-              }
-
-              // If rating is 'hard', add to local difficult tracking
-              if (rating === 'hard') {
-                setDifficultCardIds(prev => new Set(prev).add(currentCardData.id));
+              // Handle difficult cards tracking for search flashcards
+              if (isReStudyingFromReview) {
+                // When re-studying from review, only remove from difficult if user rates good/easy
+                if (rating === 'good' || rating === 'easy') {
+                  setDifficultCardIds(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(currentCardData.id);
+                    return newSet;
+                  });
+                  setIsReStudyingFromReview(false);
+                }
+                // For 'hard' or 'again' during re-study, keep the card in difficult list (no action needed)
+              } else {
+                // Normal study flow - update difficult tracking based on rating
+                if (rating === 'good' || rating === 'easy') {
+                  // Remove from difficult if it was previously marked as difficult
+                  if (difficultCardIds.has(currentCardData.id)) {
+                    setDifficultCardIds(prev => {
+                      const newSet = new Set(prev);
+                      newSet.delete(currentCardData.id);
+                      return newSet;
+                    });
+                  }
+                } else if (rating === 'hard') {
+                  // Add to difficult tracking
+                  setDifficultCardIds(prev => new Set(prev).add(currentCardData.id));
+                }
               }
 
             } catch (error) {
