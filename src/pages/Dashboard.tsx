@@ -1057,31 +1057,34 @@ const Dashboard = () => {
                                 </>
                               )}
 
-                              {/* Dynamic Placeholder Cards - Show until 5 total goals (including Daily Flashcards) */}
+                              {/* Single Placeholder Card - Show only one at a time until 5 total goals */}
                               {(() => {
                                 const userGoalsCount = dashboardData.user_goals ? dashboardData.user_goals.length : 0;
                                 const totalGoals = 1 + userGoalsCount; // 1 for Daily Flashcards + user goals
-                                const placeholdersNeeded = Math.max(0, 5 - totalGoals);
+                                const canAddMore = totalGoals < 5;
 
-                                return Array.from({ length: placeholdersNeeded }, (_, index) => (
-                                  <div
-                                    key={`placeholder-${index}`}
-                                    className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700 border-dashed cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors group"
-                                    onClick={() => handleOpenGoalModal(null, false)}
-                                  >
-                                    <div className="text-center space-y-2">
-                                      <div className="text-2xl text-gray-400 group-hover:text-blue-500 transition-colors">
-                                        <Plus className="h-6 w-6 mx-auto" />
-                                      </div>
-                                      <div className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300">
-                                        Add New Goal
-                                      </div>
-                                      <div className="text-xs text-gray-400 dark:text-gray-500 group-hover:text-blue-500">
-                                        Click to set goal
+                                // Show only one placeholder card if user can add more goals
+                                if (canAddMore) {
+                                  return (
+                                    <div
+                                      className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700 border-dashed cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors group"
+                                      onClick={() => handleOpenGoalModal(null, false)}
+                                    >
+                                      <div className="text-center space-y-2">
+                                        <div className="text-2xl text-gray-400 group-hover:text-blue-500 transition-colors">
+                                          <Plus className="h-6 w-6 mx-auto" />
+                                        </div>
+                                        <div className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300">
+                                          Add New Goal
+                                        </div>
+                                        <div className="text-xs text-gray-400 dark:text-gray-500 group-hover:text-blue-500">
+                                          Click to set goal
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                ));
+                                  );
+                                }
+                                return null;
                               })()}
                             </div>
                           ) : (
