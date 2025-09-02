@@ -155,12 +155,13 @@ const GoalSettings: React.FC = () => {
       };
 
       // Fetch all goal-related data in parallel
-      const [overviewRes, statisticsRes, goalTypesRes, userGoalsRes, usersRes] = await Promise.all([
+      const [overviewRes, statisticsRes, goalTypesRes, userGoalsRes, usersRes, defaultsRes] = await Promise.all([
         fetch('http://localhost:8000/api/admin/goals/overview', { headers }),
         fetch('http://localhost:8000/api/admin/goals/statistics', { headers }),
         fetch('http://localhost:8000/api/admin/goal-types', { headers }),
         fetch('http://localhost:8000/api/admin/user-goals', { headers }),
-        fetch('http://localhost:8000/api/admin/users', { headers })
+        fetch('http://localhost:8000/api/admin/users', { headers }),
+        fetch('http://localhost:8000/api/admin/goals/defaults', { headers })
       ]);
 
       if (!overviewRes.ok || !statisticsRes.ok) {
@@ -191,6 +192,14 @@ const GoalSettings: React.FC = () => {
         // Handle Laravel pagination format
         const usersArray = Array.isArray(usersData) ? usersData : (usersData.data || []);
         setUsers(usersArray);
+      }
+
+      if (defaultsRes.ok) {
+        const defaultsData = await defaultsRes.json();
+        setDefaultGoals({
+          student_default: defaultsData.student_default || 50,
+          admin_default: defaultsData.admin_default || 25
+        });
       }
 
     } catch (error) {
@@ -388,6 +397,8 @@ const GoalSettings: React.FC = () => {
       }
 
       toast.success('Default goals updated successfully');
+      // Refresh the data to show updated values
+      fetchGoalData();
     } catch (error) {
       console.error('Error updating defaults:', error);
       toast.error('Failed to update default goals');
