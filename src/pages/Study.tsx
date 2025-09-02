@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
   RotateCcw, Heart, X, Check, Volume2, BookOpen, Star, AlertCircle, UserPlus, Edit3,
-  Clock, RefreshCw, CheckSquare, Layers as LayersIcon, Pencil as PencilIcon, CheckCircle, FileText, Loader2
+  Clock, RefreshCw, CheckSquare, Layers as LayersIcon, Pencil as PencilIcon, CheckCircle, FileText, Loader2, Pause, Play, Square
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
@@ -104,6 +104,7 @@ const Study = () => {
   const [studyTime, setStudyTime] = useState(0);  // Time spent on current activity (flashcards, quiz, exercises)
   const [overallStudyTime, setOverallStudyTime] = useState(0);  // Total time spent across all activities
   const [isStudying, setIsStudying] = useState(false);
+  const [isTimerPaused, setIsTimerPaused] = useState(false);  // Manual pause state
   const [cardStudyStartTime, setCardStudyStartTime] = useState(0);
   const [studySession, setStudySession] = useState<any>(null);
   const [showStatsPanel, setShowStatsPanel] = useState(false);
@@ -264,6 +265,7 @@ const Study = () => {
         setOverallStudyTime(0);
         setCardStudyStartTime(0);
         setIsStudying(false);
+        setIsTimerPaused(false);
         setTimerKey(k => k + 1);
         setOverallTimerKey(k => k + 1);
         setBookmarkedCards([]);
@@ -689,7 +691,8 @@ const Study = () => {
     let timer: NodeJS.Timeout | null = null;
 
     // Continue timer until ALL activities are complete, not just flashcards
-    if (isStudying && !isOverallComplete) {
+    // Also respect manual pause state
+    if (isStudying && !isOverallComplete && !isTimerPaused) {
       timer = setInterval(() => {
         setOverallStudyTime(prevTime => prevTime + 1);
       }, 1000);
@@ -698,7 +701,7 @@ const Study = () => {
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [isStudying, isOverallComplete]); // Watch all completion states
+  }, [isStudying, isOverallComplete, isTimerPaused]); // Watch all completion states and pause state
 
   // Track current activity time (resets on tab change by separate effect)
   useEffect(() => {
@@ -710,7 +713,8 @@ const Study = () => {
 
     const isActivityRunning = isFlashcardsActive || isQuizActive || isExercisesActive;
 
-    if (isActivityRunning) {
+    // Only run timer if activity is running AND not manually paused
+    if (isActivityRunning && !isTimerPaused) {
       // Ensure the overall session is considered active while any activity runs
       if (!isStudying) setIsStudying(true);
 
@@ -730,7 +734,7 @@ const Study = () => {
     return () => {
       if (activityTimer) clearInterval(activityTimer);
     };
-  }, [tab, flashcards.length, quizzes.length, exercises.length, sessionComplete, quizCompleted, exerciseCompleted, isStudying]);
+  }, [tab, flashcards.length, quizzes.length, exercises.length, sessionComplete, quizCompleted, exerciseCompleted, isStudying, isTimerPaused]);
 
   // Stop the overall timer when all activities are complete
   useEffect(() => {
@@ -933,6 +937,56 @@ const Study = () => {
     }
   };
 
+  // Manual timer control functions
+  const handlePauseTimer = () => {
+    setIsTimerPaused(true);
+  };
+
+  const handleResumeTimer = () => {
+    setIsTimerPaused(false);
+  };
+
+  const handleStopTimer = () => {
+    setIsStudying(false);
+    setIsTimerPaused(false);
+  };
+
+  const handleResetTimer = () => {
+    setStudyTime(0);
+    setOverallStudyTime(0);
+    setCardStudyStartTime(0);
+    setTimerKey(k => k + 1);
+    setOverallTimerKey(k => k + 1);
+    setIsTimerPaused(false);
+  };
+
+  // Helper functions for activity completion with automatic timer management
+  const handleQuizCompletion = () => {
+    setQuizCompleted(true);
+    // Check if this was the last activity and stop timer if so
+    const flashcardsComplete = flashcards.length === 0 || sessionComplete;
+    const exercisesComplete = exercises.length === 0 || exerciseCompleted;
+
+    if (flashcardsComplete && exercisesComplete) {
+      // All activities complete - stop both timers
+      setIsStudying(false);
+      setIsTimerPaused(false);
+    }
+  };
+
+  const handleExerciseCompletion = () => {
+    setExerciseCompleted(true);
+    // Check if this was the last activity and stop timer if so
+    const flashcardsComplete = flashcards.length === 0 || sessionComplete;
+    const quizzesComplete = quizzes.length === 0 || quizCompleted;
+
+    if (flashcardsComplete && quizzesComplete) {
+      // All activities complete - stop both timers
+      setIsStudying(false);
+      setIsTimerPaused(false);
+    }
+  };
+
   const handleNextCard = async (rating: 'again' | 'hard' | 'good' | 'easy') => {
     // Set loading state for the specific button clicked
     setRatingInProgress(rating);
@@ -1069,6 +1123,10 @@ const Study = () => {
             }
 
             setSessionComplete(true);
+
+            // For search flashcards, always stop timer when complete since there are no other activities
+            setIsStudying(false);
+            setIsTimerPaused(false);
           }
 
           // Reset rating state
@@ -1176,6 +1234,17 @@ const Study = () => {
       }
 
       setSessionComplete(true);
+
+      // Check if this was the last activity and stop timer if so
+      const quizzesComplete = quizzes.length === 0 || quizCompleted;
+      const exercisesComplete = exercises.length === 0 || exerciseCompleted;
+
+      if (quizzesComplete && exercisesComplete) {
+        // All activities complete - stop both timers
+        setIsStudying(false);
+        setIsTimerPaused(false);
+      }
+
       setRatingInProgress(null);
       // Don't stop isStudying here - let overall session logic handle that
     }
@@ -1882,7 +1951,7 @@ const Study = () => {
                               </Button>
                             ) : (
                               <Button
-                                onClick={() => setQuizCompleted(true)}
+                                onClick={handleQuizCompletion}
                                 disabled={quizAnswers.length !== quizzes.length || quizAnswers.includes(null) || quizAnswers.includes(undefined)}
                                 className="w-full sm:w-auto"
                               >
@@ -2173,7 +2242,7 @@ const Study = () => {
                               </Button>
                             ) : (
                               <Button
-                                onClick={() => setExerciseCompleted(true)}
+                                onClick={handleExerciseCompletion}
                                 disabled={exerciseAnswers.length !== exercises.length || exerciseAnswers.includes(null) || exerciseAnswers.includes(undefined) || exerciseAnswers.includes('')}
                               >
                                 Submit
@@ -2530,15 +2599,67 @@ const Study = () => {
                 </h3>
 
                 {/* Activity Study Timer */}
-                <div className="flex items-center">
-                  <span className="text-xs text-muted-foreground mr-2">Current Activity:</span>
-                  <StudyTimer
-                    key={timerKey}
-                    isActive={isStudying && !sessionComplete}
-                    initialTime={studyTime}
-                    onTimeUpdate={setStudyTime}
-                    className="text-sm font-medium bg-muted/30 px-2 py-1 rounded"
-                  />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className="text-xs text-muted-foreground mr-2">Current Activity:</span>
+                    <StudyTimer
+                      key={timerKey}
+                      isActive={isStudying && !sessionComplete && !isTimerPaused}
+                      initialTime={studyTime}
+                      onTimeUpdate={setStudyTime}
+                      className="text-sm font-medium bg-muted/30 px-2 py-1 rounded"
+                    />
+                    {isTimerPaused && (
+                      <Badge variant="outline" className="ml-2 text-xs">
+                        Paused
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Timer Control Buttons */}
+                  <div className="flex items-center gap-1">
+                    {!isTimerPaused ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handlePauseTimer}
+                        disabled={!isStudying || isOverallComplete}
+                        className="text-xs px-2 py-1 h-7"
+                        title="Pause timer"
+                      >
+                        <Pause className="h-3 w-3" />
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleResumeTimer}
+                        className="text-xs px-2 py-1 h-7"
+                        title="Resume timer"
+                      >
+                        <Play className="h-3 w-3" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleStopTimer}
+                      disabled={!isStudying}
+                      className="text-xs px-2 py-1 h-7"
+                      title="Stop timer"
+                    >
+                      <Square className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResetTimer}
+                      className="text-xs px-2 py-1 h-7"
+                      title="Reset timer"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               </div>
 
