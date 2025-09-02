@@ -752,6 +752,21 @@ const Study = () => {
     }
   }, [isOverallComplete, isStudying]);
 
+  // Auto-switch to available tab when content changes
+  useEffect(() => {
+    // Check if current tab has content, if not switch to first available tab
+    const availableTabs = [];
+    if (flashcards.length > 0) availableTabs.push('flashcards');
+    if (quizzes.length > 0) availableTabs.push('quiz');
+    if (exercises.length > 0) availableTabs.push('exercises');
+    availableTabs.push('review'); // Review is always available
+
+    // If current tab is not available, switch to first available tab
+    if (!availableTabs.includes(tab)) {
+      setTab(availableTabs[0] as any);
+    }
+  }, [flashcards.length, quizzes.length, exercises.length, tab]);
+
   // Initialize the study session when component mounts
   useEffect(() => {
     // Try to restore an existing study session
@@ -1012,7 +1027,8 @@ const Study = () => {
     // Record the flashcard review if user is authenticated
     const currentCardData = flashcards[currentCard];
     if (user && session && currentCardData && currentCardData.id) {
-      const studyTimeForCard = studyTime - cardStudyStartTime;
+      // Use overall study time instead of individual card time
+      const studyTimeForCard = overallStudyTime;
 
       try {
         // Check if this is a search flashcard study session
@@ -1609,41 +1625,47 @@ const Study = () => {
         {/* Tab Selector */}
         <div className="flex justify-center mb-4 sm:mb-6">
           <div className="flex bg-white dark:bg-gray-800 rounded-lg p-1 w-full max-w-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <Button
-              className={`flex-1 rounded-md transition-all duration-300 text-xs sm:text-sm ${tab === 'flashcards' ?
-                'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
-                'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-              variant="ghost"
-              onClick={() => handleTabSwitch('flashcards')}
-              size="sm"
-            >
-              <LayersIcon className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 ${tab === 'flashcards' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
-              <span className="hidden xs:inline">Flashcards</span>
-              <span className="xs:hidden">Cards</span>
-            </Button>
-            <Button
-              className={`flex-1 rounded-md transition-all duration-300 text-xs sm:text-sm ${tab === 'quiz' ?
-                'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
-                'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-              variant="ghost"
-              onClick={() => handleTabSwitch('quiz')}
-              size="sm"
-            >
-              <CheckSquare className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 ${tab === 'quiz' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
-              Quiz
-            </Button>
-            <Button
-              className={`flex-1 rounded-md transition-all duration-300 text-xs sm:text-sm ${tab === 'exercises' ?
-                'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
-                'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-              variant="ghost"
-              onClick={() => handleTabSwitch('exercises')}
-              size="sm"
-            >
-              <PencilIcon className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 ${tab === 'exercises' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
-              <span className="hidden xs:inline">Exercises</span>
-              <span className="xs:hidden">Exec</span>
-            </Button>
+            {flashcards.length > 0 && (
+              <Button
+                className={`flex-1 rounded-md transition-all duration-300 text-xs sm:text-sm ${tab === 'flashcards' ?
+                  'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
+                  'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                variant="ghost"
+                onClick={() => handleTabSwitch('flashcards')}
+                size="sm"
+              >
+                <LayersIcon className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 ${tab === 'flashcards' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
+                <span className="hidden xs:inline">Flashcards</span>
+                <span className="xs:hidden">Cards</span>
+              </Button>
+            )}
+            {quizzes.length > 0 && (
+              <Button
+                className={`flex-1 rounded-md transition-all duration-300 text-xs sm:text-sm ${tab === 'quiz' ?
+                  'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
+                  'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                variant="ghost"
+                onClick={() => handleTabSwitch('quiz')}
+                size="sm"
+              >
+                <CheckSquare className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 ${tab === 'quiz' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
+                Quiz
+              </Button>
+            )}
+            {exercises.length > 0 && (
+              <Button
+                className={`flex-1 rounded-md transition-all duration-300 text-xs sm:text-sm ${tab === 'exercises' ?
+                  'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
+                  'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                variant="ghost"
+                onClick={() => handleTabSwitch('exercises')}
+                size="sm"
+              >
+                <PencilIcon className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 ${tab === 'exercises' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
+                <span className="hidden xs:inline">Exercises</span>
+                <span className="xs:hidden">Exec</span>
+              </Button>
+            )}
             <Button
               className={`flex-1 rounded-md transition-all duration-300 text-xs sm:text-sm ${tab === 'review' ?
                 'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
