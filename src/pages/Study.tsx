@@ -1333,6 +1333,23 @@ const Study = () => {
       return updated;
     });
 
+    // If re-studying from review and rating as 'again' or 'hard', skip all API calls and stat updates
+    // Just move to next card or show completion
+    if (isReStudyingFromReview && (rating === 'again' || rating === 'hard')) {
+      if (currentCard < flashcards.length - 1) {
+        setCurrentCard(currentCard + 1);
+        setIsFlipped(false);
+        setCardStudyStartTime(studyTime); // Reset start time for next card
+        // Don't reset isReStudyingFromReview flag here since we're still in review mode
+      } else {
+        // Last card in review - complete the session
+        setSessionComplete(true);
+        setIsTimerPaused(true);
+      }
+      setRatingInProgress(null);
+      return; // Early return - skip all API calls and stat updates
+    }
+
     // Record the flashcard review if user is authenticated
     const currentCardData = flashcards[currentCard];
     if (user && session && currentCardData && currentCardData.id) {
