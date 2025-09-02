@@ -330,6 +330,49 @@ export const getCurrentSearchStudySession = (): SearchStudySession | null => {
 };
 
 /**
+ * Record a flashcard review for search flashcards using the search flashcard system
+ */
+export const recordSearchFlashcardReview = async (
+  flashcardId: string | number,
+  rating: 'again' | 'hard' | 'good' | 'easy',
+  studyTimeSeconds: number,
+  sessionId: string,
+  session: Session | null,
+  searchId: number
+): Promise<{ success: boolean, sessionStats?: any }> => {
+  if (!session?.access_token) {
+    console.error('No access token available');
+    return { success: false };
+  }
+
+  try {
+    const response = await fetchWithAuth(
+      API_ENDPOINTS.SEARCH_FLASHCARDS.REVIEWS.RECORD_REVIEW,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          search_id: searchId,
+          flashcard_id: flashcardId,
+          rating: rating,
+          study_time: studyTimeSeconds,
+          session_id: sessionId
+        }),
+      },
+      session
+    );
+
+    // Return the response as-is for search flashcards
+    return {
+      success: response.success,
+      sessionStats: response.data || null
+    };
+  } catch (error) {
+    console.error('Error recording search flashcard review:', error);
+    return { success: false };
+  }
+};
+
+/**
  * Clear the current search study session
  */
 export const clearCurrentSearchStudySession = (): void => {
