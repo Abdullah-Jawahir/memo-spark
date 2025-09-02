@@ -37,7 +37,7 @@ interface UserGoal {
 interface GoalManagementModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedGoalType?: GoalType | null;
+  selectedGoalType?: GoalType | UserGoal | null;
   onGoalUpdated: () => void;
 }
 
@@ -70,15 +70,28 @@ const GoalManagementModal: React.FC<GoalManagementModalProps> = ({
   useEffect(() => {
     if (open) {
       fetchData();
+
       if (selectedGoalType) {
-        setSelectedGoalTypeId(selectedGoalType.id);
-        setTargetValue(selectedGoalType.default_value);
+        // Check if this is an existing user goal (UserGoal) or just a goal type (GoalType)
+        if (isUserGoal(selectedGoalType)) {
+          // This is an existing user goal - pre-populate with current values
+          setSelectedGoalTypeId(selectedGoalType.goal_type.id);
+          setTargetValue(selectedGoalType.target_value);
+          setActiveTab("set-goal");
+        } else {
+          // This is a new goal - use default values
+          setSelectedGoalTypeId(selectedGoalType.id);
+          setTargetValue(selectedGoalType.default_value || 0);
+          setActiveTab("set-goal");
+        }
+      } else {
+        // No specific goal selected - reset form
+        setSelectedGoalTypeId("");
+        setTargetValue(0);
         setActiveTab("set-goal");
       }
     }
-  }, [open, selectedGoalType]);
-
-  const fetchData = async () => {
+  }, [open, selectedGoalType]); const fetchData = async () => {
     try {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
@@ -258,6 +271,11 @@ const GoalManagementModal: React.FC<GoalManagementModalProps> = ({
     return goalTypes.find(gt => gt.id === selectedGoalTypeId);
   };
 
+  // Helper function to check if selectedGoalType is a UserGoal
+  const isUserGoal = (goal: any): goal is UserGoal => {
+    return goal && typeof goal === 'object' && 'target_value' in goal && 'goal_type' in goal;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -277,6 +295,20 @@ const GoalManagementModal: React.FC<GoalManagementModalProps> = ({
 
           <TabsContent value="set-goal" className="space-y-4">
             <div className="space-y-4">
+              {selectedGoalType && isUserGoal(selectedGoalType) && (
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Edit className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                      Editing existing goal
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    Current value: {selectedGoalType.current_value || 0}/{selectedGoalType.target_value} {selectedGoalType.goal_type.unit}
+                  </p>
+                </div>
+              )}
+
               <div>
                 <Label htmlFor="goal-type">Select Goal Type</Label>
                 <Select value={selectedGoalTypeId} onValueChange={setSelectedGoalTypeId}>
@@ -324,7 +356,10 @@ const GoalManagementModal: React.FC<GoalManagementModalProps> = ({
                   </div>
 
                   <Button onClick={handleSetGoal} disabled={loading} className="w-full">
-                    {loading ? 'Setting Goal...' : 'Set Goal'}
+                    {loading ?
+                      (selectedGoalType && isUserGoal(selectedGoalType) ? 'Updating Goal...' : 'Setting Goal...') :
+                      (selectedGoalType && isUserGoal(selectedGoalType) ? 'Update Goal' : 'Set Goal')
+                    }
                   </Button>
                 </div>
               )}
