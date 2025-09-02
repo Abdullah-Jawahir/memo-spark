@@ -18,6 +18,7 @@ import StudyTimer from '@/components/study/StudyTimer';
 import StudyStatsPanel from '@/components/study/StudyStatsPanel';
 import { useTranslation } from 'react-i18next';
 import { startStudySession, recordFlashcardReview, getCurrentStudySession, clearCurrentStudySession, startSearchStudySession, recordSearchStudyInteraction, completeSearchStudySession, getCurrentSearchStudySession, clearCurrentSearchStudySession } from '@/utils/studyTracking';
+import { recordActivityTiming, updateSessionTiming } from '@/utils/studyTimingTracking';
 import { API_ENDPOINTS, fetchWithAuth } from '@/config/api';
 import { useToast } from '@/hooks/use-toast';
 import { downloadStudyProgressPDF } from '@/utils/pdfExport';
@@ -113,6 +114,15 @@ const Study = () => {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [ratingInProgress, setRatingInProgress] = useState<'again' | 'hard' | 'good' | 'easy' | null>(null);
+
+  // New timing system state
+  const [activityTimingHistory, setActivityTimingHistory] = useState<{
+    flashcard: number;
+    quiz: number;
+    exercise: number;
+  }>({ flashcard: 0, quiz: 0, exercise: 0 });
+  const [currentActivityStartTime, setCurrentActivityStartTime] = useState<number>(0);
+  const [currentActivityType, setCurrentActivityType] = useState<'flashcard' | 'quiz' | 'exercise' | null>(null);
 
   // Track which deck is currently loaded to avoid carrying session stats between decks
   const [currentDeckIdentifier, setCurrentDeckIdentifier] = useState<string | null>(null);
@@ -788,6 +798,106 @@ const Study = () => {
     };
   }, [isGuestUser]);
 
+  // Track activity timing and update backend when activities complete
+  useEffect(() => {
+    const updateBackendTiming = async () => {
+      if (!studySession?.session_id || !session?.access_token) return;
+
+      try {
+        console.log('Updating session timing:', {
+          sessionId: studySession.session_id,
+          overallStudyTime,
+          activityTimingHistory
+        });
+
+        await updateSessionTiming(
+          studySession.session_id,
+          overallStudyTime,
+          activityTimingHistory.flashcard,
+          activityTimingHistory.quiz,
+          activityTimingHistory.exercise,
+          session
+        );
+      } catch (error) {
+        console.error('Failed to update session timing:', error);
+      }
+    };
+
+    // Update backend timing when any activity completes
+    if (sessionComplete || quizCompleted || exerciseCompleted) {
+      updateBackendTiming();
+    }
+  }, [sessionComplete, quizCompleted, exerciseCompleted, studySession?.session_id, session]);
+
+  // Save timing data before page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (studySession?.session_id && session?.access_token && overallStudyTime > 0) {
+        // Record final timing update before leaving
+        // Note: beforeunload handlers should be synchronous, so we can't await here
+        // The API call will be fired but may not complete before page unloads
+        updateSessionTiming(
+          studySession.session_id,
+          overallStudyTime,
+          activityTimingHistory.flashcard,
+          activityTimingHistory.quiz,
+          activityTimingHistory.exercise,
+          session
+        ).catch(error => {
+          console.error('Failed to save timing on page unload:', error);
+        });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Also save timing when component unmounts (this can be async)
+      if (studySession?.session_id && session?.access_token && overallStudyTime > 0) {
+        updateSessionTiming(
+          studySession.session_id,
+          overallStudyTime,
+          activityTimingHistory.flashcard,
+          activityTimingHistory.quiz,
+          activityTimingHistory.exercise,
+          session
+        ).catch(error => {
+          console.error('Failed to save timing on component unmount:', error);
+        });
+      }
+    };
+  }, [studySession?.session_id, session?.access_token]);
+
+  // Track current activity type and start time
+  useEffect(() => {
+    let newActivityType: 'flashcard' | 'quiz' | 'exercise' | null = null;
+
+    if (tab === 'flashcards' && flashcards.length > 0 && !sessionComplete) {
+      newActivityType = 'flashcard';
+    } else if (tab === 'quiz' && quizzes.length > 0 && !quizCompleted) {
+      newActivityType = 'quiz';
+    } else if (tab === 'exercises' && exercises.length > 0 && !exerciseCompleted) {
+      newActivityType = 'exercise';
+    }
+
+    // If activity type changed, record the previous activity's time
+    if (currentActivityType !== newActivityType && currentActivityType && currentActivityStartTime > 0) {
+      const activityDuration = overallStudyTime - currentActivityStartTime;
+
+      setActivityTimingHistory(prev => ({
+        ...prev,
+        [currentActivityType]: prev[currentActivityType] + activityDuration
+      }));
+    }
+
+    // Set new activity type and start time
+    setCurrentActivityType(newActivityType);
+    if (newActivityType && newActivityType !== currentActivityType) {
+      setCurrentActivityStartTime(overallStudyTime);
+    }
+  }, [tab, flashcards.length, quizzes.length, exercises.length, sessionComplete, quizCompleted, exerciseCompleted, overallStudyTime, currentActivityType, currentActivityStartTime]);
+
   // Reset quiz state when quizzes change or tab switches
   useEffect(() => {
     setQuizStep(0);
@@ -985,8 +1095,25 @@ const Study = () => {
   };
 
   // Helper functions for activity completion with automatic timer management
-  const handleQuizCompletion = () => {
+  const handleQuizCompletion = async () => {
     setQuizCompleted(true);
+
+    // Record quiz timing if user is authenticated
+    if (studySession?.session_id && session?.access_token && currentActivityType === 'quiz') {
+      const quizDuration = overallStudyTime - currentActivityStartTime;
+      await recordActivityTiming(
+        studySession.session_id,
+        'quiz',
+        quizDuration,
+        {
+          quiz_completed: true,
+          total_questions: quizzes.length,
+          answers: quizAnswers
+        },
+        session
+      );
+    }
+
     // Check if this was the last activity and stop timer if so
     const flashcardsComplete = flashcards.length === 0 || sessionComplete;
     const exercisesComplete = exercises.length === 0 || exerciseCompleted;
@@ -999,8 +1126,25 @@ const Study = () => {
     }
   };
 
-  const handleExerciseCompletion = () => {
+  const handleExerciseCompletion = async () => {
     setExerciseCompleted(true);
+
+    // Record exercise timing if user is authenticated
+    if (studySession?.session_id && session?.access_token && currentActivityType === 'exercise') {
+      const exerciseDuration = overallStudyTime - currentActivityStartTime;
+      await recordActivityTiming(
+        studySession.session_id,
+        'exercise',
+        exerciseDuration,
+        {
+          exercise_completed: true,
+          total_exercises: exercises.length,
+          answers: exerciseAnswers
+        },
+        session
+      );
+    }
+
     // Check if this was the last activity and stop timer if so
     const flashcardsComplete = flashcards.length === 0 || sessionComplete;
     const quizzesComplete = quizzes.length === 0 || quizCompleted;
@@ -1028,7 +1172,7 @@ const Study = () => {
     const currentCardData = flashcards[currentCard];
     if (user && session && currentCardData && currentCardData.id) {
       // Use overall study time instead of individual card time
-      const studyTimeForCard = overallStudyTime;
+      const studyTimeForCard = 0; // Remove timer from individual card reviews
 
       try {
         // Check if this is a search flashcard study session
@@ -1151,6 +1295,30 @@ const Study = () => {
 
             setSessionComplete(true);
 
+            // Record flashcard timing for search session
+            if (session?.access_token && currentActivityType === 'flashcard') {
+              const flashcardDuration = overallStudyTime - currentActivityStartTime;
+              // For search flashcards, we don't have a regular study session, but we can still record timing
+              try {
+                const searchSessionInfo = JSON.parse(localStorage.getItem('memo-spark-search-session-info') || '{}');
+                if (searchSessionInfo.session_id) {
+                  await recordActivityTiming(
+                    searchSessionInfo.session_id,
+                    'flashcard',
+                    flashcardDuration,
+                    {
+                      flashcards_completed: true,
+                      total_flashcards: flashcards.length,
+                      search_id: searchSessionInfo.search_id
+                    },
+                    session
+                  );
+                }
+              } catch (error) {
+                console.error('Failed to record search flashcard timing:', error);
+              }
+            }
+
             // For search flashcards, always stop timer when complete since there are no other activities
             setIsStudying(false);
             setIsTimerPaused(false);
@@ -1258,6 +1426,21 @@ const Study = () => {
       }
 
       setSessionComplete(true);
+
+      // Record flashcard timing for regular session
+      if (studySession?.session_id && session?.access_token && currentActivityType === 'flashcard') {
+        const flashcardDuration = overallStudyTime - currentActivityStartTime;
+        await recordActivityTiming(
+          studySession.session_id,
+          'flashcard',
+          flashcardDuration,
+          {
+            flashcards_completed: true,
+            total_flashcards: flashcards.length
+          },
+          session
+        );
+      }
 
       // Always auto-pause timers when flashcards complete, regardless of other activities
       console.log('Flashcards completed - auto-pausing timers');
