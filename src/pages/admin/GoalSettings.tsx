@@ -91,6 +91,7 @@ const GoalSettings: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [overview, setOverview] = useState<GoalOverview | null>(null);
   const [statistics, setStatistics] = useState<GoalStatistics | null>(null);
 
@@ -137,12 +138,30 @@ const GoalSettings: React.FC = () => {
       navigate('/login');
       return;
     }
-    fetchGoalData();
-  }, [user, navigate]);
+    fetchGoalData(true); // Initial load
 
-  const fetchGoalData = async () => {
+    // Handle page visibility change for background refresh
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !loading) {
+        fetchGoalData(false); // Background refresh
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, navigate, loading]);
+
+  const fetchGoalData = async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
@@ -204,9 +223,12 @@ const GoalSettings: React.FC = () => {
 
     } catch (error) {
       console.error('Error fetching goal data:', error);
-      toast.error('Failed to load goal settings');
+      if (!overview) { // Only show toast error if this is initial load
+        toast.error('Failed to load goal settings');
+      }
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -238,7 +260,7 @@ const GoalSettings: React.FC = () => {
         min_value: 0,
         max_value: 1000
       });
-      fetchGoalData();
+      fetchGoalData(false);
     } catch (error) {
       console.error('Error creating goal type:', error);
       toast.error('Failed to create goal type');
@@ -266,7 +288,7 @@ const GoalSettings: React.FC = () => {
       toast.success('Goal type updated successfully');
       setIsGoalTypeDialogOpen(false);
       setEditingGoalType(null);
-      fetchGoalData();
+      fetchGoalData(false);
     } catch (error) {
       console.error('Error updating goal type:', error);
       toast.error('Failed to update goal type');
@@ -289,7 +311,7 @@ const GoalSettings: React.FC = () => {
       if (!response.ok) throw new Error('Failed to delete goal type');
 
       toast.success('Goal type deleted successfully');
-      fetchGoalData();
+      fetchGoalData(false);
     } catch (error) {
       console.error('Error deleting goal type:', error);
       toast.error('Failed to delete goal type');
@@ -320,7 +342,7 @@ const GoalSettings: React.FC = () => {
         goal_type_id: '',
         target_value: 0
       });
-      fetchGoalData();
+      fetchGoalData(false);
     } catch (error) {
       console.error('Error creating user goal:', error);
       toast.error('Failed to create user goal');
@@ -344,7 +366,7 @@ const GoalSettings: React.FC = () => {
       if (!response.ok) throw new Error('Failed to update user goal');
 
       toast.success('User goal updated successfully');
-      fetchGoalData();
+      fetchGoalData(false);
     } catch (error) {
       console.error('Error updating user goal:', error);
       toast.error('Failed to update user goal');
@@ -367,7 +389,7 @@ const GoalSettings: React.FC = () => {
       if (!response.ok) throw new Error('Failed to delete user goal');
 
       toast.success('User goal deleted successfully');
-      fetchGoalData();
+      fetchGoalData(false);
     } catch (error) {
       console.error('Error deleting user goal:', error);
       toast.error('Failed to delete user goal');
@@ -398,7 +420,7 @@ const GoalSettings: React.FC = () => {
 
       toast.success('Default goals updated successfully');
       // Refresh the data to show updated values
-      fetchGoalData();
+      fetchGoalData(false);
     } catch (error) {
       console.error('Error updating defaults:', error);
       toast.error('Failed to update default goals');
@@ -407,7 +429,7 @@ const GoalSettings: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading && !overview) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center gap-4 mb-6">
@@ -431,7 +453,12 @@ const GoalSettings: React.FC = () => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Dashboard
         </Button>
-        <h1 className="text-3xl font-bold">Goal Settings</h1>
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          Goal Settings
+          {refreshing && (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary opacity-60"></div>
+          )}
+        </h1>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6 w-full max-w-full">
