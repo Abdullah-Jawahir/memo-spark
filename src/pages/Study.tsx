@@ -362,16 +362,14 @@ const Study = () => {
 
   // Function to handle tab switching with timer resumption
   const handleTabSwitch = (newTab: 'flashcards' | 'quiz' | 'exercises' | 'review') => {
-    // If timer is paused (from flashcard completion) and switching to quiz/exercises, resume timer
-    if (isTimerPaused && (newTab === 'quiz' || newTab === 'exercises')) {
+    // If timer is paused (from flashcard completion) and switching to quiz/exercises/review, resume timer
+    if (isTimerPaused && (newTab === 'quiz' || newTab === 'exercises' || newTab === 'review')) {
       console.log('Timer resuming due to tab switch to:', newTab);
       setIsTimerPaused(false);
     }
 
     setTab(newTab);
-  };
-
-  useEffect(() => {
+  }; useEffect(() => {
     // Initial load only
     const data = localStorage.getItem('generatedContent');
     const searchFlashcardsData = localStorage.getItem('memo-spark-study-flashcards');
@@ -978,10 +976,11 @@ const Study = () => {
     const flashcardsComplete = flashcards.length === 0 || sessionComplete;
     const exercisesComplete = exercises.length === 0 || exerciseCompleted;
 
+    setIsTimerPaused(true);
+
     if (flashcardsComplete && exercisesComplete) {
       // All activities complete - stop both timers
       setIsStudying(false);
-      setIsTimerPaused(false);
     }
   };
 
@@ -991,10 +990,11 @@ const Study = () => {
     const flashcardsComplete = flashcards.length === 0 || sessionComplete;
     const quizzesComplete = quizzes.length === 0 || quizCompleted;
 
+    setIsTimerPaused(true);
+
     if (flashcardsComplete && quizzesComplete) {
       // All activities complete - stop both timers
       setIsStudying(false);
-      setIsTimerPaused(false);
     }
   };
 
