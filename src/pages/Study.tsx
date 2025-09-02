@@ -197,6 +197,106 @@ const Study = () => {
 
   const isGuestUser = !user && generatedContent !== null;
 
+  // Study progress persistence key
+  const STUDY_PROGRESS_KEY = 'memo-spark-study-progress';
+
+  // Function to save study progress to localStorage
+  const saveStudyProgress = () => {
+    try {
+      const progressData = {
+        currentCard,
+        isFlipped,
+        tab,
+        sessionStats,
+        sessionRatings,
+        quizStep,
+        quizAnswers,
+        quizCompleted,
+        exerciseStep,
+        exerciseAnswers,
+        exerciseCompleted,
+        showExerciseAnswers,
+        bookmarkedCards,
+        sessionComplete,
+        reviewedDifficult: Array.from(reviewedDifficult),
+        isQuizReviewMode,
+        studyTime,
+        overallStudyTime,
+        isStudying,
+        isTimerPaused,
+        cardStudyStartTime,
+        activityTimingHistory,
+        currentActivityStartTime,
+        currentActivityType,
+        currentDeckIdentifier,
+        difficultCardIds: Array.from(difficultCardIds),
+        timestamp: Date.now()
+      };
+
+      localStorage.setItem(STUDY_PROGRESS_KEY, JSON.stringify(progressData));
+      console.log('Study progress saved');
+    } catch (error) {
+      console.error('Failed to save study progress:', error);
+    }
+  };
+
+  // Function to restore study progress from localStorage
+  const restoreStudyProgress = () => {
+    try {
+      const savedProgress = localStorage.getItem(STUDY_PROGRESS_KEY);
+      if (!savedProgress) return false;
+
+      const progressData = JSON.parse(savedProgress);
+
+      // Check if the saved progress is recent (within last hour) to avoid restoring very old sessions
+      const isRecentProgress = progressData.timestamp && (Date.now() - progressData.timestamp < 60 * 60 * 1000);
+      if (!isRecentProgress) {
+        localStorage.removeItem(STUDY_PROGRESS_KEY);
+        return false;
+      }
+
+      // Restore state
+      setCurrentCard(progressData.currentCard || 0);
+      setIsFlipped(progressData.isFlipped || false);
+      setTab(progressData.tab || 'flashcards');
+      setSessionStats(progressData.sessionStats || { correct: 0, difficult: 0, timeSpent: 0 });
+      setSessionRatings(progressData.sessionRatings || []);
+      setQuizStep(progressData.quizStep || 0);
+      setQuizAnswers(progressData.quizAnswers || []);
+      setQuizCompleted(progressData.quizCompleted || false);
+      setExerciseStep(progressData.exerciseStep || 0);
+      setExerciseAnswers(progressData.exerciseAnswers || []);
+      setExerciseCompleted(progressData.exerciseCompleted || false);
+      setShowExerciseAnswers(progressData.showExerciseAnswers || false);
+      setBookmarkedCards(progressData.bookmarkedCards || []);
+      setSessionComplete(progressData.sessionComplete || false);
+      setReviewedDifficult(new Set(progressData.reviewedDifficult || []));
+      setIsQuizReviewMode(progressData.isQuizReviewMode || false);
+      setStudyTime(progressData.studyTime || 0);
+      setOverallStudyTime(progressData.overallStudyTime || 0);
+      setIsStudying(progressData.isStudying || false);
+      setIsTimerPaused(progressData.isTimerPaused || false);
+      setCardStudyStartTime(progressData.cardStudyStartTime || 0);
+      setActivityTimingHistory(progressData.activityTimingHistory || { flashcard: 0, quiz: 0, exercise: 0 });
+      setCurrentActivityStartTime(progressData.currentActivityStartTime || 0);
+      setCurrentActivityType(progressData.currentActivityType || null);
+      setCurrentDeckIdentifier(progressData.currentDeckIdentifier || null);
+      setDifficultCardIds(new Set(progressData.difficultCardIds || []));
+
+      console.log('Study progress restored successfully');
+      return true;
+    } catch (error) {
+      console.error('Failed to restore study progress:', error);
+      localStorage.removeItem(STUDY_PROGRESS_KEY);
+      return false;
+    }
+  };
+
+  // Function to clear study progress (called when starting fresh)
+  const clearStudyProgress = () => {
+    localStorage.removeItem(STUDY_PROGRESS_KEY);
+  };
+
   // Memoized completion status to avoid calling function during render
   const isOverallComplete = useMemo(() => {
     // Only consider activities complete if they exist AND are completed
@@ -215,6 +315,49 @@ const Study = () => {
 
     return true;
   }, [sessionComplete, quizCompleted, exerciseCompleted, flashcards.length, quizzes.length, exercises.length]);
+
+  // Auto-save study progress whenever important state changes (throttled)
+  useEffect(() => {
+    // Only save progress if we have actual content loaded and user is studying
+    if ((flashcards.length > 0 || quizzes.length > 0 || exercises.length > 0) && !isLoadingFromStorage) {
+      // Throttle saves to avoid excessive localStorage writes
+      const timeoutId = setTimeout(() => {
+        saveStudyProgress();
+      }, 1000); // Save after 1 second of inactivity
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [
+    currentCard, isFlipped, tab, sessionStats, sessionRatings, quizStep, quizAnswers, quizCompleted,
+    exerciseStep, exerciseAnswers, exerciseCompleted, showExerciseAnswers, bookmarkedCards,
+    sessionComplete, reviewedDifficult, isQuizReviewMode, studyTime, overallStudyTime,
+    isStudying, isTimerPaused, cardStudyStartTime, activityTimingHistory, currentActivityStartTime,
+    currentActivityType, currentDeckIdentifier, difficultCardIds, flashcards.length, quizzes.length, exercises.length
+  ]);
+
+  // Handle page visibility changes to pause/resume timers
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Page became hidden (user switched tabs/apps)
+        console.log('Page hidden - pausing timers');
+        setIsTimerPaused(true);
+        saveStudyProgress(); // Save progress when leaving
+      } else {
+        // Page became visible (user returned)
+        console.log('Page visible - resuming timers');
+        if (isStudying && !isOverallComplete) {
+          setIsTimerPaused(false);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isStudying, isOverallComplete]);
 
   const fetchMaterials = async (force = false) => {
     if (!session?.access_token) return;
@@ -265,6 +408,9 @@ const Study = () => {
 
       // If the deck changed since last load, reset session-related state
       if (currentDeckIdentifier !== deckIdentifier) {
+        // Clear saved progress when switching to a different deck
+        clearStudyProgress();
+
         // Reset session-level state so counts/time don't carry over
         setCurrentCard(0);
         setIsFlipped(false);
@@ -302,6 +448,16 @@ const Study = () => {
       // Ensure sessionRatings matches the new flashcards length
       setSessionRatings(Array(parsed.flashcards?.length || 0).fill(null));
 
+      // Try to restore study progress if deck hasn't changed
+      let progressRestored = false;
+      if (currentDeckIdentifier === deckIdentifier && !force) {
+        console.log('Attempting to restore study progress for same deck');
+        progressRestored = restoreStudyProgress();
+        if (progressRestored) {
+          console.log('Study progress restored successfully');
+        }
+      }
+
       if ((!parsed.flashcards || parsed.flashcards.length === 0) &&
         (!parsed.quizzes || parsed.quizzes.length === 0) &&
         (!parsed.exercises || parsed.exercises.length === 0)) {
@@ -310,15 +466,27 @@ const Study = () => {
 
       if (user && parsed.flashcards?.length) {
         setIsStudying(true);
-        startStudySession(idToUse, session)
-          .then(sessionData => {
-            if (sessionData) {
-              setStudySession(sessionData);
-              setIsStudying(true);
-              setCardStudyStartTime(0);
-            }
-          })
-          .catch(error => console.error('Failed to start study session:', error));
+
+        // Only start a new session if we didn't restore progress or don't have an existing session
+        const existingSession = getCurrentStudySession();
+        const shouldStartNewSession = !progressRestored || !existingSession;
+
+        if (shouldStartNewSession) {
+          console.log('Starting new study session');
+          startStudySession(idToUse, session)
+            .then(sessionData => {
+              if (sessionData) {
+                setStudySession(sessionData);
+                setIsStudying(true);
+                setCardStudyStartTime(0);
+              }
+            })
+            .catch(error => console.error('Failed to start study session:', error));
+        } else {
+          console.log('Using existing study session from restored progress');
+          // Set the existing session from localStorage
+          setStudySession(existingSession);
+        }
       } else if (!user && parsed.flashcards?.length) {
         setIsStudying(true);
       }
@@ -667,6 +835,8 @@ const Study = () => {
       try { localStorage.removeItem('memo-spark-current-study-session'); } catch (e) { /* ignore */ }
       setStudySession(null);
       setCurrentDeckIdentifier(deckIdentifier);
+      // Clear old progress when switching decks
+      clearStudyProgress();
     }
 
     setGeneratedContent(parsed);
@@ -679,12 +849,33 @@ const Study = () => {
     setExercises(parsed.exercises || []);
     setSessionRatings(Array(parsed.flashcards?.length || 0).fill(null));
 
+    // Try to restore study progress if this is the same deck/content
+    let progressRestored = false;
+    if (currentDeckIdentifier === deckIdentifier) {
+      console.log('Attempting to restore study progress for same content');
+      progressRestored = restoreStudyProgress();
+      if (progressRestored) {
+        console.log('Study progress restored successfully');
+      }
+    }
+
     if (user && session && parsed.flashcards?.length) {
       const legacyDeckId = searchParams.get('deck') || 'default-deck';
       setIsStudying(true);
-      startStudySession(legacyDeckId, session)
-        .then(sessionData => { if (sessionData) setStudySession(sessionData); })
-        .catch(console.error);
+
+      // Only start a new session if we didn't restore progress or don't have an existing session
+      const existingSession = getCurrentStudySession();
+      const shouldStartNewSession = !progressRestored || !existingSession;
+
+      if (shouldStartNewSession) {
+        console.log('Starting new study session for original materials');
+        startStudySession(legacyDeckId, session)
+          .then(sessionData => { if (sessionData) setStudySession(sessionData); })
+          .catch(console.error);
+      } else {
+        console.log('Using existing study session from restored progress for original materials');
+        setStudySession(existingSession);
+      }
     } else if (!user && parsed.flashcards?.length) {
       setIsStudying(true);
     }
@@ -823,7 +1014,8 @@ const Study = () => {
   // Save timing data before page unload
   useEffect(() => {
     const handleBeforeUnload = () => {
-      // No need to update session timing on unload since activities are recorded individually
+      // Save study progress before the page unloads
+      saveStudyProgress();
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -1171,12 +1363,17 @@ const Study = () => {
               // Update session stats based on the review result
               if (reviewResult.success && reviewResult.data?.session_stats) {
                 const stats = reviewResult.data.session_stats;
-                setSessionStats(prev => ({
-                  correct: stats.good_or_easy_count || 0,
-                  difficult: stats.hard_count || 0,
-                  timeSpent: studyTime
-                }));
-                console.log('Updated session stats from review:', stats);
+                // Instead of replacing stats, update them incrementally to preserve restored progress
+                setSessionStats(prev => {
+                  const newStats = { ...prev, timeSpent: studyTime };
+                  if (rating === 'good' || rating === 'easy') {
+                    newStats.correct = prev.correct + 1;
+                  } else if (rating === 'hard') {
+                    newStats.difficult = prev.difficult + 1;
+                  }
+                  return newStats;
+                });
+                console.log('Updated session stats incrementally, preserving restored progress');
               } else {
                 // Fallback: Update local session stats
                 setSessionStats(prev => {
@@ -1334,13 +1531,18 @@ const Study = () => {
             session
           );
 
-          // If we received session stats from the backend, use them to update our UI
+          // If we received session stats from the backend, update them incrementally to preserve restored progress
           if (result && result.success && result.sessionStats) {
-            setSessionStats({
-              correct: result.sessionStats.good_or_easy_count || 0,
-              difficult: result.sessionStats.hard_count || 0,
-              timeSpent: studyTime
+            setSessionStats(prev => {
+              const newStats = { ...prev, timeSpent: studyTime };
+              if (rating === 'good' || rating === 'easy') {
+                newStats.correct = prev.correct + 1;
+              } else if (rating === 'hard') {
+                newStats.difficult = prev.difficult + 1;
+              }
+              return newStats;
             });
+            console.log('Updated regular flashcard stats incrementally, preserving restored progress');
           } else {
             // Fall back to local updates if server stats aren't available
             if (rating === 'good' || rating === 'easy') {
@@ -1469,6 +1671,9 @@ const Study = () => {
   };
 
   const handleRestartSession = async () => {
+    // Clear saved progress when explicitly restarting
+    clearStudyProgress();
+
     // Reset all state
     setCurrentCard(0);
     setIsFlipped(false);
