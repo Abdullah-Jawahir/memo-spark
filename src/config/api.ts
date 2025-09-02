@@ -22,6 +22,13 @@ export const API_ENDPOINTS = {
     RECENT_ACTIVITY: `${API_BASE_URL}/api/study/recent-activity`,
     DECK_MATERIALS: (deckId: string | number) => `${API_BASE_URL}/api/decks/${deckId}/materials`,
     ENRICH_MATERIALS: `${API_BASE_URL}/api/study/enrich-materials`,
+    TIMING: {
+      START: `${API_BASE_URL}/api/study/timing/start`,
+      END: `${API_BASE_URL}/api/study/timing/end`,
+      RECORD: `${API_BASE_URL}/api/study/timing/record`,
+      SUMMARY: (sessionId: string) => `${API_BASE_URL}/api/study/timing/summary/${sessionId}`,
+      UPDATE_SESSION: `${API_BASE_URL}/api/study/timing/update-session`,
+    },
   },
   DECKS: {
     LIST: `${API_BASE_URL}/api/decks`,
