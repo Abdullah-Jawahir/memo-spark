@@ -484,15 +484,91 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if we just returned from upload with a new document
+    // Check if we just returned from upload with a new document or study session
     const queryParams = new URLSearchParams(location.search);
-    if (queryParams.get('refresh') === 'true') {
+    const refreshParam = queryParams.get('refresh');
+    const fromStudy = queryParams.get('fromStudy');
+
+    if (refreshParam === 'true' || fromStudy === 'true') {
       // Remove the query param
       navigate(location.pathname, { replace: true });
       // Fetch fresh data
       fetchDashboardData(true);
     }
   }, [location]);
+
+  // Auto-refresh dashboard when returning from study sessions
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      // Refresh data when tab becomes visible again (user returns from study)
+      if (!document.hidden && session?.access_token) {
+        // Only refresh if we haven't refreshed in the last 30 seconds
+        const lastRefresh = localStorage.getItem(DASHBOARD_LAST_FETCH_KEY);
+        const now = new Date().getTime();
+        const lastRefreshTime = lastRefresh ? new Date(lastRefresh).getTime() : 0;
+
+        if (now - lastRefreshTime > 30000) { // 30 seconds
+          console.log('Auto-refreshing dashboard after returning to tab');
+          fetchDashboardData(true);
+        }
+      }
+    };
+
+    // Add visibility change listener
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup listener
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [session?.access_token]);
+
+  // Also refresh when the component gains focus (browser tab activated)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (session?.access_token) {
+        // Only refresh if we haven't refreshed in the last 30 seconds
+        const lastRefresh = localStorage.getItem(DASHBOARD_LAST_FETCH_KEY);
+        const now = new Date().getTime();
+        const lastRefreshTime = lastRefresh ? new Date(lastRefresh).getTime() : 0;
+
+        if (now - lastRefreshTime > 30000) { // 30 seconds
+          console.log('Auto-refreshing dashboard after window focus');
+          fetchDashboardData(true);
+        }
+      }
+    };
+
+    // Add focus listener
+    window.addEventListener('focus', handleFocus);
+
+    // Cleanup listener
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [session?.access_token]);
+
+  // Periodic auto-refresh every 2 minutes when dashboard is active
+  useEffect(() => {
+    if (!session?.access_token) return;
+
+    const interval = setInterval(() => {
+      // Only refresh if tab is visible and we haven't refreshed in the last minute
+      if (!document.hidden) {
+        const lastRefresh = localStorage.getItem(DASHBOARD_LAST_FETCH_KEY);
+        const now = new Date().getTime();
+        const lastRefreshTime = lastRefresh ? new Date(lastRefresh).getTime() : 0;
+
+        if (now - lastRefreshTime > 60000) { // 1 minute
+          console.log('Periodic auto-refresh of dashboard data');
+          fetchDashboardData(true);
+        }
+      }
+    }, 120000); // 2 minutes
+
+    // Cleanup interval
+    return () => clearInterval(interval);
+  }, [session?.access_token]);
 
   // Direct API test on mount
   useEffect(() => {
