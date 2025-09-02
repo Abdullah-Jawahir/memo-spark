@@ -1378,6 +1378,10 @@ const Study = () => {
                   if (!isReStudyingFromReview || (rating === 'good' || rating === 'easy')) {
                     if (rating === 'good' || rating === 'easy') {
                       newStats.correct = prev.correct + 1;
+                      // If re-studying from review and rating good/easy, decrement difficult count
+                      if (isReStudyingFromReview && difficultCardIds.has(currentCardData.id)) {
+                        newStats.difficult = Math.max(0, prev.difficult - 1);
+                      }
                     } else if (rating === 'hard') {
                       newStats.difficult = prev.difficult + 1;
                     }
@@ -1393,6 +1397,10 @@ const Study = () => {
                   if (!isReStudyingFromReview || (rating === 'good' || rating === 'easy')) {
                     if (rating === 'good' || rating === 'easy') {
                       newStats.correct = prev.correct + 1;
+                      // If re-studying from review and rating good/easy, decrement difficult count
+                      if (isReStudyingFromReview && difficultCardIds.has(currentCardData.id)) {
+                        newStats.difficult = Math.max(0, prev.difficult - 1);
+                      }
                     } else if (rating === 'hard') {
                       newStats.difficult = prev.difficult + 1;
                     }
@@ -1439,6 +1447,10 @@ const Study = () => {
                 if (!isReStudyingFromReview || (rating === 'good' || rating === 'easy')) {
                   if (rating === 'good' || rating === 'easy') {
                     newStats.correct = prev.correct + 1;
+                    // If re-studying from review and rating good/easy, decrement difficult count
+                    if (isReStudyingFromReview && difficultCardIds.has(currentCardData.id)) {
+                      newStats.difficult = Math.max(0, prev.difficult - 1);
+                    }
                   } else if (rating === 'hard') {
                     newStats.difficult = prev.difficult + 1;
                   }
@@ -1455,6 +1467,10 @@ const Study = () => {
               if (!isReStudyingFromReview || (rating === 'good' || rating === 'easy')) {
                 if (rating === 'good' || rating === 'easy') {
                   newStats.correct = prev.correct + 1;
+                  // If re-studying from review and rating good/easy, decrement difficult count
+                  if (isReStudyingFromReview && difficultCardIds.has(currentCardData.id)) {
+                    newStats.difficult = Math.max(0, prev.difficult - 1);
+                  }
                 } else if (rating === 'hard') {
                   newStats.difficult = prev.difficult + 1;
                 }
@@ -1572,6 +1588,10 @@ const Study = () => {
               if (!isReStudyingFromReview || (rating === 'good' || rating === 'easy')) {
                 if (rating === 'good' || rating === 'easy') {
                   newStats.correct = prev.correct + 1;
+                  // If re-studying from review and rating good/easy, decrement difficult count
+                  if (isReStudyingFromReview && sessionRatings[currentCard] === 'hard') {
+                    newStats.difficult = Math.max(0, prev.difficult - 1);
+                  }
                 } else if (rating === 'hard') {
                   newStats.difficult = prev.difficult + 1;
                 }
@@ -1584,7 +1604,14 @@ const Study = () => {
             // Only update stats if not re-studying from review, or if rating is good/easy
             if (!isReStudyingFromReview || (rating === 'good' || rating === 'easy')) {
               if (rating === 'good' || rating === 'easy') {
-                setSessionStats(prev => ({ ...prev, correct: prev.correct + 1 }));
+                setSessionStats(prev => {
+                  const newStats = { ...prev, correct: prev.correct + 1 };
+                  // If re-studying from review and rating good/easy, decrement difficult count
+                  if (isReStudyingFromReview && sessionRatings[currentCard] === 'hard') {
+                    newStats.difficult = Math.max(0, prev.difficult - 1);
+                  }
+                  return newStats;
+                });
               } else if (rating === 'hard') {
                 setSessionStats(prev => ({ ...prev, difficult: prev.difficult + 1 }));
               }
@@ -1599,7 +1626,14 @@ const Study = () => {
       // Only update stats if not re-studying from review, or if rating is good/easy
       if (!isReStudyingFromReview || (rating === 'good' || rating === 'easy')) {
         if (rating === 'good' || rating === 'easy') {
-          setSessionStats(prev => ({ ...prev, correct: prev.correct + 1 }));
+          setSessionStats(prev => {
+            const newStats = { ...prev, correct: prev.correct + 1 };
+            // If re-studying from review and rating good/easy, decrement difficult count
+            if (isReStudyingFromReview && sessionRatings[currentCard] === 'hard') {
+              newStats.difficult = Math.max(0, prev.difficult - 1);
+            }
+            return newStats;
+          });
         } else if (rating === 'hard') {
           setSessionStats(prev => ({ ...prev, difficult: prev.difficult + 1 }));
         }
