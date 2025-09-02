@@ -1366,10 +1366,13 @@ const Study = () => {
                 // Instead of replacing stats, update them incrementally to preserve restored progress
                 setSessionStats(prev => {
                   const newStats = { ...prev, timeSpent: studyTime };
-                  if (rating === 'good' || rating === 'easy') {
-                    newStats.correct = prev.correct + 1;
-                  } else if (rating === 'hard') {
-                    newStats.difficult = prev.difficult + 1;
+                  // Only update stats if not re-studying from review, or if rating is good/easy
+                  if (!isReStudyingFromReview || (rating === 'good' || rating === 'easy')) {
+                    if (rating === 'good' || rating === 'easy') {
+                      newStats.correct = prev.correct + 1;
+                    } else if (rating === 'hard') {
+                      newStats.difficult = prev.difficult + 1;
+                    }
                   }
                   return newStats;
                 });
@@ -1378,10 +1381,13 @@ const Study = () => {
                 // Fallback: Update local session stats
                 setSessionStats(prev => {
                   const newStats = { ...prev, timeSpent: studyTime };
-                  if (rating === 'good' || rating === 'easy') {
-                    newStats.correct = prev.correct + 1;
-                  } else if (rating === 'hard') {
-                    newStats.difficult = prev.difficult + 1;
+                  // Only update stats if not re-studying from review, or if rating is good/easy
+                  if (!isReStudyingFromReview || (rating === 'good' || rating === 'easy')) {
+                    if (rating === 'good' || rating === 'easy') {
+                      newStats.correct = prev.correct + 1;
+                    } else if (rating === 'hard') {
+                      newStats.difficult = prev.difficult + 1;
+                    }
                   }
                   return newStats;
                 });
@@ -1408,10 +1414,13 @@ const Study = () => {
               // Fallback: Update local session stats only
               setSessionStats(prev => {
                 const newStats = { ...prev, timeSpent: studyTime };
-                if (rating === 'good' || rating === 'easy') {
-                  newStats.correct = prev.correct + 1;
-                } else if (rating === 'hard') {
-                  newStats.difficult = prev.difficult + 1;
+                // Only update stats if not re-studying from review, or if rating is good/easy
+                if (!isReStudyingFromReview || (rating === 'good' || rating === 'easy')) {
+                  if (rating === 'good' || rating === 'easy') {
+                    newStats.correct = prev.correct + 1;
+                  } else if (rating === 'hard') {
+                    newStats.difficult = prev.difficult + 1;
+                  }
                 }
                 return newStats;
               });
@@ -1421,10 +1430,13 @@ const Study = () => {
             // Fallback: Update local session stats only for search flashcards without proper session info
             setSessionStats(prev => {
               const newStats = { ...prev, timeSpent: studyTime };
-              if (rating === 'good' || rating === 'easy') {
-                newStats.correct = prev.correct + 1;
-              } else if (rating === 'hard') {
-                newStats.difficult = prev.difficult + 1;
+              // Only update stats if not re-studying from review, or if rating is good/easy
+              if (!isReStudyingFromReview || (rating === 'good' || rating === 'easy')) {
+                if (rating === 'good' || rating === 'easy') {
+                  newStats.correct = prev.correct + 1;
+                } else if (rating === 'hard') {
+                  newStats.difficult = prev.difficult + 1;
+                }
               }
               return newStats;
             });
@@ -1535,20 +1547,26 @@ const Study = () => {
           if (result && result.success && result.sessionStats) {
             setSessionStats(prev => {
               const newStats = { ...prev, timeSpent: studyTime };
-              if (rating === 'good' || rating === 'easy') {
-                newStats.correct = prev.correct + 1;
-              } else if (rating === 'hard') {
-                newStats.difficult = prev.difficult + 1;
+              // Only update stats if not re-studying from review, or if rating is good/easy
+              if (!isReStudyingFromReview || (rating === 'good' || rating === 'easy')) {
+                if (rating === 'good' || rating === 'easy') {
+                  newStats.correct = prev.correct + 1;
+                } else if (rating === 'hard') {
+                  newStats.difficult = prev.difficult + 1;
+                }
               }
               return newStats;
             });
             console.log('Updated regular flashcard stats incrementally, preserving restored progress');
           } else {
             // Fall back to local updates if server stats aren't available
-            if (rating === 'good' || rating === 'easy') {
-              setSessionStats(prev => ({ ...prev, correct: prev.correct + 1 }));
-            } else if (rating === 'hard') {
-              setSessionStats(prev => ({ ...prev, difficult: prev.difficult + 1 }));
+            // Only update stats if not re-studying from review, or if rating is good/easy
+            if (!isReStudyingFromReview || (rating === 'good' || rating === 'easy')) {
+              if (rating === 'good' || rating === 'easy') {
+                setSessionStats(prev => ({ ...prev, correct: prev.correct + 1 }));
+              } else if (rating === 'hard') {
+                setSessionStats(prev => ({ ...prev, difficult: prev.difficult + 1 }));
+              }
             }
           }
         }
@@ -1557,10 +1575,13 @@ const Study = () => {
       }
     } else {
       // For unauthenticated users, still update the local stats
-      if (rating === 'good' || rating === 'easy') {
-        setSessionStats(prev => ({ ...prev, correct: prev.correct + 1 }));
-      } else if (rating === 'hard') {
-        setSessionStats(prev => ({ ...prev, difficult: prev.difficult + 1 }));
+      // Only update stats if not re-studying from review, or if rating is good/easy
+      if (!isReStudyingFromReview || (rating === 'good' || rating === 'easy')) {
+        if (rating === 'good' || rating === 'easy') {
+          setSessionStats(prev => ({ ...prev, correct: prev.correct + 1 }));
+        } else if (rating === 'hard') {
+          setSessionStats(prev => ({ ...prev, difficult: prev.difficult + 1 }));
+        }
       }
     }
 
