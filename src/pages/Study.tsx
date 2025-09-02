@@ -1490,58 +1490,70 @@ const Study = () => {
 
           // Handle card navigation for search flashcards
           if (currentCard < flashcards.length - 1) {
-            setCurrentCard(currentCard + 1);
-            setIsFlipped(false);
-            setCardStudyStartTime(studyTime); // Reset start time for next card
-            setIsReStudyingFromReview(false); // Reset re-studying flag when moving to next card
+            // If we were re-studying from review, go back to review tab instead of next card
+            if (isReStudyingFromReview) {
+              setIsReStudyingFromReview(false); // Reset the re-studying flag
+              setTab('review'); // Go back to review tab
+            } else {
+              // Normal flow - move to next card
+              setCurrentCard(currentCard + 1);
+              setIsFlipped(false);
+              setCardStudyStartTime(studyTime); // Reset start time for next card
+            }
           } else {
-            // Flashcards are complete - handle search session completion
-            if (session?.access_token) {
-              completeSearchStudySession(session)
-                .then(result => {
-                  if (result.success) {
-                    console.log('Search study session completed:', result.finalStats);
-                    // Only clear localStorage if there's no search_id in URL (temporary sessions)
-                    // For persistent sessions with search_id, keep localStorage for reload support
-                    const searchId = new URLSearchParams(window.location.search).get('search_id');
-                    if (!searchId) {
-                      localStorage.removeItem('memo-spark-search-session-info');
-                      localStorage.removeItem('memo-spark-current-search-study-session');
+            // If we were re-studying from review and it's the last card, go back to review tab
+            if (isReStudyingFromReview) {
+              setIsReStudyingFromReview(false); // Reset the re-studying flag
+              setTab('review'); // Go back to review tab
+            } else {
+              // Normal flow - handle search session completion
+              if (session?.access_token) {
+                completeSearchStudySession(session)
+                  .then(result => {
+                    if (result.success) {
+                      console.log('Search study session completed:', result.finalStats);
+                      // Only clear localStorage if there's no search_id in URL (temporary sessions)
+                      // For persistent sessions with search_id, keep localStorage for reload support
+                      const searchId = new URLSearchParams(window.location.search).get('search_id');
+                      if (!searchId) {
+                        localStorage.removeItem('memo-spark-search-session-info');
+                        localStorage.removeItem('memo-spark-current-search-study-session');
+                      }
                     }
-                  }
-                })
-                .catch(console.error);
-            }
-
-            setSessionComplete(true);
-
-            // Record flashcard timing for search session
-            if (session?.access_token && currentActivityType === 'flashcard') {
-              const flashcardDuration = overallStudyTime - currentActivityStartTime;
-              // For search flashcards, we don't have a regular study session, but we can still record timing
-              try {
-                const searchSessionInfo = JSON.parse(localStorage.getItem('memo-spark-search-session-info') || '{}');
-                if (searchSessionInfo.session_id) {
-                  await recordActivityTiming(
-                    searchSessionInfo.session_id,
-                    'flashcard',
-                    flashcardDuration,
-                    {
-                      flashcards_completed: true,
-                      total_flashcards: flashcards.length,
-                      search_id: searchSessionInfo.search_id
-                    },
-                    session
-                  );
-                }
-              } catch (error) {
-                console.error('Failed to record search flashcard timing:', error);
+                  })
+                  .catch(console.error);
               }
-            }
 
-            // For search flashcards, always stop timer when complete since there are no other activities
-            setIsStudying(false);
-            setIsTimerPaused(false);
+              setSessionComplete(true);
+
+              // Record flashcard timing for search session
+              if (session?.access_token && currentActivityType === 'flashcard') {
+                const flashcardDuration = overallStudyTime - currentActivityStartTime;
+                // For search flashcards, we don't have a regular study session, but we can still record timing
+                try {
+                  const searchSessionInfo = JSON.parse(localStorage.getItem('memo-spark-search-session-info') || '{}');
+                  if (searchSessionInfo.session_id) {
+                    await recordActivityTiming(
+                      searchSessionInfo.session_id,
+                      'flashcard',
+                      flashcardDuration,
+                      {
+                        flashcards_completed: true,
+                        total_flashcards: flashcards.length,
+                        search_id: searchSessionInfo.search_id
+                      },
+                      session
+                    );
+                  }
+                } catch (error) {
+                  console.error('Failed to record search flashcard timing:', error);
+                }
+              }
+
+              // For search flashcards, always stop timer when complete since there are no other activities
+              setIsStudying(false);
+              setIsTimerPaused(false);
+            }
           }
 
           // Reset rating state
