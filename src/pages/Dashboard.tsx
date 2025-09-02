@@ -966,7 +966,7 @@ const Dashboard = () => {
                           Today's Goals
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="h-[400px] overflow-hidden">
+                      <CardContent className="h-[500px] overflow-hidden">
                         <div
                           className="h-full overflow-y-auto pr-2 scrollbar-gradient"
                         >
@@ -1098,6 +1098,7 @@ const Dashboard = () => {
                             </div>
                           )}
                         </div>
+
                       </CardContent>
                     </Card>
                   </div>
