@@ -425,7 +425,7 @@ const GoalSettings: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-6 max-w-full overflow-hidden">
       <div className="flex items-center gap-4 mb-6">
         <Button variant="ghost" onClick={() => navigate('/admin')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -434,7 +434,7 @@ const GoalSettings: React.FC = () => {
         <h1 className="text-3xl font-bold">Goal Settings</h1>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs defaultValue="overview" className="space-y-6 w-full max-w-full">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Target className="h-4 w-4" />
@@ -458,11 +458,11 @@ const GoalSettings: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-6 w-full max-w-full overflow-hidden">
           {overview && (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+                <Card className="w-full">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Users</CardTitle>
                     <Users className="h-4 w-4 text-muted-foreground" />
@@ -475,7 +475,7 @@ const GoalSettings: React.FC = () => {
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="w-full">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Average Daily Goal</CardTitle>
                     <Target className="h-4 w-4 text-muted-foreground" />
@@ -488,7 +488,7 @@ const GoalSettings: React.FC = () => {
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="w-full">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Recent Updates</CardTitle>
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -502,7 +502,7 @@ const GoalSettings: React.FC = () => {
                 </Card>
               </div>
 
-              <Card>
+              <Card className="w-full">
                 <CardHeader>
                   <CardTitle>Goal Distribution</CardTitle>
                   <CardDescription>
@@ -512,18 +512,18 @@ const GoalSettings: React.FC = () => {
                 <CardContent>
                   <div className="space-y-4">
                     {overview.goal_distribution.map((range, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Badge variant="outline">{range.goal_range} cards</Badge>
-                          <span className="text-sm text-muted-foreground">
+                      <div key={index} className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <Badge variant="outline" className="shrink-0">{range.goal_range} cards</Badge>
+                          <span className="text-sm text-muted-foreground truncate">
                             {range.count} users
                           </span>
                         </div>
-                        <div className="w-24 bg-muted rounded-full h-2">
+                        <div className="w-20 bg-muted rounded-full h-2 shrink-0">
                           <div
                             className="bg-primary h-2 rounded-full"
                             style={{
-                              width: `${(range.count / overview.total_users_with_goals) * 100}%`
+                              width: `${Math.min((range.count / overview.total_users_with_goals) * 100, 100)}%`
                             }}
                           ></div>
                         </div>
@@ -536,10 +536,10 @@ const GoalSettings: React.FC = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="statistics" className="space-y-6">
+        <TabsContent value="statistics" className="space-y-6 w-full max-w-full overflow-hidden">
           {statistics && (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
                     <CardTitle>Goals by User Type</CardTitle>
@@ -622,7 +622,7 @@ const GoalSettings: React.FC = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="goal-types" className="space-y-6">
+        <TabsContent value="goal-types" className="space-y-6 w-full max-w-full overflow-hidden">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold">Goal Types Management</h2>
             <Dialog open={isGoalTypeDialogOpen} onOpenChange={setIsGoalTypeDialogOpen}>
@@ -752,78 +752,80 @@ const GoalSettings: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Unit</TableHead>
-                    <TableHead>Default</TableHead>
-                    <TableHead>Range</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {goalTypes.map((goalType) => (
-                    <TableRow key={goalType.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{goalType.name}</div>
-                          <div className="text-sm text-muted-foreground">{goalType.description}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">{goalType.category}</Badge>
-                      </TableCell>
-                      <TableCell>{goalType.unit}</TableCell>
-                      <TableCell>{goalType.default_value}</TableCell>
-                      <TableCell>{goalType.min_value} - {goalType.max_value}</TableCell>
-                      <TableCell>
-                        <Badge variant={goalType.is_active ? "default" : "secondary"}>
-                          {goalType.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setEditingGoalType(goalType);
-                              setNewGoalType({
-                                name: goalType.name,
-                                description: goalType.description,
-                                unit: goalType.unit,
-                                category: goalType.category,
-                                default_value: goalType.default_value,
-                                min_value: goalType.min_value,
-                                max_value: goalType.max_value
-                              });
-                              setIsGoalTypeDialogOpen(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteGoalType(goalType.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Unit</TableHead>
+                      <TableHead>Default</TableHead>
+                      <TableHead>Range</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {goalTypes.map((goalType) => (
+                      <TableRow key={goalType.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{goalType.name}</div>
+                            <div className="text-sm text-muted-foreground">{goalType.description}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">{goalType.category}</Badge>
+                        </TableCell>
+                        <TableCell>{goalType.unit}</TableCell>
+                        <TableCell>{goalType.default_value}</TableCell>
+                        <TableCell>{goalType.min_value} - {goalType.max_value}</TableCell>
+                        <TableCell>
+                          <Badge variant={goalType.is_active ? "default" : "secondary"}>
+                            {goalType.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditingGoalType(goalType);
+                                setNewGoalType({
+                                  name: goalType.name,
+                                  description: goalType.description,
+                                  unit: goalType.unit,
+                                  category: goalType.category,
+                                  default_value: goalType.default_value,
+                                  min_value: goalType.min_value,
+                                  max_value: goalType.max_value
+                                });
+                                setIsGoalTypeDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteGoalType(goalType.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="user-goals" className="space-y-6">
+        <TabsContent value="user-goals" className="space-y-6 w-full max-w-full overflow-hidden">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold">User Goals Management</h2>
             <Dialog open={isUserGoalDialogOpen} onOpenChange={setIsUserGoalDialogOpen}>
@@ -898,7 +900,7 @@ const GoalSettings: React.FC = () => {
             </Dialog>
           </div>
 
-          <div className="flex gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="flex-1">
               <Label htmlFor="search-email">Search by Email</Label>
               <div className="relative">
@@ -913,10 +915,10 @@ const GoalSettings: React.FC = () => {
               </div>
             </div>
 
-            <div>
+            <div className="sm:w-48">
               <Label htmlFor="user-filter">Filter by User</Label>
               <Select value={selectedUser} onValueChange={setSelectedUser}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="All users" />
                 </SelectTrigger>
                 <SelectContent>
@@ -939,95 +941,97 @@ const GoalSettings: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Goal Type</TableHead>
-                    <TableHead>Target</TableHead>
-                    <TableHead>Current</TableHead>
-                    <TableHead>Progress</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {userGoals
-                    .filter(goal => goal.user && goal.goal_type) // Filter out goals with missing user or goal_type
-                    .filter(goal => {
-                      if (selectedUser && selectedUser !== "all" && goal.user_id !== selectedUser) return false;
-                      if (searchEmail && goal.user && !goal.user.email.toLowerCase().includes(searchEmail.toLowerCase())) return false;
-                      return true;
-                    })
-                    .map((userGoal) => {
-                      const progress = userGoal.target_value > 0 ? (userGoal.current_value / userGoal.target_value) * 100 : 0;
-                      return (
-                        <TableRow key={userGoal.id}>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{userGoal.user?.name || 'Unknown User'}</div>
-                              <div className="text-sm text-muted-foreground">{userGoal.user?.email || 'No email'}</div>
-                              <Badge variant="outline" className="text-xs">{userGoal.user?.user_type || 'Unknown'}</Badge>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{userGoal.goal_type?.name || 'Unknown Goal Type'}</div>
-                              <div className="text-sm text-muted-foreground">{userGoal.goal_type?.category || 'N/A'}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{userGoal.target_value} {userGoal.goal_type?.unit || ''}</TableCell>
-                          <TableCell>{userGoal.current_value} {userGoal.goal_type?.unit || ''}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div className="w-20 bg-muted rounded-full h-2">
-                                <div
-                                  className="bg-primary h-2 rounded-full"
-                                  style={{ width: `${Math.min(progress, 100)}%` }}
-                                ></div>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Goal Type</TableHead>
+                      <TableHead>Target</TableHead>
+                      <TableHead>Current</TableHead>
+                      <TableHead>Progress</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {userGoals
+                      .filter(goal => goal.user && goal.goal_type) // Filter out goals with missing user or goal_type
+                      .filter(goal => {
+                        if (selectedUser && selectedUser !== "all" && goal.user_id !== selectedUser) return false;
+                        if (searchEmail && goal.user && !goal.user.email.toLowerCase().includes(searchEmail.toLowerCase())) return false;
+                        return true;
+                      })
+                      .map((userGoal) => {
+                        const progress = userGoal.target_value > 0 ? (userGoal.current_value / userGoal.target_value) * 100 : 0;
+                        return (
+                          <TableRow key={userGoal.id}>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{userGoal.user?.name || 'Unknown User'}</div>
+                                <div className="text-sm text-muted-foreground">{userGoal.user?.email || 'No email'}</div>
+                                <Badge variant="outline" className="text-xs">{userGoal.user?.user_type || 'Unknown'}</Badge>
                               </div>
-                              <span className="text-sm">{Math.round(progress)}%</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={userGoal.is_active ? "default" : "secondary"}>
-                              {userGoal.is_active ? "Active" : "Inactive"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  const newValue = prompt(`Update target for ${userGoal.goal_type?.name || 'Goal'}:`, userGoal.target_value.toString());
-                                  if (newValue && !isNaN(parseInt(newValue))) {
-                                    handleUpdateUserGoal(userGoal.id, parseInt(newValue));
-                                  }
-                                }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteUserGoal(userGoal.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                </TableBody>
-              </Table>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{userGoal.goal_type?.name || 'Unknown Goal Type'}</div>
+                                <div className="text-sm text-muted-foreground">{userGoal.goal_type?.category || 'N/A'}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>{userGoal.target_value} {userGoal.goal_type?.unit || ''}</TableCell>
+                            <TableCell>{userGoal.current_value} {userGoal.goal_type?.unit || ''}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="w-20 bg-muted rounded-full h-2">
+                                  <div
+                                    className="bg-primary h-2 rounded-full"
+                                    style={{ width: `${Math.min(progress, 100)}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-sm">{Math.round(progress)}%</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={userGoal.is_active ? "default" : "secondary"}>
+                                {userGoal.is_active ? "Active" : "Inactive"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const newValue = prompt(`Update target for ${userGoal.goal_type?.name || 'Goal'}:`, userGoal.target_value.toString());
+                                    if (newValue && !isNaN(parseInt(newValue))) {
+                                      handleUpdateUserGoal(userGoal.id, parseInt(newValue));
+                                    }
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteUserGoal(userGoal.id)}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="settings" className="space-y-6">
+        <TabsContent value="settings" className="space-y-6 w-full max-w-full overflow-hidden">
           <Card>
             <CardHeader>
               <CardTitle>Default Goal Recommendations</CardTitle>
@@ -1036,7 +1040,7 @@ const GoalSettings: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="student_default">Student Default (cards/day)</Label>
                   <Input
