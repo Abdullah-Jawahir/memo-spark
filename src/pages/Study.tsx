@@ -360,6 +360,17 @@ const Study = () => {
     }
   };
 
+  // Function to handle tab switching with timer resumption
+  const handleTabSwitch = (newTab: 'flashcards' | 'quiz' | 'exercises' | 'review') => {
+    // If timer is paused (from flashcard completion) and switching to quiz/exercises, resume timer
+    if (isTimerPaused && (newTab === 'quiz' || newTab === 'exercises')) {
+      console.log('Timer resuming due to tab switch to:', newTab);
+      setIsTimerPaused(false);
+    }
+
+    setTab(newTab);
+  };
+
   useEffect(() => {
     // Initial load only
     const data = localStorage.getItem('generatedContent');
@@ -1208,15 +1219,12 @@ const Study = () => {
       setCardStudyStartTime(studyTime); // Reset start time for next card
       setIsReStudyingFromReview(false); // Reset re-studying flag when moving to next card
     } else {
-      // Flashcards are complete, but don't stop the overall timer
-      // Only mark flashcard activity as complete
-      // The overall timer continues until all activities are done or user leaves
-
-      // Complete search study session if this is a search flashcard session
+      // Flashcards are complete - handle completion based on session type
       const searchSessionInfo = localStorage.getItem('memo-spark-search-session-info');
       const isSearchFlashcardSession = !!searchSessionInfo; // Simplified check
 
       if (isSearchFlashcardSession && session?.access_token) {
+        // Handle search flashcard session completion
         completeSearchStudySession(session)
           .then(result => {
             if (result.success) {
@@ -1235,18 +1243,12 @@ const Study = () => {
 
       setSessionComplete(true);
 
-      // Check if this was the last activity and stop timer if so
-      const quizzesComplete = quizzes.length === 0 || quizCompleted;
-      const exercisesComplete = exercises.length === 0 || exerciseCompleted;
-
-      if (quizzesComplete && exercisesComplete) {
-        // All activities complete - stop both timers
-        setIsStudying(false);
-        setIsTimerPaused(false);
-      }
+      // Always auto-pause timers when flashcards complete, regardless of other activities
+      console.log('Flashcards completed - auto-pausing timers');
+      setIsTimerPaused(true);  // Pause the timer instead of stopping completely
+      // Note: isStudying remains true so timer can be resumed when switching tabs
 
       setRatingInProgress(null);
-      // Don't stop isStudying here - let overall session logic handle that
     }
 
     // Reset rating state
@@ -1612,7 +1614,7 @@ const Study = () => {
                 'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
                 'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               variant="ghost"
-              onClick={() => setTab('flashcards')}
+              onClick={() => handleTabSwitch('flashcards')}
               size="sm"
             >
               <LayersIcon className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 ${tab === 'flashcards' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
@@ -1624,7 +1626,7 @@ const Study = () => {
                 'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
                 'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               variant="ghost"
-              onClick={() => setTab('quiz')}
+              onClick={() => handleTabSwitch('quiz')}
               size="sm"
             >
               <CheckSquare className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 ${tab === 'quiz' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
@@ -1635,7 +1637,7 @@ const Study = () => {
                 'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
                 'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               variant="ghost"
-              onClick={() => setTab('exercises')}
+              onClick={() => handleTabSwitch('exercises')}
               size="sm"
             >
               <PencilIcon className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 ${tab === 'exercises' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
@@ -1647,7 +1649,7 @@ const Study = () => {
                 'bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white shadow-md' :
                 'bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               variant="ghost"
-              onClick={() => setTab('review')}
+              onClick={() => handleTabSwitch('review')}
               size="sm"
             >
               <RotateCcw className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 ${tab === 'review' ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
@@ -1721,7 +1723,7 @@ const Study = () => {
                           </Button>
                         </Link>
                         <Button variant="outline" onClick={async () => {
-                          setTab('review');
+                          handleTabSwitch('review');
                           // Refresh difficult cards count when switching to review tab
                           await refreshDifficultCardsCount();
                         }} className="w-full sm:w-auto">
@@ -2463,7 +2465,7 @@ const Study = () => {
                                   timeSpent: studyTime
                                 }));
 
-                                setTab('flashcards');
+                                handleTabSwitch('flashcards');
 
                                 console.log('Study Again: Preserving stats:', currentStats);
                               }}
