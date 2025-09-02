@@ -1334,19 +1334,11 @@ const Study = () => {
     });
 
     // If re-studying from review and rating as 'again' or 'hard', skip all API calls and stat updates
-    // Just move to next card or show completion
+    // Just return to review tab
     if (isReStudyingFromReview && (rating === 'again' || rating === 'hard')) {
-      if (currentCard < flashcards.length - 1) {
-        setCurrentCard(currentCard + 1);
-        setIsFlipped(false);
-        setCardStudyStartTime(studyTime); // Reset start time for next card
-        // Don't reset isReStudyingFromReview flag here since we're still in review mode
-      } else {
-        // Last card in review - complete the session
-        setSessionComplete(true);
-        setIsTimerPaused(true);
-      }
       setRatingInProgress(null);
+      setIsReStudyingFromReview(false); // Reset the re-studying flag
+      setTab('review'); // Go back to review tab
       return; // Early return - skip all API calls and stat updates
     }
 
@@ -1658,56 +1650,66 @@ const Study = () => {
     }
 
     if (currentCard < flashcards.length - 1) {
-      setCurrentCard(currentCard + 1);
-      setIsFlipped(false);
-      setCardStudyStartTime(studyTime); // Reset start time for next card
-      setIsReStudyingFromReview(false); // Reset re-studying flag when moving to next card
+      // If we were re-studying from review, go back to review tab instead of next card
+      if (isReStudyingFromReview) {
+        setIsReStudyingFromReview(false); // Reset the re-studying flag
+        setTab('review'); // Go back to review tab
+      } else {
+        // Normal flow - move to next card
+        setCurrentCard(currentCard + 1);
+        setIsFlipped(false);
+        setCardStudyStartTime(studyTime); // Reset start time for next card
+      }
     } else {
-      // Flashcards are complete - handle completion based on session type
-      const searchSessionInfo = localStorage.getItem('memo-spark-search-session-info');
-      const isSearchFlashcardSession = !!searchSessionInfo; // Simplified check
+      // If we were re-studying from review and it's the last card, go back to review tab
+      if (isReStudyingFromReview) {
+        setIsReStudyingFromReview(false); // Reset the re-studying flag
+        setTab('review'); // Go back to review tab
+      } else {
+        // Normal flow - handle completion based on session type
+        const searchSessionInfo = localStorage.getItem('memo-spark-search-session-info');
+        const isSearchFlashcardSession = !!searchSessionInfo; // Simplified check
 
-      if (isSearchFlashcardSession && session?.access_token) {
-        // Handle search flashcard session completion
-        completeSearchStudySession(session)
-          .then(result => {
-            if (result.success) {
-              console.log('Search study session completed:', result.finalStats);
-              // Only clear localStorage if there's no search_id in URL (temporary sessions)
-              // For persistent sessions with search_id, keep localStorage for reload support
-              const searchId = new URLSearchParams(window.location.search).get('search_id');
-              if (!searchId) {
-                localStorage.removeItem('memo-spark-search-session-info');
-                localStorage.removeItem('memo-spark-current-search-study-session');
+        if (isSearchFlashcardSession && session?.access_token) {
+          // Handle search flashcard session completion
+          completeSearchStudySession(session)
+            .then(result => {
+              if (result.success) {
+                console.log('Search study session completed:', result.finalStats);
+                // Only clear localStorage if there's no search_id in URL (temporary sessions)
+                // For persistent sessions with search_id, keep localStorage for reload support
+                const searchId = new URLSearchParams(window.location.search).get('search_id');
+                if (!searchId) {
+                  localStorage.removeItem('memo-spark-search-session-info');
+                  localStorage.removeItem('memo-spark-current-search-study-session');
+                }
               }
-            }
-          })
-          .catch(console.error);
+            })
+            .catch(console.error);
+        }
+
+        setSessionComplete(true);
+
+        // Record flashcard timing for regular session
+        if (studySession?.session_id && session?.access_token && currentActivityType === 'flashcard') {
+          const flashcardDuration = overallStudyTime - currentActivityStartTime;
+          await recordActivityTiming(
+            studySession.session_id,
+            'flashcard',
+            flashcardDuration,
+            {
+              flashcards_completed: true,
+              total_flashcards: flashcards.length
+            },
+            session
+          );
+        }
+
+        // Always auto-pause timers when flashcards complete, regardless of other activities
+        console.log('Flashcards completed - auto-pausing timers');
+        setIsTimerPaused(true);  // Pause the timer instead of stopping completely
+        // Note: isStudying remains true so timer can be resumed when switching tabs
       }
-
-      setSessionComplete(true);
-
-      // Record flashcard timing for regular session
-      if (studySession?.session_id && session?.access_token && currentActivityType === 'flashcard') {
-        const flashcardDuration = overallStudyTime - currentActivityStartTime;
-        await recordActivityTiming(
-          studySession.session_id,
-          'flashcard',
-          flashcardDuration,
-          {
-            flashcards_completed: true,
-            total_flashcards: flashcards.length
-          },
-          session
-        );
-      }
-
-      // Always auto-pause timers when flashcards complete, regardless of other activities
-      console.log('Flashcards completed - auto-pausing timers');
-      setIsTimerPaused(true);  // Pause the timer instead of stopping completely
-      // Note: isStudying remains true so timer can be resumed when switching tabs
-
-      setRatingInProgress(null);
     }
 
     // Reset rating state
