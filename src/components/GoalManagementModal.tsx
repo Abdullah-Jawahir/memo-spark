@@ -72,8 +72,17 @@ const GoalManagementModal: React.FC<GoalManagementModalProps> = ({
       fetchData();
 
       if (selectedGoalType) {
+        // Handle Daily Flashcards special case
+        if (isDailyFlashcards(selectedGoalType)) {
+          // For Daily Flashcards, it should have goal_type property
+          if ('goal_type' in selectedGoalType && selectedGoalType.goal_type) {
+            setSelectedGoalTypeId(selectedGoalType.goal_type.id);
+            setTargetValue(selectedGoalType.target_value);
+            setActiveTab("set-goal");
+          }
+        }
         // Check if this is an existing user goal (UserGoal) or just a goal type (GoalType)
-        if (isUserGoal(selectedGoalType)) {
+        else if (isUserGoal(selectedGoalType)) {
           // This is an existing user goal - pre-populate with current values
           setSelectedGoalTypeId(selectedGoalType.goal_type.id);
           setTargetValue(selectedGoalType.target_value);
@@ -276,6 +285,11 @@ const GoalManagementModal: React.FC<GoalManagementModalProps> = ({
     return goal && typeof goal === 'object' && 'target_value' in goal && 'goal_type' in goal;
   };
 
+  // Helper function to check if it's the special Daily Flashcards case
+  const isDailyFlashcards = (goal: any): boolean => {
+    return goal && goal.id === 'daily-flashcards';
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -295,7 +309,7 @@ const GoalManagementModal: React.FC<GoalManagementModalProps> = ({
 
           <TabsContent value="set-goal" className="space-y-4">
             <div className="space-y-4">
-              {selectedGoalType && isUserGoal(selectedGoalType) && (
+              {selectedGoalType && isUserGoal(selectedGoalType) && !isDailyFlashcards(selectedGoalType) && (
                 <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                   <div className="flex items-center gap-2">
                     <Edit className="h-4 w-4 text-blue-600" />
