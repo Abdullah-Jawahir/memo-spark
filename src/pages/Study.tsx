@@ -1099,13 +1099,13 @@ const Study = () => {
       return;
     }
 
-    // Only reset stats for quiz/exercises tabs that have actual content
+    // For quiz/exercises tabs, preserve stats but they will be hidden in the UI
     if (tab === 'quiz' && quizzes.length > 0) {
-      setSessionStats({
-        correct: 0,
-        difficult: 0,
+      setSessionStats(prev => ({
+        correct: prev.correct, // Preserve correct count (will be hidden in UI)
+        difficult: prev.difficult, // Preserve difficult count (will be hidden in UI)
         timeSpent: studyTime // Keep current activity time
-      });
+      }));
       // Reset activity-specific timers but not the overall timer
       setStudyTime(0);
       setCardStudyStartTime(0);
@@ -1113,11 +1113,11 @@ const Study = () => {
     }
 
     if (tab === 'exercises' && exercises.length > 0) {
-      setSessionStats({
-        correct: 0,
-        difficult: 0,
+      setSessionStats(prev => ({
+        correct: prev.correct, // Preserve correct count (will be hidden in UI)
+        difficult: prev.difficult, // Preserve difficult count (will be hidden in UI)
         timeSpent: studyTime // Keep current activity time
-      });
+      }));
       // Reset activity-specific timers but not the overall timer
       setStudyTime(0);
       setCardStudyStartTime(0);
@@ -3041,15 +3041,22 @@ const Study = () => {
               </div>
 
               <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-green-600">{sessionStats.correct}</div>
-                  <div className="text-sm text-muted-foreground">Correct</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-orange-600">{sessionStats.difficult}</div>
-                  <div className="text-sm text-muted-foreground">Marked Difficult</div>
-                </div>
-                <div>
+                {/* Only show correct/difficult counts for flashcards and review tabs */}
+                {(tab === 'flashcards' || tab === 'review') && (
+                  <>
+                    <div>
+                      <div className="text-2xl font-bold text-green-600">{sessionStats.correct}</div>
+                      <div className="text-sm text-muted-foreground">Correct</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-orange-600">{sessionStats.difficult}</div>
+                      <div className="text-sm text-muted-foreground">Marked Difficult</div>
+                    </div>
+                  </>
+                )}
+
+                {/* Always show total time, but adjust grid layout based on what's visible */}
+                <div className={`${(tab === 'flashcards' || tab === 'review') ? '' : 'col-span-3'}`}>
                   <div className="text-2xl font-bold text-blue-600">{formatTime(overallStudyTime)}</div>
                   <div className="text-sm text-muted-foreground">Total Time</div>
                 </div>
