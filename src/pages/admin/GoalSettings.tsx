@@ -108,8 +108,11 @@ const GoalSettings: React.FC = () => {
   const [isGoalTypeDialogOpen, setIsGoalTypeDialogOpen] = useState(false);
   const [isUserGoalDialogOpen, setIsUserGoalDialogOpen] = useState(false);
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [isEditUserGoalDialogOpen, setIsEditUserGoalDialogOpen] = useState(false);
+  const [isDeleteConfirmDialogOpen, setIsDeleteConfirmDialogOpen] = useState(false);
   const [editingGoalType, setEditingGoalType] = useState<GoalType | null>(null);
   const [editingUserGoal, setEditingUserGoal] = useState<UserGoal | null>(null);
+  const [deletingItem, setDeletingItem] = useState<{ id: string, name: string, type: 'goal-type' | 'user-goal' } | null>(null);
 
   // Form states
   const [newGoalType, setNewGoalType] = useState({
@@ -127,6 +130,8 @@ const GoalSettings: React.FC = () => {
     goal_type_id: '',
     target_value: 0
   });
+
+  const [editTargetValue, setEditTargetValue] = useState(0);
 
   const [defaultGoals, setDefaultGoals] = useState({
     student_default: 50,
@@ -305,9 +310,74 @@ const GoalSettings: React.FC = () => {
 
       toast.success('Goal type deleted successfully');
       fetchGoalData(false);
+      setIsDeleteConfirmDialogOpen(false);
+      setDeletingItem(null);
     } catch (error) {
       console.error('Error deleting goal type:', error);
       toast.error('Failed to delete goal type');
+    }
+  };
+
+  const handleDeleteUserGoal = async (userGoalId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('No authentication token');
+
+      const response = await fetch(`http://localhost:8000/api/admin/user-goals/${userGoalId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) throw new Error('Failed to delete user goal');
+
+      toast.success('User goal deleted successfully');
+      fetchGoalData(false);
+      setIsDeleteConfirmDialogOpen(false);
+      setDeletingItem(null);
+    } catch (error) {
+      console.error('Error deleting user goal:', error);
+      toast.error('Failed to delete user goal');
+    }
+  };
+
+  const confirmDelete = () => {
+    if (!deletingItem) return;
+
+    if (deletingItem.type === 'goal-type') {
+      handleDeleteGoalType(deletingItem.id);
+    } else {
+      handleDeleteUserGoal(deletingItem.id);
+    }
+  };
+
+  const handleEditUserGoal = async () => {
+    if (!editingUserGoal) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('No authentication token');
+
+      const response = await fetch(`http://localhost:8000/api/admin/user-goals/${editingUserGoal.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ target_value: editTargetValue })
+      });
+
+      if (!response.ok) throw new Error('Failed to update user goal');
+
+      toast.success('User goal updated successfully');
+      setIsEditUserGoalDialogOpen(false);
+      setEditingUserGoal(null);
+      fetchGoalData(false);
+    } catch (error) {
+      console.error('Error updating user goal:', error);
+      toast.error('Failed to update user goal');
     }
   };
 
@@ -363,29 +433,6 @@ const GoalSettings: React.FC = () => {
     } catch (error) {
       console.error('Error updating user goal:', error);
       toast.error('Failed to update user goal');
-    }
-  };
-
-  const handleDeleteUserGoal = async (userGoalId: string) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('No authentication token');
-
-      const response = await fetch(`http://localhost:8000/api/admin/user-goals/${userGoalId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) throw new Error('Failed to delete user goal');
-
-      toast.success('User goal deleted successfully');
-      fetchGoalData(false);
-    } catch (error) {
-      console.error('Error deleting user goal:', error);
-      toast.error('Failed to delete user goal');
     }
   };
 
@@ -840,7 +887,14 @@ const GoalSettings: React.FC = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleDeleteGoalType(goalType.id)}
+                              onClick={() => {
+                                setDeletingItem({
+                                  id: goalType.id,
+                                  name: goalType.name,
+                                  type: 'goal-type'
+                                });
+                                setIsDeleteConfirmDialogOpen(true);
+                              }}
                               className="text-red-600 hover:text-red-700"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -1034,10 +1088,9 @@ const GoalSettings: React.FC = () => {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
-                                    const newValue = prompt(`Update target for ${userGoal.goal_type?.name || 'Goal'}:`, userGoal.target_value.toString());
-                                    if (newValue && !isNaN(parseInt(newValue))) {
-                                      handleUpdateUserGoal(userGoal.id, parseInt(newValue));
-                                    }
+                                    setEditingUserGoal(userGoal);
+                                    setEditTargetValue(userGoal.target_value);
+                                    setIsEditUserGoalDialogOpen(true);
                                   }}
                                 >
                                   <Edit className="h-4 w-4" />
@@ -1045,7 +1098,14 @@ const GoalSettings: React.FC = () => {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleDeleteUserGoal(userGoal.id)}
+                                  onClick={() => {
+                                    setDeletingItem({
+                                      id: userGoal.id,
+                                      name: `${userGoal.user?.name || 'User'}'s ${userGoal.goal_type?.name || 'Goal'}`,
+                                      type: 'user-goal'
+                                    });
+                                    setIsDeleteConfirmDialogOpen(true);
+                                  }}
                                   className="text-red-600 hover:text-red-700"
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -1120,6 +1180,71 @@ const GoalSettings: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Edit User Goal Modal */}
+      <Dialog open={isEditUserGoalDialogOpen} onOpenChange={setIsEditUserGoalDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User Goal</DialogTitle>
+            <DialogDescription>
+              Update the target value for {editingUserGoal?.user?.name}'s {editingUserGoal?.goal_type?.name} goal.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-target-value">Target Value ({editingUserGoal?.goal_type?.unit})</Label>
+              <Input
+                id="edit-target-value"
+                type="number"
+                value={editTargetValue}
+                onChange={(e) => setEditTargetValue(parseInt(e.target.value) || 0)}
+                placeholder="Enter target value"
+                min={editingUserGoal?.goal_type?.min_value || 0}
+                max={editingUserGoal?.goal_type?.max_value || 1000}
+              />
+              {editingUserGoal?.goal_type && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Range: {editingUserGoal.goal_type.min_value} - {editingUserGoal.goal_type.max_value} {editingUserGoal.goal_type.unit}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditUserGoalDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditUserGoal}>
+              Update Goal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={isDeleteConfirmDialogOpen} onOpenChange={setIsDeleteConfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{deletingItem?.name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsDeleteConfirmDialogOpen(false);
+              setDeletingItem(null);
+            }}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
