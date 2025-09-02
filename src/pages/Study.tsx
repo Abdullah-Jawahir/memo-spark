@@ -18,7 +18,7 @@ import StudyTimer from '@/components/study/StudyTimer';
 import StudyStatsPanel from '@/components/study/StudyStatsPanel';
 import { useTranslation } from 'react-i18next';
 import { startStudySession, recordFlashcardReview, getCurrentStudySession, clearCurrentStudySession, startSearchStudySession, recordSearchStudyInteraction, completeSearchStudySession, getCurrentSearchStudySession, clearCurrentSearchStudySession } from '@/utils/studyTracking';
-import { recordActivityTiming, updateSessionTiming } from '@/utils/studyTimingTracking';
+import { recordActivityTiming } from '@/utils/studyTimingTracking';
 import { API_ENDPOINTS, fetchWithAuth } from '@/config/api';
 import { useToast } from '@/hooks/use-toast';
 import { downloadStudyProgressPDF } from '@/utils/pdfExport';
@@ -809,17 +809,8 @@ const Study = () => {
           overallStudyTime,
           activityTimingHistory
         });
-
-        await updateSessionTiming(
-          studySession.session_id,
-          overallStudyTime,
-          activityTimingHistory.flashcard,
-          activityTimingHistory.quiz,
-          activityTimingHistory.exercise,
-          session
-        );
       } catch (error) {
-        console.error('Failed to update session timing:', error);
+        console.error('Failed to record activity timing:', error);
       }
     };
 
@@ -832,40 +823,14 @@ const Study = () => {
   // Save timing data before page unload
   useEffect(() => {
     const handleBeforeUnload = () => {
-      if (studySession?.session_id && session?.access_token && overallStudyTime > 0) {
-        // Record final timing update before leaving
-        // Note: beforeunload handlers should be synchronous, so we can't await here
-        // The API call will be fired but may not complete before page unloads
-        updateSessionTiming(
-          studySession.session_id,
-          overallStudyTime,
-          activityTimingHistory.flashcard,
-          activityTimingHistory.quiz,
-          activityTimingHistory.exercise,
-          session
-        ).catch(error => {
-          console.error('Failed to save timing on page unload:', error);
-        });
-      }
+      // No need to update session timing on unload since activities are recorded individually
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      // Also save timing when component unmounts (this can be async)
-      if (studySession?.session_id && session?.access_token && overallStudyTime > 0) {
-        updateSessionTiming(
-          studySession.session_id,
-          overallStudyTime,
-          activityTimingHistory.flashcard,
-          activityTimingHistory.quiz,
-          activityTimingHistory.exercise,
-          session
-        ).catch(error => {
-          console.error('Failed to save timing on component unmount:', error);
-        });
-      }
+      // No need to update session timing on unmount since activities are recorded individually
     };
   }, [studySession?.session_id, session?.access_token]);
 
@@ -1615,7 +1580,7 @@ const Study = () => {
       {/* Top Navigation Bar */}
       <div className="w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm fixed top-0 z-40 border-b border-gray-200 dark:border-gray-800">
         <div className="container mx-auto px-3 sm:px-4 py-2 flex justify-between items-center">
-          <Link to="/dashboard" className="flex items-center space-x-2 group">
+          <Link to="/dashboard?fromStudy=true" className="flex items-center space-x-2 group">
             <div className="p-1.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg group-hover:scale-105 transition-transform">
               <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
@@ -1922,7 +1887,7 @@ const Study = () => {
                         <Button onClick={handleRestartSession} className="w-full sm:w-auto">
                           Restart Session
                         </Button>
-                        <Link to="/dashboard?refresh=true" className="w-full sm:w-auto">
+                        <Link to="/dashboard?fromStudy=true" className="w-full sm:w-auto">
                           <Button variant="outline" className="w-full">
                             Go to Dashboard
                           </Button>
