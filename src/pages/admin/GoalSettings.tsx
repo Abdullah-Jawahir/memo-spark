@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Users, Target, TrendingUp, Settings, Plus, Edit, Trash2, Search } from "lucide-react";
+import { ArrowLeft, Users, Target, TrendingUp, Settings, Plus, Edit, Trash2, Search, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -92,6 +92,7 @@ const GoalSettings: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<number>(0);
   const [overview, setOverview] = useState<GoalOverview | null>(null);
   const [statistics, setStatistics] = useState<GoalStatistics | null>(null);
 
@@ -138,28 +139,20 @@ const GoalSettings: React.FC = () => {
       navigate('/login');
       return;
     }
-    fetchGoalData(true); // Initial load
+    fetchGoalData(true); // Initial load only
+  }, [user, navigate]); const fetchGoalData = async (isInitialLoad = false) => {
+    // Throttle API calls - don't allow refresh more than once every 2 seconds
+    const now = Date.now();
+    if (!isInitialLoad && now - lastRefresh < 2000) {
+      return;
+    }
 
-    // Handle page visibility change for background refresh
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && !loading) {
-        fetchGoalData(false); // Background refresh
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [user, navigate, loading]);
-
-  const fetchGoalData = async (isInitialLoad = false) => {
     try {
       if (isInitialLoad) {
         setLoading(true);
       } else {
         setRefreshing(true);
+        setLastRefresh(now);
       }
 
       const { data: { session } } = await supabase.auth.getSession();
@@ -448,17 +441,28 @@ const GoalSettings: React.FC = () => {
 
   return (
     <div className="container mx-auto p-6 max-w-full overflow-hidden">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" onClick={() => navigate('/admin')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" onClick={() => navigate('/admin')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            Goal Settings
+            {refreshing && (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary opacity-60"></div>
+            )}
+          </h1>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => fetchGoalData(false)}
+          disabled={refreshing || (Date.now() - lastRefresh < 2000)}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Refreshing...' : 'Refresh Data'}
         </Button>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          Goal Settings
-          {refreshing && (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary opacity-60"></div>
-          )}
-        </h1>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6 w-full max-w-full">
