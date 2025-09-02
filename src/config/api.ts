@@ -27,7 +27,6 @@ export const API_ENDPOINTS = {
       END: `${API_BASE_URL}/api/study/timing/end`,
       RECORD: `${API_BASE_URL}/api/study/timing/record`,
       SUMMARY: (sessionId: string) => `${API_BASE_URL}/api/study/timing/summary/${sessionId}`,
-      UPDATE_SESSION: `${API_BASE_URL}/api/study/timing/update-session`,
     },
   },
   DECKS: {
