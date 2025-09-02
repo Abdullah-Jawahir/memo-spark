@@ -366,8 +366,14 @@ const Dashboard = () => {
   }, [currentJobId, session?.access_token]);
 
   // Goal management handlers
-  const handleOpenGoalModal = (goalType?: any) => {
-    setSelectedGoalType(goalType);
+  const handleOpenGoalModal = (goalData?: any, isEditing = false) => {
+    if (isEditing && goalData) {
+      // When editing, pass the complete user goal data
+      setSelectedGoalType(goalData);
+    } else {
+      // When creating new, pass just the goal type
+      setSelectedGoalType(goalData);
+    }
     setGoalModalOpen(true);
   };
 
@@ -970,7 +976,24 @@ const Dashboard = () => {
                                   variant="ghost"
                                   size="sm"
                                   className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={() => handleOpenGoalModal({ name: 'Daily Flashcards', category: 'study', unit: 'cards', default_value: dashboardData?.todays_goal?.goal || 50 })}
+                                  onClick={() => {
+                                    // Create a user goal object for Daily Flashcards
+                                    const dailyFlashcardsGoal = {
+                                      id: 'daily-flashcards',
+                                      target_value: dashboardData?.todays_goal?.goal || 50,
+                                      current_value: dashboardData?.todays_goal?.studied || 0,
+                                      goal_type: {
+                                        id: 'daily-flashcards-type',
+                                        name: 'Daily Flashcards',
+                                        category: 'study',
+                                        unit: 'cards',
+                                        default_value: dashboardData?.todays_goal?.goal || 50,
+                                        min_value: 1,
+                                        max_value: 500
+                                      }
+                                    };
+                                    handleOpenGoalModal(dailyFlashcardsGoal, true);
+                                  }}
                                 >
                                   <Edit className="h-3 w-3" />
                                 </Button>
@@ -999,13 +1022,13 @@ const Dashboard = () => {
                               {/* Additional User Goals */}
                               {dashboardData.user_goals && dashboardData.user_goals.length > 0 && (
                                 <>
-                                  {dashboardData.user_goals.slice(0, 2).map((userGoal) => (
+                                  {dashboardData.user_goals.slice(0, 4).map((userGoal) => (
                                     <div key={userGoal.id} className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800 relative group">
                                       <Button
                                         variant="ghost"
                                         size="sm"
                                         className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={() => handleOpenGoalModal(userGoal.goal_type)}
+                                        onClick={() => handleOpenGoalModal(userGoal, true)}
                                       >
                                         <Edit className="h-3 w-3" />
                                       </Button>
@@ -1034,39 +1057,32 @@ const Dashboard = () => {
                                 </>
                               )}
 
-                              {/* If no additional goals, show placeholders */}
-                              {(!dashboardData.user_goals || dashboardData.user_goals.length === 0) && (
-                                <>
+                              {/* Dynamic Placeholder Cards - Show until 5 total goals (including Daily Flashcards) */}
+                              {(() => {
+                                const userGoalsCount = dashboardData.user_goals ? dashboardData.user_goals.length : 0;
+                                const totalGoals = 1 + userGoalsCount; // 1 for Daily Flashcards + user goals
+                                const placeholdersNeeded = Math.max(0, 5 - totalGoals);
+
+                                return Array.from({ length: placeholdersNeeded }, (_, index) => (
                                   <div
+                                    key={`placeholder-${index}`}
                                     className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700 border-dashed cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors group"
-                                    onClick={() => handleOpenGoalModal({ name: 'Study Time', category: 'time', unit: 'minutes', default_value: 30 })}
+                                    onClick={() => handleOpenGoalModal(null, false)}
                                   >
                                     <div className="text-center space-y-2">
+                                      <div className="text-2xl text-gray-400 group-hover:text-blue-500 transition-colors">
+                                        <Plus className="h-6 w-6 mx-auto" />
+                                      </div>
                                       <div className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300">
-                                        Study Time Goal
+                                        Add New Goal
                                       </div>
                                       <div className="text-xs text-gray-400 dark:text-gray-500 group-hover:text-blue-500">
                                         Click to set goal
                                       </div>
-                                      <Edit className="h-4 w-4 mx-auto text-gray-400 group-hover:text-blue-500" />
                                     </div>
                                   </div>
-                                  <div
-                                    className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700 border-dashed cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors group"
-                                    onClick={() => handleOpenGoalModal({ name: 'Weekly Achievement', category: 'achievement', unit: 'points', default_value: 100 })}
-                                  >
-                                    <div className="text-center space-y-2">
-                                      <div className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300">
-                                        Weekly Achievement
-                                      </div>
-                                      <div className="text-xs text-gray-400 dark:text-gray-500 group-hover:text-blue-500">
-                                        Click to set goal
-                                      </div>
-                                      <Edit className="h-4 w-4 mx-auto text-gray-400 group-hover:text-blue-500" />
-                                    </div>
-                                  </div>
-                                </>
-                              )}
+                                ));
+                              })()}
                             </div>
                           ) : (
                             <div className="text-center py-8">
