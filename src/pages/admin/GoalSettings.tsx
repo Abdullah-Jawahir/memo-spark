@@ -36,12 +36,12 @@ interface UserGoal {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  user: {
+  user?: {
     name: string;
     email: string;
     user_type: string;
   };
-  goal_type: GoalType;
+  goal_type?: GoalType;
 }
 
 interface GoalTemplate {
@@ -953,9 +953,10 @@ const GoalSettings: React.FC = () => {
                 </TableHeader>
                 <TableBody>
                   {userGoals
+                    .filter(goal => goal.user && goal.goal_type) // Filter out goals with missing user or goal_type
                     .filter(goal => {
                       if (selectedUser && selectedUser !== "all" && goal.user_id !== selectedUser) return false;
-                      if (searchEmail && !goal.user.email.toLowerCase().includes(searchEmail.toLowerCase())) return false;
+                      if (searchEmail && goal.user && !goal.user.email.toLowerCase().includes(searchEmail.toLowerCase())) return false;
                       return true;
                     })
                     .map((userGoal) => {
@@ -964,19 +965,19 @@ const GoalSettings: React.FC = () => {
                         <TableRow key={userGoal.id}>
                           <TableCell>
                             <div>
-                              <div className="font-medium">{userGoal.user.name}</div>
-                              <div className="text-sm text-muted-foreground">{userGoal.user.email}</div>
-                              <Badge variant="outline" className="text-xs">{userGoal.user.user_type}</Badge>
+                              <div className="font-medium">{userGoal.user?.name || 'Unknown User'}</div>
+                              <div className="text-sm text-muted-foreground">{userGoal.user?.email || 'No email'}</div>
+                              <Badge variant="outline" className="text-xs">{userGoal.user?.user_type || 'Unknown'}</Badge>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div>
-                              <div className="font-medium">{userGoal.goal_type.name}</div>
-                              <div className="text-sm text-muted-foreground">{userGoal.goal_type.category}</div>
+                              <div className="font-medium">{userGoal.goal_type?.name || 'Unknown Goal Type'}</div>
+                              <div className="text-sm text-muted-foreground">{userGoal.goal_type?.category || 'N/A'}</div>
                             </div>
                           </TableCell>
-                          <TableCell>{userGoal.target_value} {userGoal.goal_type.unit}</TableCell>
-                          <TableCell>{userGoal.current_value} {userGoal.goal_type.unit}</TableCell>
+                          <TableCell>{userGoal.target_value} {userGoal.goal_type?.unit || ''}</TableCell>
+                          <TableCell>{userGoal.current_value} {userGoal.goal_type?.unit || ''}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <div className="w-20 bg-muted rounded-full h-2">
@@ -999,7 +1000,7 @@ const GoalSettings: React.FC = () => {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  const newValue = prompt(`Update target for ${userGoal.goal_type.name}:`, userGoal.target_value.toString());
+                                  const newValue = prompt(`Update target for ${userGoal.goal_type?.name || 'Goal'}:`, userGoal.target_value.toString());
                                   if (newValue && !isNaN(parseInt(newValue))) {
                                     handleUpdateUserGoal(userGoal.id, parseInt(newValue));
                                   }
