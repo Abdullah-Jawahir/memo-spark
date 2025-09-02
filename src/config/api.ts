@@ -80,8 +80,32 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}, sess
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `API error: ${response.status}`);
+    // Check if the response is JSON before trying to parse it
+    const contentType = response.headers.get('content-type');
+    let errorData: any = {};
+
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        // If JSON parsing fails, use default error
+        errorData = {};
+      }
+    } else {
+      // If it's not JSON (e.g., HTML error page), get the text
+      try {
+        const textResponse = await response.text();
+        console.error('Non-JSON error response status:', response.status);
+        console.error('Non-JSON error response headers:', Object.fromEntries(response.headers.entries()));
+        console.error('Non-JSON error response text:', textResponse.substring(0, 500)); // First 500 chars
+        errorData = { message: `Server returned HTML error page (${response.status})` };
+      } catch (e) {
+        console.error('Failed to read error response text:', e);
+        errorData = {};
+      }
+    }
+
+    throw new Error(errorData.error || errorData.message || `API error: ${response.status}`);
   }
 
   return response.json();
