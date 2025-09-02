@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, Target, TrendingUp, Clock, Plus, Search, LogOut, Loader2, RefreshCw, User, Eye, EyeOff } from 'lucide-react';
+import { BookOpen, Target, TrendingUp, Clock, Plus, Search, LogOut, Loader2, RefreshCw, User, Eye, EyeOff, Edit } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -15,6 +15,7 @@ import { API_ENDPOINTS, API_BASE_URL } from '@/config/api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { SearchFlashcardsService } from '@/integrations/searchFlashcardsService';
 import { useToast } from '@/hooks/use-toast';
+import GoalManagementModal from '@/components/GoalManagementModal';
 
 // Type definitions based on the API response
 interface UserInfo {
@@ -52,11 +53,28 @@ interface TodaysGoal {
   message: string;
 }
 
+interface UserGoalProgress {
+  id: string;
+  goal_type: {
+    id: string;
+    name: string;
+    description: string;
+    unit: string;
+    category: string;
+  };
+  target_value: number;
+  current_value: number;
+  progress_percentage: number;
+  is_completed: boolean;
+  is_active: boolean;
+}
+
 interface DashboardData {
   user: UserInfo;
   metrics: Metrics;
   recent_decks: RecentDeck[];
   todays_goal: TodaysGoal;
+  user_goals?: UserGoalProgress[];
 }
 
 interface Achievement {
@@ -80,6 +98,10 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  // Goal management modal state
+  const [goalModalOpen, setGoalModalOpen] = useState(false);
+  const [selectedGoalType, setSelectedGoalType] = useState<any>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Profile modal states
@@ -342,6 +364,17 @@ const Dashboard = () => {
 
     return () => clearInterval(interval);
   }, [currentJobId, session?.access_token]);
+
+  // Goal management handlers
+  const handleOpenGoalModal = (goalType?: any) => {
+    setSelectedGoalType(goalType);
+    setGoalModalOpen(true);
+  };
+
+  const handleGoalUpdated = () => {
+    // Refresh dashboard data when goals are updated
+    fetchDashboardData(true);
+  };
 
   // Handle flashcard generation
   const handleGenerateFlashcards = async (e: React.FormEvent) => {
@@ -919,57 +952,131 @@ const Dashboard = () => {
                     </Card>
                   </div>
 
-                  {/* Today's Goal - Takes 1 column */}
+                  {/* Today's Goals - Takes 1 column */}
                   <div className="xl:col-span-1">
                     <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50 h-full">
                       <CardHeader className="pb-4">
                         <CardTitle className="text-xl font-bold text-center bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                          Today's Goal
+                          Today's Goals
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="flex flex-col justify-center">
-                        {dashboardData?.todays_goal ? (
-                          <div className="text-center space-y-6">
-                            <div className="relative">
-                              <div className="text-4xl font-bold text-blue-600 mb-2">
-                                {dashboardData.todays_goal.studied}/{dashboardData.todays_goal.goal}
+                      <CardContent className="h-[400px] overflow-hidden">
+                        <div className="h-full overflow-y-auto scrollbar-thin pr-2">
+                          {dashboardData?.todays_goal ? (
+                            <div className="space-y-4">
+                              {/* Primary Goal (Daily Flashcards) */}
+                              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800 relative group">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => handleOpenGoalModal({ name: 'Daily Flashcards', category: 'study', unit: 'cards', default_value: dashboardData?.todays_goal?.goal || 50 })}
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <div className="text-center space-y-3">
+                                  <div className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                                    Daily Flashcards
+                                  </div>
+                                  <div className="text-2xl font-bold text-blue-600">
+                                    {dashboardData.todays_goal.studied}/{dashboardData.todays_goal.goal}
+                                  </div>
+                                  <Progress
+                                    value={dashboardData.todays_goal.progress_percentage}
+                                    className="h-2"
+                                  />
+                                  <div className="text-xs text-blue-600 dark:text-blue-400">
+                                    {dashboardData.todays_goal.progress_percentage}% Complete
+                                  </div>
+                                  {dashboardData.todays_goal.is_completed && (
+                                    <div className="text-xs text-green-600 dark:text-green-400 font-medium">
+                                      🎉 Completed!
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                              <p className="text-sm text-muted-foreground">{dashboardData.todays_goal.goal_description}</p>
-                            </div>
 
-                            <div className="space-y-3">
-                              <Progress
-                                value={dashboardData.todays_goal.progress_percentage}
-                                className={`h-3 ${dashboardData.todays_goal.is_completed ? "bg-green-200" : ""}`}
-                              />
-                              <div className="flex justify-between text-xs text-muted-foreground">
-                                <span>Progress</span>
-                                <span>{dashboardData.todays_goal.progress_percentage}%</span>
+                              {/* Additional User Goals */}
+                              {dashboardData.user_goals && dashboardData.user_goals.length > 0 && (
+                                <>
+                                  {dashboardData.user_goals.slice(0, 2).map((userGoal) => (
+                                    <div key={userGoal.id} className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800 relative group">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => handleOpenGoalModal(userGoal.goal_type)}
+                                      >
+                                        <Edit className="h-3 w-3" />
+                                      </Button>
+                                      <div className="text-center space-y-3">
+                                        <div className="text-sm font-medium text-green-700 dark:text-green-300">
+                                          {userGoal.goal_type.name}
+                                        </div>
+                                        <div className="text-xl font-bold text-green-600">
+                                          {userGoal.current_value}/{userGoal.target_value} {userGoal.goal_type.unit}
+                                        </div>
+                                        <Progress
+                                          value={userGoal.progress_percentage}
+                                          className="h-2"
+                                        />
+                                        <div className="text-xs text-green-600 dark:text-green-400">
+                                          {Math.round(userGoal.progress_percentage)}% Complete
+                                        </div>
+                                        {userGoal.is_completed && (
+                                          <div className="text-xs text-green-600 dark:text-green-400 font-medium">
+                                            🎉 Completed!
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </>
+                              )}
+
+                              {/* If no additional goals, show placeholders */}
+                              {(!dashboardData.user_goals || dashboardData.user_goals.length === 0) && (
+                                <>
+                                  <div
+                                    className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700 border-dashed cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors group"
+                                    onClick={() => handleOpenGoalModal({ name: 'Study Time', category: 'time', unit: 'minutes', default_value: 30 })}
+                                  >
+                                    <div className="text-center space-y-2">
+                                      <div className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300">
+                                        Study Time Goal
+                                      </div>
+                                      <div className="text-xs text-gray-400 dark:text-gray-500 group-hover:text-blue-500">
+                                        Click to set goal
+                                      </div>
+                                      <Edit className="h-4 w-4 mx-auto text-gray-400 group-hover:text-blue-500" />
+                                    </div>
+                                  </div>
+                                  <div
+                                    className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700 border-dashed cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors group"
+                                    onClick={() => handleOpenGoalModal({ name: 'Weekly Achievement', category: 'achievement', unit: 'points', default_value: 100 })}
+                                  >
+                                    <div className="text-center space-y-2">
+                                      <div className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300">
+                                        Weekly Achievement
+                                      </div>
+                                      <div className="text-xs text-gray-400 dark:text-gray-500 group-hover:text-blue-500">
+                                        Click to set goal
+                                      </div>
+                                      <Edit className="h-4 w-4 mx-auto text-gray-400 group-hover:text-blue-500" />
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8">
+                              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-full flex items-center justify-center">
+                                <Target className="h-8 w-8 text-gray-400" />
                               </div>
+                              <p className="text-muted-foreground">No active goals found</p>
                             </div>
-
-                            <div className={`p-4 rounded-xl ${dashboardData.todays_goal.is_completed
-                              ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
-                              : "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
-                              }`}>
-                              <p className={`text-sm font-medium ${dashboardData.todays_goal.is_completed
-                                ? "text-green-800 dark:text-green-200"
-                                : "text-blue-800 dark:text-blue-200"
-                                }`}>
-                                {dashboardData.todays_goal.is_completed
-                                  ? "🎉 Daily goal completed!"
-                                  : dashboardData.todays_goal.message}
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-center py-8">
-                            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-full flex items-center justify-center">
-                              <Target className="h-8 w-8 text-gray-400" />
-                            </div>
-                            <p className="text-muted-foreground">No active goal found</p>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
                   </div>
@@ -1325,6 +1432,14 @@ const Dashboard = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Goal Management Modal */}
+        <GoalManagementModal
+          open={goalModalOpen}
+          onOpenChange={setGoalModalOpen}
+          selectedGoalType={selectedGoalType}
+          onGoalUpdated={handleGoalUpdated}
+        />
       </div>
     </ProtectedRoute>
   );
