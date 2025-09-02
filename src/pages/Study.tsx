@@ -2829,15 +2829,22 @@ const Study = () => {
                                         return newSet;
                                       });
 
-                                      // Refresh the difficult cards count from the review system
-                                      await refreshDifficultCardsCount();
+                                      // Calculate the difficult count manually based on local state
+                                      // Count how many cards are marked as 'hard' but not yet reviewed
+                                      const currentDifficultCount = difficultCards.filter(difficultCard =>
+                                        !reviewedDifficult.has(difficultCard.originalIndex) &&
+                                        difficultCard.originalIndex !== card.originalIndex // Exclude the card we just marked
+                                      ).length;
 
                                       // Also increment the correct count for marking as reviewed
                                       setSessionStats(prev => ({
                                         correct: prev.correct + 1, // Increment correct count
-                                        difficult: prev.difficult, // Will be updated by refreshDifficultCardsCount
+                                        difficult: currentDifficultCount, // Use manually calculated count
                                         timeSpent: prev.timeSpent
                                       }));
+
+                                      // Save progress after updating session stats
+                                      setTimeout(() => saveStudyProgress(), 100);
 
                                       toast({
                                         title: "Success",
@@ -2884,6 +2891,9 @@ const Study = () => {
                                         }));
                                       }
 
+                                      // Save progress after updating session stats
+                                      setTimeout(() => saveStudyProgress(), 100);
+
                                       toast({
                                         title: "Success",
                                         description: "Card marked as reviewed successfully!",
@@ -2914,6 +2924,9 @@ const Study = () => {
                                       difficult: Math.max(0, prev.difficult - 1), // Decrement difficult count
                                       timeSpent: prev.timeSpent // Keep time unchanged
                                     }));
+
+                                    // Save progress after updating session stats
+                                    setTimeout(() => saveStudyProgress(), 100);
 
                                     toast({
                                       title: "Success",
