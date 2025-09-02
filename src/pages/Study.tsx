@@ -17,7 +17,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import StudyTimer from '@/components/study/StudyTimer';
 import StudyStatsPanel from '@/components/study/StudyStatsPanel';
 import { useTranslation } from 'react-i18next';
-import { startStudySession, recordFlashcardReview, getCurrentStudySession, clearCurrentStudySession, startSearchStudySession, recordSearchStudyInteraction, completeSearchStudySession, getCurrentSearchStudySession, clearCurrentSearchStudySession } from '@/utils/studyTracking';
+import { startStudySession, recordFlashcardReview, recordSearchFlashcardReview, getCurrentStudySession, clearCurrentStudySession, startSearchStudySession, recordSearchStudyInteraction, completeSearchStudySession, getCurrentSearchStudySession, clearCurrentSearchStudySession } from '@/utils/studyTracking';
 import { recordActivityTiming } from '@/utils/studyTimingTracking';
 import { API_ENDPOINTS, fetchWithAuth } from '@/config/api';
 import { useToast } from '@/hooks/use-toast';
@@ -626,10 +626,24 @@ const Study = () => {
         setIsStudying(true);
         setCurrentDeckIdentifier(`search-${parsedSearchData.topic}`);
 
-        // Reset session stats for fresh start
-        setSessionStats({ correct: 0, difficult: 0, timeSpent: 0 });
-        setReviewedDifficult(new Set());
-        setDifficultCardIds(new Set());
+        // Try to restore study progress for search flashcards
+        let progressRestored = false;
+        const searchIdentifier = `search-${parsedSearchData.topic}`;
+        if (currentDeckIdentifier === searchIdentifier) {
+          console.log('Attempting to restore study progress for search flashcards');
+          progressRestored = restoreStudyProgress();
+          if (progressRestored) {
+            console.log('Search flashcard progress restored successfully');
+          }
+        }
+
+        // Only reset session stats if progress wasn't restored
+        if (!progressRestored) {
+          console.log('Starting fresh search flashcard session');
+          setSessionStats({ correct: 0, difficult: 0, timeSpent: 0 });
+          setReviewedDifficult(new Set());
+          setDifficultCardIds(new Set());
+        }
 
         setIsLoadingFromStorage(false);
         setLastUpdated(new Date());
@@ -1354,33 +1368,34 @@ const Study = () => {
         const isSearchFlashcardSession = !!searchSessionInfo; // Simplified check
 
         if (isSearchFlashcardSession) {
-          // Handle search flashcard study session using new review-based system
+          // Handle search flashcard study session using the same timing system as regular flashcards
           const searchInfo = JSON.parse(searchSessionInfo);
 
           console.log('Search flashcard session info:', searchInfo);
           console.log('Current card data:', currentCardData);
           console.log('Recording review with rating:', rating);
+          console.log('Current studySession:', studySession);
 
-          if (searchInfo.search_id) {
+          // Check if we have session info (either from searchInfo or studySession)
+          const effectiveSessionId = searchInfo.session_id || studySession?.session_id;
+
+          if (searchInfo.search_id && effectiveSessionId) {
             try {
-              const searchService = new SearchFlashcardsService();
-
-              // Record the review in the new review system (similar to regular flashcards)
-              const reviewResult = await searchService.recordReview(
-                searchInfo.search_id,
-                currentCardData.id,
+              // Use the specialized search flashcard review function
+              // This will use the search flashcard review endpoints
+              const result = await recordSearchFlashcardReview(
+                currentCardData.id || `search-card-${currentCard}`,
                 rating,
                 studyTimeForCard,
-                searchInfo.session_id?.toString(), // Use search session ID and convert to string
-                session
+                String(effectiveSessionId), // Convert to string to match backend validation
+                session,
+                searchInfo.search_id
               );
 
-              console.log('Review recorded successfully:', reviewResult);
+              console.log('Search flashcard review recorded successfully:', result);
 
               // Update session stats based on the review result
-              if (reviewResult.success && reviewResult.data?.session_stats) {
-                const stats = reviewResult.data.session_stats;
-                // Instead of replacing stats, update them incrementally to preserve restored progress
+              if (result && result.success && result.sessionStats) {
                 setSessionStats(prev => {
                   const newStats = { ...prev, timeSpent: studyTime };
                   // Only update stats if not re-studying from review, or if rating is good/easy
@@ -1397,7 +1412,7 @@ const Study = () => {
                   }
                   return newStats;
                 });
-                console.log('Updated session stats incrementally, preserving restored progress');
+                console.log('Updated search flashcard stats using timing system');
               } else {
                 // Fallback: Update local session stats
                 setSessionStats(prev => {
@@ -1468,7 +1483,11 @@ const Study = () => {
               });
             }
           } else {
-            console.error('Search session info missing search_id:', searchInfo);
+            console.error('Search session info missing search_id or session_id:', {
+              searchInfo,
+              studySession,
+              effectiveSessionId: searchInfo.session_id || studySession?.session_id
+            });
             // Fallback: Update local session stats only for search flashcards without proper session info
             setSessionStats(prev => {
               const newStats = { ...prev, timeSpent: studyTime };
@@ -1526,25 +1545,23 @@ const Study = () => {
 
               setSessionComplete(true);
 
-              // Record flashcard timing for search session
-              if (session?.access_token && currentActivityType === 'flashcard') {
+              // Record flashcard timing for search session using the same system as regular flashcards
+              const effectiveSessionId = searchInfo.session_id || studySession?.session_id;
+              if (effectiveSessionId && session?.access_token && currentActivityType === 'flashcard') {
                 const flashcardDuration = overallStudyTime - currentActivityStartTime;
-                // For search flashcards, we don't have a regular study session, but we can still record timing
                 try {
-                  const searchSessionInfo = JSON.parse(localStorage.getItem('memo-spark-search-session-info') || '{}');
-                  if (searchSessionInfo.session_id) {
-                    await recordActivityTiming(
-                      searchSessionInfo.session_id,
-                      'flashcard',
-                      flashcardDuration,
-                      {
-                        flashcards_completed: true,
-                        total_flashcards: flashcards.length,
-                        search_id: searchSessionInfo.search_id
-                      },
-                      session
-                    );
-                  }
+                  await recordActivityTiming(
+                    String(effectiveSessionId), // Convert to string for backend validation
+                    'flashcard',
+                    flashcardDuration,
+                    {
+                      flashcards_completed: true,
+                      total_flashcards: flashcards.length,
+                      is_search_flashcards: true, // Flag to indicate this is from search flashcards
+                      search_id: searchInfo.search_id
+                    },
+                    session
+                  );
                 } catch (error) {
                   console.error('Failed to record search flashcard timing:', error);
                 }
