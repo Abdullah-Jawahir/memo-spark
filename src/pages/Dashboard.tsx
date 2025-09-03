@@ -1273,8 +1273,21 @@ const Dashboard = () => {
                                 value={searchTopic}
                                 onChange={(e) => setSearchTopic(e.target.value)}
                                 placeholder="Enter topic (e.g., Machine Learning, Python Programming)"
-                                className="h-12 px-4 text-sm dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:border-blue-300 dark:hover:border-blue-600 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none transition-all duration-200 placeholder:text-gray-400 dark:placeholder:text-gray-500"
-                                style={{ boxShadow: 'none' }}
+                                className="h-12 px-4 text-sm bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:border-blue-300 dark:hover:border-blue-600 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none transition-all duration-200 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                                style={{
+                                  boxShadow: 'none',
+                                  outline: 'none',
+                                  border: 'none',
+                                  transition: 'border-color 0.2s ease'
+                                }}
+                                onFocus={(e) => {
+                                  e.target.style.outline = 'none';
+                                  e.target.style.boxShadow = 'none';
+                                  e.target.style.borderColor = 'none';
+                                }}
+                                onBlur={(e) => {
+                                  e.target.style.borderColor = 'none';
+                                }}
                               />
                               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-cyan-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
                             </div>
@@ -1284,8 +1297,21 @@ const Dashboard = () => {
                               <select
                                 value={difficulty}
                                 onChange={(e) => setDifficulty(e.target.value as 'beginner' | 'intermediate' | 'advanced')}
-                                className="w-full h-12 px-4 text-s dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:border-blue-300 dark:hover:border-blue-600 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none transition-all duration-200 appearance-none cursor-pointer"
-                                style={{ boxShadow: 'none' }}
+                                className="w-full h-12 px-4 text-s bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:border-blue-300 dark:hover:border-blue-600 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none transition-all duration-200 appearance-none cursor-pointer"
+                                style={{
+                                  boxShadow: 'none',
+                                  outline: 'none',
+                                  border: 'none',
+                                  transition: 'none'
+                                }}
+                                onFocus={(e) => {
+                                  e.target.style.outline = 'none';
+                                  e.target.style.boxShadow = 'none';
+                                  e.target.style.borderColor = 'none';
+                                }}
+                                onBlur={(e) => {
+                                  e.target.style.borderColor = 'none';
+                                }}
                               >
                                 <option value="beginner">🌱 Beginner</option>
                                 <option value="intermediate">📚 Intermediate</option>
@@ -1406,6 +1432,19 @@ const Dashboard = () => {
                       onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="Enter your full name"
                       disabled={profileLoading}
+                      style={{
+                        boxShadow: 'none',
+                        outline: 'none',
+                        transition: 'none'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = 'none';
+                        e.target.style.borderColor = 'none';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'none';
+                      }}
                     />
                   </div>
 
@@ -1418,7 +1457,21 @@ const Dashboard = () => {
                       onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
                       placeholder="Enter your email address"
                       disabled={profileLoading}
+                      style={{
+                        boxShadow: 'none',
+                        outline: 'none',
+                        transition: 'none'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = 'none';
+                        e.target.style.borderColor = 'none';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'none';
+                      }}
                     />
+
                   </div>
 
                   <Button
@@ -1454,6 +1507,19 @@ const Dashboard = () => {
                         placeholder="Enter your current password"
                         disabled={profileLoading}
                         className="pr-10"
+                        style={{
+                          boxShadow: 'none',
+                          outline: 'none',
+                          transition: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.outline = 'none';
+                          e.target.style.boxShadow = 'none';
+                          e.target.style.borderColor = 'none';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'none';
+                        }}
                       />
                       <Button
                         type="button"
@@ -1462,6 +1528,19 @@ const Dashboard = () => {
                         className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                         onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                         disabled={profileLoading}
+                        style={{
+                          boxShadow: 'none',
+                          outline: 'none',
+                          transition: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.outline = 'none';
+                          e.target.style.boxShadow = 'none';
+                          e.target.style.borderColor = 'none';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'none';
+                        }}
                       >
                         {showCurrentPassword ? (
                           <EyeOff className="h-4 w-4" />
@@ -1483,6 +1562,19 @@ const Dashboard = () => {
                         placeholder="Enter your new password (min. 8 characters)"
                         disabled={profileLoading}
                         className="pr-10"
+                        style={{
+                          boxShadow: 'none',
+                          outline: 'none',
+                          transition: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.outline = 'none';
+                          e.target.style.boxShadow = 'none';
+                          e.target.style.borderColor = 'none';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'none';
+                        }}
                       />
                       <Button
                         type="button"
@@ -1491,6 +1583,19 @@ const Dashboard = () => {
                         className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                         onClick={() => setShowNewPassword(!showNewPassword)}
                         disabled={profileLoading}
+                        style={{
+                          boxShadow: 'none',
+                          outline: 'none',
+                          transition: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.outline = 'none';
+                          e.target.style.boxShadow = 'none';
+                          e.target.style.borderColor = 'none';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'none';
+                        }}
                       >
                         {showNewPassword ? (
                           <EyeOff className="h-4 w-4" />
@@ -1512,6 +1617,19 @@ const Dashboard = () => {
                         placeholder="Confirm your new password"
                         disabled={profileLoading}
                         className="pr-10"
+                        style={{
+                          boxShadow: 'none',
+                          outline: 'none',
+                          transition: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.outline = 'none';
+                          e.target.style.boxShadow = 'none';
+                          e.target.style.borderColor = 'none';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'none';
+                        }}
                       />
                       <Button
                         type="button"
@@ -1520,6 +1638,19 @@ const Dashboard = () => {
                         className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         disabled={profileLoading}
+                        style={{
+                          boxShadow: 'none',
+                          outline: 'none',
+                          transition: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.outline = 'none';
+                          e.target.style.boxShadow = 'none';
+                          e.target.style.borderColor = 'none';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'none';
+                        }}
                       >
                         {showConfirmPassword ? (
                           <EyeOff className="h-4 w-4" />
