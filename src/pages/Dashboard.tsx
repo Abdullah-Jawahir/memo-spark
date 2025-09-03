@@ -753,34 +753,40 @@ const Dashboard = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
         {/* Fixed Header */}
         <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-4">
             <div className="flex items-center justify-between">
               {/* Logo */}
-              <Link to="/" className="flex items-center space-x-3 group">
-                <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl group-hover:scale-105 transition-transform shadow-lg">
-                  <BookOpen className="h-6 w-6 text-white" />
+              <Link to="/" className="flex items-center space-x-2 md:space-x-3 group">
+                <div className="p-1.5 md:p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl group-hover:scale-105 transition-transform shadow-lg">
+                  <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-white" />
                 </div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   MemoSpark
                 </span>
               </Link>
 
               {/* Header Actions */}
-              <div className="flex items-center space-x-3">
-                <ThemeSwitcher />
+              <div className="flex items-center space-x-2 md:space-x-3">
+                <div className="hidden sm:block">
+                  <ThemeSwitcher />
+                </div>
                 <Link to="/upload">
-                  <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Deck
+                  <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg text-xs md:text-sm px-2 md:px-3">
+                    <Plus className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+                    <span className="hidden sm:inline">Create Deck</span>
+                    <span className="sm:hidden">Create</span>
                   </Button>
                 </Link>
-                <Button variant="outline" size="sm" onClick={openProfileModal}>
-                  <User className="h-4 w-4 mr-2" />
-                  Profile
+                <Button variant="outline" size="sm" onClick={openProfileModal} className="text-xs md:text-sm px-2 md:px-3">
+                  <User className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+                  <span className="hidden sm:inline">Profile</span>
                 </Button>
-                <Button variant="outline" size="sm" onClick={signOut}>
-                  <LogOut className="h-4 w-4" />
+                <Button variant="outline" size="sm" onClick={signOut} className="px-2 md:px-3">
+                  <LogOut className="h-3 w-3 md:h-4 md:w-4" />
                 </Button>
+                <div className="sm:hidden">
+                  <ThemeSwitcher />
+                </div>
               </div>
             </div>
           </div>
