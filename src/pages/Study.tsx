@@ -3101,9 +3101,9 @@ const Study = () => {
         {/* Study Stats */}
         <div className="max-w-full sm:max-w-4xl mx-auto mt-8">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-semibold text-foreground">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center mb-4">
+                <h3 className="font-semibold text-foreground text-lg">
                   Session Stats
                   {isGuestUser && (
                     <Badge variant="outline" className="ml-2 text-xs">
@@ -3113,45 +3113,47 @@ const Study = () => {
                 </h3>
 
                 {/* Activity Study Timer */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <span className="text-xs text-muted-foreground mr-2">Current Activity:</span>
-                    <StudyTimer
-                      key={timerKey}
-                      isActive={isStudying && !sessionComplete && !isTimerPaused}
-                      initialTime={studyTime}
-                      onTimeUpdate={setStudyTime}
-                      className="text-sm font-medium bg-muted/30 px-2 py-1 rounded"
-                    />
-                    {isTimerPaused && (
-                      <Badge variant="outline" className="ml-2 text-xs">
-                        Paused
-                      </Badge>
-                    )}
+                <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0">
+                    <span className="text-xs text-muted-foreground sm:mr-2">Current Activity:</span>
+                    <div className="flex items-center">
+                      <StudyTimer
+                        key={timerKey}
+                        isActive={isStudying && !sessionComplete && !isTimerPaused}
+                        initialTime={studyTime}
+                        onTimeUpdate={setStudyTime}
+                        className="text-sm font-medium bg-muted/30 px-2 py-1 rounded"
+                      />
+                      {isTimerPaused && (
+                        <Badge variant="outline" className="ml-2 text-xs">
+                          Paused
+                        </Badge>
+                      )}
+                    </div>
                   </div>
 
                   {/* Timer Control Buttons */}
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2 sm:gap-1 justify-center sm:justify-end">
                     {!isTimerPaused ? (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={handlePauseTimer}
                         disabled={!isStudying || isOverallComplete}
-                        className="text-xs px-2 py-1 h-7"
+                        className="text-xs px-3 py-1.5 sm:px-2 sm:py-1 h-8 sm:h-7"
                         title="Pause timer"
                       >
-                        <Pause className="h-3 w-3" />
+                        <Pause className="h-4 w-4 sm:h-3 sm:w-3" />
                       </Button>
                     ) : (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={handleResumeTimer}
-                        className="text-xs px-2 py-1 h-7"
+                        className="text-xs px-3 py-1.5 sm:px-2 sm:py-1 h-8 sm:h-7"
                         title="Resume timer"
                       >
-                        <Play className="h-3 w-3" />
+                        <Play className="h-4 w-4 sm:h-3 sm:w-3" />
                       </Button>
                     )}
                     <Button
@@ -3159,43 +3161,43 @@ const Study = () => {
                       size="sm"
                       onClick={handleStopTimer}
                       disabled={!isStudying}
-                      className="text-xs px-2 py-1 h-7"
+                      className="text-xs px-3 py-1.5 sm:px-2 sm:py-1 h-8 sm:h-7"
                       title="Stop timer"
                     >
-                      <Square className="h-3 w-3" />
+                      <Square className="h-4 w-4 sm:h-3 sm:w-3" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleResetTimer}
-                      className="text-xs px-2 py-1 h-7"
+                      className="text-xs px-3 py-1.5 sm:px-2 sm:py-1 h-8 sm:h-7"
                       title="Reset timer"
                     >
-                      <RotateCcw className="h-3 w-3" />
+                      <RotateCcw className="h-4 w-4 sm:h-3 sm:w-3" />
                     </Button>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                 {/* Only show correct/difficult counts for flashcards and review tabs */}
                 {(tab === 'flashcards' || tab === 'review') && (
                   <>
-                    <div>
-                      <div className="text-2xl font-bold text-green-600">{sessionStats.correct}</div>
-                      <div className="text-sm text-muted-foreground">Correct</div>
+                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                      <div className="text-3xl sm:text-2xl font-bold text-green-600">{sessionStats.correct}</div>
+                      <div className="text-sm text-muted-foreground mt-1">Correct</div>
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-orange-600">{sessionStats.difficult}</div>
-                      <div className="text-sm text-muted-foreground">Marked Difficult</div>
+                    <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                      <div className="text-3xl sm:text-2xl font-bold text-orange-600">{sessionStats.difficult}</div>
+                      <div className="text-sm text-muted-foreground mt-1">Marked Difficult</div>
                     </div>
                   </>
                 )}
 
                 {/* Always show total time, but adjust grid layout based on what's visible */}
-                <div className={`${(tab === 'flashcards' || tab === 'review') ? '' : 'col-span-3'}`}>
-                  <div className="text-2xl font-bold text-blue-600">{formatTime(overallStudyTime)}</div>
-                  <div className="text-sm text-muted-foreground">Total Time</div>
+                <div className={`bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800 ${(tab === 'flashcards' || tab === 'review') ? '' : 'sm:col-span-3'}`}>
+                  <div className="text-3xl sm:text-2xl font-bold text-blue-600">{formatTime(overallStudyTime)}</div>
+                  <div className="text-sm text-muted-foreground mt-1">Total Time</div>
                 </div>
               </div>
 
