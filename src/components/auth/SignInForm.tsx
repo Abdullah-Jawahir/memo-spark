@@ -37,7 +37,7 @@ const SignInForm = ({ onSubmit, onForgotPassword, isLoading }: SignInFormProps) 
             Enter your email address and we'll send you a link to reset your password.
           </AlertDescription>
         </Alert>
-        
+
         <div className="space-y-2">
           <Label htmlFor="reset-email">Email</Label>
           <Input
@@ -48,22 +48,61 @@ const SignInForm = ({ onSubmit, onForgotPassword, isLoading }: SignInFormProps) 
             onChange={(e) => setEmail(e.target.value)}
             required
             className="h-12"
+            style={{
+              boxShadow: 'none',
+              outline: 'none',
+              transition: 'none'
+            }}
+            onFocus={(e) => {
+              e.target.style.outline = 'none';
+              e.target.style.boxShadow = 'none';
+              e.target.style.borderColor = 'none';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = 'none';
+            }}
           />
         </div>
 
         <div className="flex gap-2">
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             disabled={isLoading || !email}
+            style={{
+              boxShadow: 'none',
+              outline: 'none',
+              transition: 'none'
+            }}
+            onFocus={(e) => {
+              e.target.style.outline = 'none';
+              e.target.style.boxShadow = 'none';
+              e.target.style.borderColor = 'none';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = 'none';
+            }}
           >
             {isLoading ? "Sending..." : "Send Reset Link"}
           </Button>
-          <Button 
-            type="button" 
+          <Button
+            type="button"
             variant="outline"
             className="flex-1 h-12"
             onClick={() => setShowForgotPassword(false)}
+            style={{
+              boxShadow: 'none',
+              outline: 'none',
+              transition: 'none'
+            }}
+            onFocus={(e) => {
+              e.target.style.outline = 'none';
+              e.target.style.boxShadow = 'none';
+              e.target.style.borderColor = 'none';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = 'none';
+            }}
           >
             Back to Sign In
           </Button>
@@ -84,9 +123,22 @@ const SignInForm = ({ onSubmit, onForgotPassword, isLoading }: SignInFormProps) 
           onChange={(e) => setEmail(e.target.value)}
           required
           className="h-12"
+          style={{
+            boxShadow: 'none',
+            outline: 'none',
+            transition: 'none'
+          }}
+          onFocus={(e) => {
+            e.target.style.outline = 'none';
+            e.target.style.boxShadow = 'none';
+            e.target.style.borderColor = 'none';
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = 'none';
+          }}
         />
       </div>
-      
+
       <div className="space-y-2">
         <Label htmlFor="signin-password">Password</Label>
         <Input
@@ -97,13 +149,39 @@ const SignInForm = ({ onSubmit, onForgotPassword, isLoading }: SignInFormProps) 
           onChange={(e) => setPassword(e.target.value)}
           required
           className="h-12"
+          style={{
+            boxShadow: 'none',
+            outline: 'none',
+            transition: 'none'
+          }}
+          onFocus={(e) => {
+            e.target.style.outline = 'none';
+            e.target.style.boxShadow = 'none';
+            e.target.style.borderColor = 'none';
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = 'none';
+          }}
         />
       </div>
 
-      <Button 
-        type="submit" 
+      <Button
+        type="submit"
         className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold"
         disabled={isLoading}
+        style={{
+          boxShadow: 'none',
+          outline: 'none',
+          transition: 'none'
+        }}
+        onFocus={(e) => {
+          e.target.style.outline = 'none';
+          e.target.style.boxShadow = 'none';
+          e.target.style.borderColor = 'none';
+        }}
+        onBlur={(e) => {
+          e.target.style.borderColor = 'none';
+        }}
       >
         {isLoading ? "Signing in..." : "Sign In"}
       </Button>
@@ -113,6 +191,19 @@ const SignInForm = ({ onSubmit, onForgotPassword, isLoading }: SignInFormProps) 
           type="button"
           className="text-sm text-blue-600 hover:underline"
           onClick={() => setShowForgotPassword(true)}
+          style={{
+            boxShadow: 'none',
+            outline: 'none',
+            transition: 'none'
+          }}
+          onFocus={(e) => {
+            e.target.style.outline = 'none';
+            e.target.style.boxShadow = 'none';
+            e.target.style.borderColor = 'none';
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = 'none';
+          }}
         >
           Forgot your password?
         </button>
