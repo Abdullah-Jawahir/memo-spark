@@ -1264,55 +1264,69 @@ const Dashboard = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {/* Compact Search Form */}
-                      <form onSubmit={handleGenerateFlashcards} className="space-y-4">
+                      {/* Enhanced Search Form */}
+                      <form onSubmit={handleGenerateFlashcards} className="space-y-6">
                         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
                           <div className="lg:col-span-2">
-                            <Input
-                              value={searchTopic}
-                              onChange={(e) => setSearchTopic(e.target.value)}
-                              placeholder="Enter topic (e.g., Machine Learning, Python Programming)"
-                              className="h-11"
-                            />
+                            <div className="relative group">
+                              <Input
+                                value={searchTopic}
+                                onChange={(e) => setSearchTopic(e.target.value)}
+                                placeholder="Enter topic (e.g., Machine Learning, Python Programming)"
+                                className="h-12 px-4 text-sm dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:border-blue-300 dark:hover:border-blue-600 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none transition-all duration-200 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                                style={{ boxShadow: 'none' }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-cyan-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                            </div>
                           </div>
                           <div>
-                            <select
-                              value={difficulty}
-                              onChange={(e) => setDifficulty(e.target.value as 'beginner' | 'intermediate' | 'advanced')}
-                              className="w-full h-11 px-3 border border-input bg-background rounded-md text-sm"
-                            >
-                              <option value="beginner">Beginner</option>
-                              <option value="intermediate">Intermediate</option>
-                              <option value="advanced">Advanced</option>
-                            </select>
+                            <div className="relative group">
+                              <select
+                                value={difficulty}
+                                onChange={(e) => setDifficulty(e.target.value as 'beginner' | 'intermediate' | 'advanced')}
+                                className="w-full h-12 px-4 text-s dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:border-blue-300 dark:hover:border-blue-600 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none transition-all duration-200 appearance-none cursor-pointer"
+                                style={{ boxShadow: 'none' }}
+                              >
+                                <option value="beginner">🌱 Beginner</option>
+                                <option value="intermediate">📚 Intermediate</option>
+                                <option value="advanced">🎯 Advanced</option>
+                              </select>
+                              {/* Custom dropdown arrow */}
+                              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </div>
+                              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-cyan-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                            </div>
                           </div>
                           <Button
                             type="submit"
                             disabled={isGenerating}
-                            className="h-11 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+                            className="h-12 px-6 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                           >
                             {isGenerating ? (
                               <>
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                {getStatusMessage()}
+                                <span className="text-sm">{getStatusMessage()}</span>
                               </>
                             ) : (
                               <>
                                 <Search className="h-4 w-4 mr-2" />
-                                Generate
+                                <span className="text-sm font-semibold">Generate</span>
                               </>
                             )}
                           </Button>
                         </div>
 
-                        {/* Quick Action Links */}
-                        <div className="flex flex-wrap gap-2 pt-2">
-                          <p className="text-sm text-muted-foreground mr-2">Quick topics:</p>
+                        {/* Quick Action Topics */}
+                        <div className="flex flex-wrap gap-3 pt-2">
+                          <p className="text-sm font-medium text-muted-foreground mr-2 self-center">Quick topics:</p>
                           {['Mathematics', 'Physics', 'Chemistry', 'Biology', 'Computer Science', 'History'].map((topic) => (
                             <Badge
                               key={topic}
                               variant="secondary"
-                              className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors text-xs"
+                              className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-300 hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 text-xs px-3 py-1.5 rounded-lg font-medium transform hover:scale-105 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
                               onClick={() => setSearchTopic(topic)}
                             >
                               {topic}
@@ -1320,22 +1334,22 @@ const Dashboard = () => {
                           ))}
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
+                        {/* Enhanced Action Buttons */}
+                        <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200/70 dark:border-gray-700/70">
                           <Link to="/search" className="flex-1">
-                            <Button variant="outline" className="w-full h-10">
+                            <Button variant="outline" className="w-full h-11 border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 rounded-xl font-medium focus:outline-none focus:ring-0">
                               <Search className="h-4 w-4 mr-2" />
                               Advanced Search
                             </Button>
                           </Link>
                           <Link to="/search?tab=recent" className="flex-1">
-                            <Button variant="outline" className="w-full h-10">
+                            <Button variant="outline" className="w-full h-11 border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 rounded-xl font-medium focus:outline-none focus:ring-0">
                               <Clock className="h-4 w-4 mr-2" />
                               Recent Searches
                             </Button>
                           </Link>
                           <Link to="/search?tab=stats" className="flex-1">
-                            <Button variant="outline" className="w-full h-10">
+                            <Button variant="outline" className="w-full h-11 border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 rounded-xl font-medium focus:outline-none focus:ring-0">
                               <TrendingUp className="h-4 w-4 mr-2" />
                               Study Statistics
                             </Button>
