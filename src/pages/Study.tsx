@@ -100,6 +100,7 @@ const Study = () => {
   const [reviewedDifficult, setReviewedDifficult] = useState<Set<number>>(new Set());
   const [isLoadingFromStorage, setIsLoadingFromStorage] = useState(true); // Add this state for localStorage loading
   const [isQuizReviewMode, setIsQuizReviewMode] = useState(false); // Add this state for quiz review mode
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false); // Track if initial load is complete
 
   // Study tracking specific state
   const [studyTime, setStudyTime] = useState(0);  // Time spent on current activity (flashcards, quiz, exercises)
@@ -335,7 +336,7 @@ const Study = () => {
     currentActivityType, currentDeckIdentifier, difficultCardIds, flashcards.length, quizzes.length, exercises.length
   ]);
 
-  // Handle page visibility changes to pause/resume timers
+  // Handle page visibility changes to pause/resume timers only
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -349,6 +350,7 @@ const Study = () => {
         if (isStudying && !isOverallComplete) {
           setIsTimerPaused(false);
         }
+        // No automatic background refresh - user progress is preserved
       }
     };
 
@@ -357,9 +359,7 @@ const Study = () => {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isStudying, isOverallComplete]);
-
-  const fetchMaterials = async (force = false) => {
+  }, [isStudying, isOverallComplete]); const fetchMaterials = async (force = false) => {
     if (!session?.access_token) return;
     if (!force && (isLoadingMaterials || isRefreshing)) return;
 
@@ -370,7 +370,7 @@ const Study = () => {
     setMaterialsNotFound(false);
     if (force) {
       setIsRefreshing(true);
-    } else {
+    } else if (!hasInitiallyLoaded) {
       setIsLoadingMaterials(true);
     }
 
@@ -500,6 +500,10 @@ const Study = () => {
       setIsRefreshing(false);
       // Ensure the overall loading gate is cleared after network fetch
       setIsLoadingFromStorage(false);
+      // Mark that initial loading is complete
+      if (!hasInitiallyLoaded) {
+        setHasInitiallyLoaded(true);
+      }
     }
   };
 
@@ -655,6 +659,11 @@ const Study = () => {
           session_id: null // Will be updated when authenticated session starts
         }));
 
+        // Mark initial loading as complete for search flashcards
+        if (!hasInitiallyLoaded) {
+          setHasInitiallyLoaded(true);
+        }
+
         // Start study session for search flashcards
         if (session?.access_token && parsedSearchData.search_id) {
           startSearchStudySession(parsedSearchData.search_id, parsedSearchData.flashcards.length, session)
@@ -695,6 +704,10 @@ const Study = () => {
       }
 
       setIsLoadingFromStorage(false);
+      // Mark initial loading as complete even when no search flashcards loaded
+      if (!hasInitiallyLoaded) {
+        setHasInitiallyLoaded(true);
+      }
       return false; // Return false if no search flashcards were loaded
     };
 
@@ -709,6 +722,10 @@ const Study = () => {
       }).catch(error => {
         console.error('Error handling search flashcard session:', error);
         setIsLoadingFromStorage(false);
+        // Mark initial loading as complete even on error
+        if (!hasInitiallyLoaded) {
+          setHasInitiallyLoaded(true);
+        }
       });
       return; // Exit useEffect early for search flashcards
     }
@@ -717,10 +734,14 @@ const Study = () => {
       // If no session/token yet, avoid being stuck in loading
       if (!session?.access_token) {
         setIsLoadingFromStorage(false);
+        // Mark initial loading as complete even if no session
+        if (!hasInitiallyLoaded) {
+          setHasInitiallyLoaded(true);
+        }
         // Optional: mark as not found so the CTA displays if no local data
         if (!data) setMaterialsNotFound(true);
       } else {
-        fetchMaterials(false);
+        fetchMaterials(false); // Initial load
       }
     } else if (data) {
       const parsed: GeneratedContent = JSON.parse(data);
@@ -777,6 +798,10 @@ const Study = () => {
               }
               setLastUpdated(new Date());
               setIsLoadingFromStorage(false); // Set loading to false after data is loaded
+              // Mark initial loading as complete
+              if (!hasInitiallyLoaded) {
+                setHasInitiallyLoaded(true);
+              }
             })
             .catch(error => {
               console.error('Failed to enrich materials, using original data:', error);
@@ -794,6 +819,10 @@ const Study = () => {
     } else {
       // No data in localStorage, set loading to false
       setIsLoadingFromStorage(false);
+      // Mark initial loading as complete
+      if (!hasInitiallyLoaded) {
+        setHasInitiallyLoaded(true);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]); // Add session dependency to re-run when authentication is available
@@ -895,6 +924,10 @@ const Study = () => {
     }
     setLastUpdated(new Date());
     setIsLoadingFromStorage(false); // Set loading to false after setup is complete
+    // Mark initial loading as complete
+    if (!hasInitiallyLoaded) {
+      setHasInitiallyLoaded(true);
+    }
   };
   const currentCardData = flashcards[currentCard];
   const progress = flashcards.length > 0 ? ((currentCard + 1) / flashcards.length) * 100 : 0;
@@ -1178,8 +1211,8 @@ const Study = () => {
     }
   }, [flashcards, sessionRatings, tab, difficultCardIds, reviewedDifficult]); // Include all dependencies
 
-  // Loading state while fetching materials
-  if (isLoadingMaterials || isLoadingFromStorage) {
+  // Loading state while fetching materials - only show on initial load
+  if ((isLoadingMaterials || isLoadingFromStorage) && !hasInitiallyLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
         <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
@@ -1919,6 +1952,14 @@ const Study = () => {
           </Link>
 
           <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Background refresh indicator */}
+            {isRefreshing && (
+              <div className="flex items-center text-xs text-blue-600 dark:text-blue-400">
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                <span className="hidden sm:inline">Updating...</span>
+              </div>
+            )}
+
             {/* Overall study time always shown in nav bar */}
             <div className="flex items-center mr-1 sm:mr-2 text-xs sm:text-sm">
               <Clock className={`h-3 w-3 sm:h-4 sm:w-4 ${isStudying ? 'text-green-500' : 'text-blue-600'} mr-1`} />
@@ -1927,7 +1968,7 @@ const Study = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => fetchMaterials(true)}
+              onClick={() => fetchMaterials(true)} // force=true for manual refresh
               disabled={isRefreshing}
               className="bg-white/80 dark:bg-gray-800/80 mr-1 sm:mr-2 px-2 sm:px-3"
             >
