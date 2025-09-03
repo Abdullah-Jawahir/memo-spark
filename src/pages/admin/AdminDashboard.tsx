@@ -190,21 +190,45 @@ const AdminDashboard = () => {
   return (
     <ProtectedRoute requiredRole="admin">
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
-        <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
-        {/* Logo pinned to left corner like main header */}
-        <div className="absolute left-4 top-4 z-50">
-          <Link to="/" className="flex items-center space-x-2 group">
-            <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg group-hover:scale-105 transition-transform">
-              <BookOpen className="h-6 w-6 text-white" />
+        {/* Fixed Header */}
+        <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-4">
+            <div className="flex items-center justify-between">
+              {/* Logo */}
+              <Link to="/" className="flex items-center space-x-2 md:space-x-3 group">
+                <div className="p-1.5 md:p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl group-hover:scale-105 transition-transform shadow-lg">
+                  <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-white" />
+                </div>
+                <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  MemoSpark
+                </span>
+              </Link>
+
+              {/* Header Actions */}
+              <div className="flex items-center space-x-2 md:space-x-3">
+                <div className="hidden sm:block">
+                  <ThemeSwitcher />
+                </div>
+                <Link to="/admin/users" className="hidden sm:block">
+                  <Button size="sm" className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 shadow-lg">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Manage Users
+                  </Button>
+                </Link>
+                <Button variant="outline" size="sm" onClick={signOut} className="text-xs md:text-sm px-2 md:px-3">
+                  <LogOut className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+                  <span className="hidden sm:inline">Sign Out</span>
+                </Button>
+                <div className="sm:hidden">
+                  <ThemeSwitcher />
+                </div>
+              </div>
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              MemoSpark
-            </span>
-          </Link>
+          </div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-          {/* Header */}
+          {/* Header Content */}
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 lg:mb-8 space-y-4 lg:space-y-0">
             <div>
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
@@ -215,17 +239,14 @@ const AdminDashboard = () => {
               </div>
               <p className="text-sm sm:text-base text-muted-foreground">Welcome back, {profile?.full_name || 'Admin'}! Monitor and manage MemoSpark.</p>
             </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-              <Link to="/admin/users" className="w-full sm:w-auto">
+            {/* Mobile Actions */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 sm:hidden">
+              <Link to="/admin/users" className="w-full">
                 <Button className="w-full bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700">
                   <UserPlus className="h-4 w-4 mr-2" />
                   Manage Users
                 </Button>
               </Link>
-              <Button variant="outline" onClick={signOut} className="w-full sm:w-auto">
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
             </div>
           </div>
 
