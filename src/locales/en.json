@@ -5,13 +5,36 @@
     "about": "About",
     "contact": "Contact"
   },
+  "features": {
+    "badge": "Features",
+    "title": "Everything you need to learn smarter",
+    "description": "MemoSpark combines cutting-edge AI with proven learning techniques to create the most effective study experience.",
+    "smart_processing": {
+      "title": "Smart Document Processing",
+      "description": "Upload PDFs, images, or text documents and our AI instantly creates flashcards in multiple languages."
+    },
+    "adaptive_learning": {
+      "title": "Adaptive Learning",
+      "description": "Personalized spaced repetition using the SM-2 algorithm to optimize your learning efficiency."
+    },
+    "multilingual_support": {
+      "title": "Multilingual Support",
+      "description": "Full support for English, Sinhala, and Tamil with advanced NLP processing."
+    },
+    "progress_tracking": {
+      "title": "Progress Tracking",
+      "description": "Beautiful analytics and insights to track your learning journey and achievements."
+    }
+  },
   "cta": {
   "start": "Start Free Trial",
   "demo": "Watch Demo",
   "ready": "Ready to transform your learning?",
   "join": "Join thousands of students already using MemoSpark to achieve their academic goals.",
   "continue": "Continue your learning journey",
-  "access": "Access your personalized flashcards and learning materials anytime, anywhere."
+  "access": "Access your personalized flashcards and learning materials anytime, anywhere.",
+  "upload_new": "Upload New Document",
+  "go_dashboard": "Go to Dashboard"
   },
   "hero": {
     "badge_try": "Try out MemoSpark instantly—no sign-up needed!",
