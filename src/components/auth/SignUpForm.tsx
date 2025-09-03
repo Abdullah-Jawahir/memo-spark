@@ -18,7 +18,7 @@ const SignUpForm = ({ onSubmit, isLoading }: SignUpFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
       return;
     }
@@ -40,9 +40,22 @@ const SignUpForm = ({ onSubmit, isLoading }: SignUpFormProps) => {
           onChange={(e) => setFullName(e.target.value)}
           required
           className="h-12"
+          style={{
+            boxShadow: 'none',
+            outline: 'none',
+            transition: 'none'
+          }}
+          onFocus={(e) => {
+            e.target.style.outline = 'none';
+            e.target.style.boxShadow = 'none';
+            e.target.style.borderColor = 'none';
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = 'none';
+          }}
         />
       </div>
-      
+
       <div className="space-y-2">
         <Label htmlFor="signup-email">Email</Label>
         <Input
@@ -53,9 +66,22 @@ const SignUpForm = ({ onSubmit, isLoading }: SignUpFormProps) => {
           onChange={(e) => setEmail(e.target.value)}
           required
           className="h-12"
+          style={{
+            boxShadow: 'none',
+            outline: 'none',
+            transition: 'none'
+          }}
+          onFocus={(e) => {
+            e.target.style.outline = 'none';
+            e.target.style.boxShadow = 'none';
+            e.target.style.borderColor = 'none';
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = 'none';
+          }}
         />
       </div>
-      
+
       <div className="space-y-2">
         <Label htmlFor="signup-password">Password</Label>
         <Input
@@ -67,6 +93,19 @@ const SignUpForm = ({ onSubmit, isLoading }: SignUpFormProps) => {
           required
           minLength={6}
           className="h-12"
+          style={{
+            boxShadow: 'none',
+            outline: 'none',
+            transition: 'none'
+          }}
+          onFocus={(e) => {
+            e.target.style.outline = 'none';
+            e.target.style.boxShadow = 'none';
+            e.target.style.borderColor = 'none';
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = 'none';
+          }}
         />
       </div>
 
@@ -80,6 +119,19 @@ const SignUpForm = ({ onSubmit, isLoading }: SignUpFormProps) => {
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
           className="h-12"
+          style={{
+            boxShadow: 'none',
+            outline: 'none',
+            transition: 'none'
+          }}
+          onFocus={(e) => {
+            e.target.style.outline = 'none';
+            e.target.style.boxShadow = 'none';
+            e.target.style.borderColor = 'none';
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = 'none';
+          }}
         />
       </div>
 
@@ -91,10 +143,23 @@ const SignUpForm = ({ onSubmit, isLoading }: SignUpFormProps) => {
         </Alert>
       )}
 
-      <Button 
-        type="submit" 
+      <Button
+        type="submit"
         className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold"
         disabled={isLoading || !passwordsMatch || !fullName || !email || !password}
+        style={{
+          boxShadow: 'none',
+          outline: 'none',
+          transition: 'none'
+        }}
+        onFocus={(e) => {
+          e.target.style.outline = 'none';
+          e.target.style.boxShadow = 'none';
+          e.target.style.borderColor = 'none';
+        }}
+        onBlur={(e) => {
+          e.target.style.borderColor = 'none';
+        }}
       >
         {isLoading ? "Creating account..." : "Create Account"}
       </Button>
