@@ -737,6 +737,19 @@ const GoalSettings: React.FC = () => {
                       value={newGoalType.name}
                       onChange={(e) => setNewGoalType(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="e.g., Daily Flashcards"
+                      style={{
+                        boxShadow: 'none',
+                        outline: 'none',
+                        transition: 'none'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = 'none';
+                        e.target.style.borderColor = 'none';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'none';
+                      }}
                     />
                   </div>
 
@@ -747,6 +760,19 @@ const GoalSettings: React.FC = () => {
                       value={newGoalType.description}
                       onChange={(e) => setNewGoalType(prev => ({ ...prev, description: e.target.value }))}
                       placeholder="e.g., Number of flashcards to review daily"
+                      style={{
+                        boxShadow: 'none',
+                        outline: 'none',
+                        transition: 'none'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = 'none';
+                        e.target.style.borderColor = 'none';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'none';
+                      }}
                     />
                   </div>
 
@@ -758,13 +784,26 @@ const GoalSettings: React.FC = () => {
                         value={newGoalType.unit}
                         onChange={(e) => setNewGoalType(prev => ({ ...prev, unit: e.target.value }))}
                         placeholder="e.g., cards, minutes, points"
+                        style={{
+                          boxShadow: 'none',
+                          outline: 'none',
+                          transition: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.outline = 'none';
+                          e.target.style.boxShadow = 'none';
+                          e.target.style.borderColor = 'none';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'none';
+                        }}
                       />
                     </div>
 
                     <div>
                       <Label htmlFor="goal-category">Category</Label>
                       <Select value={newGoalType.category} onValueChange={(value) => setNewGoalType(prev => ({ ...prev, category: value as any }))}>
-                        <SelectTrigger>
+                        <SelectTrigger className="focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none" style={{ boxShadow: 'none', outline: 'none' }}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -785,6 +824,19 @@ const GoalSettings: React.FC = () => {
                         type="number"
                         value={newGoalType.default_value}
                         onChange={(e) => setNewGoalType(prev => ({ ...prev, default_value: parseInt(e.target.value) || 0 }))}
+                        style={{
+                          boxShadow: 'none',
+                          outline: 'none',
+                          transition: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.outline = 'none';
+                          e.target.style.boxShadow = 'none';
+                          e.target.style.borderColor = 'none';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'none';
+                        }}
                       />
                     </div>
 
@@ -795,6 +847,19 @@ const GoalSettings: React.FC = () => {
                         type="number"
                         value={newGoalType.min_value}
                         onChange={(e) => setNewGoalType(prev => ({ ...prev, min_value: parseInt(e.target.value) || 0 }))}
+                        style={{
+                          boxShadow: 'none',
+                          outline: 'none',
+                          transition: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.outline = 'none';
+                          e.target.style.boxShadow = 'none';
+                          e.target.style.borderColor = 'none';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'none';
+                        }}
                       />
                     </div>
 
@@ -805,6 +870,19 @@ const GoalSettings: React.FC = () => {
                         type="number"
                         value={newGoalType.max_value}
                         onChange={(e) => setNewGoalType(prev => ({ ...prev, max_value: parseInt(e.target.value) || 1000 }))}
+                        style={{
+                          boxShadow: 'none',
+                          outline: 'none',
+                          transition: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.outline = 'none';
+                          e.target.style.boxShadow = 'none';
+                          e.target.style.borderColor = 'none';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'none';
+                        }}
                       />
                     </div>
                   </div>
@@ -932,7 +1010,7 @@ const GoalSettings: React.FC = () => {
                   <div>
                     <Label htmlFor="user-select">Select User</Label>
                     <Select value={newUserGoal.user_id} onValueChange={(value) => setNewUserGoal(prev => ({ ...prev, user_id: value }))}>
-                      <SelectTrigger>
+                      <SelectTrigger className="focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none" style={{ boxShadow: 'none', outline: 'none' }}>
                         <SelectValue placeholder="Choose a user" />
                       </SelectTrigger>
                       <SelectContent>
@@ -948,7 +1026,7 @@ const GoalSettings: React.FC = () => {
                   <div>
                     <Label htmlFor="goal-type-select">Select Goal Type</Label>
                     <Select value={newUserGoal.goal_type_id} onValueChange={(value) => setNewUserGoal(prev => ({ ...prev, goal_type_id: value }))}>
-                      <SelectTrigger>
+                      <SelectTrigger className="focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none" style={{ boxShadow: 'none', outline: 'none' }}>
                         <SelectValue placeholder="Choose a goal type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -969,6 +1047,19 @@ const GoalSettings: React.FC = () => {
                       value={newUserGoal.target_value}
                       onChange={(e) => setNewUserGoal(prev => ({ ...prev, target_value: parseInt(e.target.value) || 0 }))}
                       placeholder="Enter target value"
+                      style={{
+                        boxShadow: 'none',
+                        outline: 'none',
+                        transition: 'none'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = 'none';
+                        e.target.style.borderColor = 'none';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'none';
+                      }}
                     />
                   </div>
                 </div>
@@ -996,6 +1087,19 @@ const GoalSettings: React.FC = () => {
                   value={searchEmail}
                   onChange={(e) => setSearchEmail(e.target.value)}
                   className="pl-9"
+                  style={{
+                    boxShadow: 'none',
+                    outline: 'none',
+                    transition: 'none'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.outline = 'none';
+                    e.target.style.boxShadow = 'none';
+                    e.target.style.borderColor = 'none';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = 'none';
+                  }}
                 />
               </div>
             </div>
@@ -1003,7 +1107,7 @@ const GoalSettings: React.FC = () => {
             <div className="sm:w-48">
               <Label htmlFor="user-filter">Filter by User</Label>
               <Select value={selectedUser} onValueChange={setSelectedUser}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none" style={{ boxShadow: 'none', outline: 'none' }}>
                   <SelectValue placeholder="All users" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1144,6 +1248,19 @@ const GoalSettings: React.FC = () => {
                       ...prev,
                       student_default: parseInt(e.target.value) || 1
                     }))}
+                    style={{
+                      boxShadow: 'none',
+                      outline: 'none',
+                      transition: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.outline = 'none';
+                      e.target.style.boxShadow = 'none';
+                      e.target.style.borderColor = 'none';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'none';
+                    }}
                   />
                   <p className="text-sm text-muted-foreground">
                     Recommended daily goal for new student users
@@ -1162,6 +1279,19 @@ const GoalSettings: React.FC = () => {
                       ...prev,
                       admin_default: parseInt(e.target.value) || 1
                     }))}
+                    style={{
+                      boxShadow: 'none',
+                      outline: 'none',
+                      transition: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.outline = 'none';
+                      e.target.style.boxShadow = 'none';
+                      e.target.style.borderColor = 'none';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'none';
+                    }}
                   />
                   <p className="text-sm text-muted-foreground">
                     Recommended daily goal for new admin users
@@ -1202,6 +1332,19 @@ const GoalSettings: React.FC = () => {
                 placeholder="Enter target value"
                 min={editingUserGoal?.goal_type?.min_value || 0}
                 max={editingUserGoal?.goal_type?.max_value || 1000}
+                style={{
+                  boxShadow: 'none',
+                  outline: 'none',
+                  transition: 'none'
+                }}
+                onFocus={(e) => {
+                  e.target.style.outline = 'none';
+                  e.target.style.boxShadow = 'none';
+                  e.target.style.borderColor = 'none';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'none';
+                }}
               />
               {editingUserGoal?.goal_type && (
                 <p className="text-sm text-muted-foreground mt-1">
