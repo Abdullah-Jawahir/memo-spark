@@ -73,7 +73,7 @@ const Upload = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [guestLimitExceeded, setGuestLimitExceeded] = useState(false);
   const [deckName, setDeckName] = useState("");
-  const [cardTypes, setCardTypes] = useState<string[]>(["flashcard", "exercise"]); // default checked
+  const [cardTypes, setCardTypes] = useState<string[]>(["flashcard", "quiz", "exercise"]); // default all types checked
   const [difficulty, setDifficulty] = useState<string>("intermediate");
 
   interface Quiz {
@@ -207,6 +207,7 @@ const Upload = () => {
         generatedContentRef.current = content;
         setGeneratedCards(Array.isArray(content.flashcards) ? content.flashcards : []);
         localStorage.setItem('generatedContent', JSON.stringify(content));
+        localStorage.setItem('currentDeckName', deckName); // Store deck name for enrichment
         setUploadComplete(true);
         setProcessingStatus('completed');
       } else if (response.data.document_id) {
@@ -272,6 +273,7 @@ const Upload = () => {
         generatedContentRef.current = content;
         setGeneratedCards(Array.isArray(content.flashcards) ? content.flashcards : []);
         localStorage.setItem('generatedContent', JSON.stringify(content));
+        localStorage.setItem('currentDeckName', deckName); // Store deck name for enrichment
       } else if (response.data.status === 'failed') {
         setProcessingStatus('failed');
         setIsUploading(false);
@@ -328,6 +330,17 @@ const Upload = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
+      {/* Navigation Header */}
+      <div className="absolute top-4 left-4 z-50">
+        <Link to="/" className="flex items-center space-x-2 group">
+          <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg group-hover:scale-105 transition-transform">
+            <BookOpen className="h-6 w-6 text-white" />
+          </div>
+          <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            MemoSpark
+          </span>
+        </Link>
+      </div>
       <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
       <div className="max-w-4xl mx-auto px-6 py-8">
         {/* Header */}
@@ -476,6 +489,7 @@ const Upload = () => {
                           console.log('Saving to localStorage (from button):', content);
                           if (content && content.flashcards && content.flashcards.length > 0) {
                             localStorage.setItem('generatedContent', JSON.stringify(content));
+                            localStorage.setItem('currentDeckName', deckName); // Store deck name for enrichment
                             navigate('/study');
                           }
                         }}

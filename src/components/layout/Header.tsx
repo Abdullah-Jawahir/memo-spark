@@ -1,27 +1,25 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Menu, X, User, LogOut, Sun, Moon, Monitor } from 'lucide-react';
+import { BookOpen, Menu, X, User, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
+import ThemeSwitcher from './ThemeSwitcher';
+import LanguageToggle from '@/components/common/LanguageToggle';
 
-interface HeaderProps {
-  currentLanguage: string;
-}
-
-const Header = ({ currentLanguage }: HeaderProps) => {
+const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { t } = useTranslation();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   return (
-    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-lg border-b border-border shadow-sm">
+      <div className="relative w-full py-2">
+        {/* Logo pinned to left corner */}
+        <div className="absolute left-4 top-1/2 -translate-y-1/2">
           <Link to="/" className="flex items-center space-x-2 group">
             <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg group-hover:scale-105 transition-transform">
               <BookOpen className="h-6 w-6 text-white" />
@@ -30,174 +28,161 @@ const Header = ({ currentLanguage }: HeaderProps) => {
               MemoSpark
             </span>
           </Link>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/features" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
-              Features
-            </Link>
-            <Link to="/pricing" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
-              Pricing
-            </Link>
-            <Link to="/about" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
-              About
-            </Link>
-            <Link to="/contact" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
-              Contact
-            </Link>
-          </nav>
-
-          <div className="flex items-center space-x-4">
-            {/* Theme Switcher Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="p-2 rounded-full focus:outline-none" aria-label="Change theme">
-                  {theme === 'light' ? <Sun className="h-5 w-5 text-gray-900" /> : theme === 'dark' ? <Moon className="h-5 w-5 text-gray-300" /> : <Monitor className="h-5 w-5 text-gray-400" />}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
-                  <DropdownMenuRadioItem value="light">
-                    <span className="flex items-center gap-2"><Sun className="h-4 w-4" /> Light</span>
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="dark">
-                    <span className="flex items-center gap-2"><Moon className="h-4 w-4" /> Dark</span>
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="system">
-                    <span className="flex items-center gap-2"><Monitor className="h-4 w-4" /> System</span>
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {/* Mobile Menu Button */}
-            <button 
-              className="md:hidden"
-              onClick={toggleMenu}
-            >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-
-            {/* Desktop Auth Buttons */}
-            <div className="hidden md:flex items-center space-x-4">
-              {user && profile ? (
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <User className="h-4 w-4 text-gray-600" />
-                    <span className="text-sm text-gray-700">{profile.full_name}</span>
-                    <Badge variant={profile.role === 'admin' ? 'destructive' : 'secondary'} className="text-xs">
-                      {profile.role}
-                    </Badge>
-                  </div>
-                  <Link to={profile.role === 'admin' ? '/admin' : '/dashboard'}>
-                    <Button variant="ghost" className="text-gray-600 hover:text-blue-600">
-                      Dashboard
-                    </Button>
-                  </Link>
-                  <Button variant="outline" onClick={signOut} size="sm">
-                    <LogOut className="h-4 w-4 mr-1" />
-                    Sign Out
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <Link to="/auth">
-                    <Button variant="ghost" className="text-gray-600 hover:text-blue-600">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link to="/auth">
-                    <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6">
-                      Get Started
-                    </Button>
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Centered nav/content (keeps previous max width) */}
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-center">
+          <nav className="hidden lg:flex items-center space-x-8">
+            <Link to="/features" className="text-muted-foreground hover:text-primary transition-colors font-medium">
+              {t('nav.features')}
+            </Link>
+            <Link to="/pricing" className="text-muted-foreground hover:text-primary transition-colors font-medium">
+              {t('nav.pricing')}
+            </Link>
+            <Link to="/about" className="text-muted-foreground hover:text-primary transition-colors font-medium">
+              {t('nav.about')}
+            </Link>
+            <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors font-medium">
+              {t('nav.contact')}
+            </Link>
+          </nav>
+        </div>
+
+        {/* Profile / Auth pinned to right corner */}
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-4">
+          <div className="hidden md:block">
+            <LanguageToggle />
+          </div>
+          <ThemeSwitcher />
+
+          {/* Mobile Menu Button (kept near right) */}
+          <button
+            className="lg:hidden p-2 hover:bg-muted rounded-lg transition-colors"
+            onClick={toggleMenu}
+            aria-label="Toggle menu"
+          >
+            {isMenuOpen ? <X className="h-6 w-6 text-foreground" /> : <Menu className="h-6 w-6 text-foreground" />}
+          </button>
+
+          {/* Profile / Auth area */}
+          {user && profile ? (
+            <Link to="/dashboard" className="hidden lg:flex items-center space-x-3 px-4 py-2 bg-muted/50 rounded-lg border border-border min-w-0 hover:bg-muted transition-colors">
+              <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full flex-shrink-0">
+                <User className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-medium text-foreground leading-tight truncate">
+                  {profile.full_name}
+                </span>
+                <Badge
+                  variant={profile.role === 'admin' ? 'destructive' : 'secondary'}
+                  className="text-[11px] px-2 py-0.5 rounded-full font-semibold capitalize w-fit mt-0.5"
+                >
+                  {profile.role}
+                </Badge>
+              </div>
+            </Link>
+          ) : (
+            <div className="hidden lg:flex items-center space-x-3">
+              <Link to="/auth">
+                <Button
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-primary hover:bg-muted px-4 py-2"
+                >
+                  Sign In
+                </Button>
+              </Link>
+              <Link to="/auth">
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2">
+                  Get Started
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Navigation (same content but will render under header when open) */}
         {isMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-gray-200">
-            <nav className="flex flex-col space-y-4 mt-4">
-              {/* Theme Switcher Dropdown for Mobile */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="p-2 rounded-full self-end hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors mb-2" aria-label="Change theme">
-                    {theme === 'dark' ? <Sun className="h-5 w-5 text-yellow-400" /> : theme === 'light' ? <Moon className="h-5 w-5 text-gray-700" /> : <Monitor className="h-5 w-5 text-gray-700" />}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
-                    <DropdownMenuRadioItem value="light">
-                      <span className="flex items-center gap-2"><Sun className="h-4 w-4" /> Light</span>
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="dark">
-                      <span className="flex items-center gap-2"><Moon className="h-4 w-4" /> Dark</span>
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="system">
-                      <span className="flex items-center gap-2"><Monitor className="h-4 w-4" /> System</span>
-                    </DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Link 
-                to="/features" 
-                className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
+          <div className="lg:hidden mt-4 pb-4 border-t border-border bg-background/95 backdrop-blur-sm rounded-lg">
+            <nav className="flex flex-col space-y-4 mt-4 px-2">
+              {/* Theme Switcher and Language Toggle for Mobile */}
+              <div className="flex justify-between items-center mb-2">
+                <LanguageToggle />
+                <ThemeSwitcher />
+              </div>
+
+              <Link
+                to="/features"
+                className="text-muted-foreground hover:text-primary transition-colors font-medium py-2 px-3 rounded-lg hover:bg-muted"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Features
               </Link>
-              <Link 
-                to="/pricing" 
-                className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
+              <Link
+                to="/pricing"
+                className="text-muted-foreground hover:text-primary transition-colors font-medium py-2 px-3 rounded-lg hover:bg-muted"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Pricing
               </Link>
-              <Link 
-                to="/about" 
-                className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
+              <Link
+                to="/about"
+                className="text-muted-foreground hover:text-primary transition-colors font-medium py-2 px-3 rounded-lg hover:bg-muted"
                 onClick={() => setIsMenuOpen(false)}
               >
                 About
               </Link>
-              <Link 
-                to="/contact" 
-                className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
+              <Link
+                to="/contact"
+                className="text-muted-foreground hover:text-primary transition-colors font-medium py-2 px-3 rounded-lg hover:bg-muted"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Contact
               </Link>
-              
+
               {user && profile ? (
-                <div className="flex flex-col space-y-2 pt-4">
-                  <div className="flex items-center space-x-2 pb-2">
-                    <User className="h-4 w-4 text-gray-600" />
-                    <span className="text-sm text-gray-700">{profile.full_name}</span>
-                    <Badge variant={profile.role === 'admin' ? 'destructive' : 'secondary'} className="text-xs">
-                      {profile.role}
-                    </Badge>
+                <div className="flex flex-col space-y-3 pt-4 border-t border-border">
+                  {/* User Info Section for Mobile */}
+                  <div className="flex items-center space-x-3 px-3 py-3 bg-muted/50 rounded-lg border border-border">
+                    <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full">
+                      <User className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-foreground">
+                        {profile.full_name}
+                      </span>
+                      <Badge
+                        variant={profile.role === 'admin' ? 'destructive' : 'secondary'}
+                        className="text-[11px] px-2 py-0.5 rounded-full font-semibold capitalize w-fit mt-1"
+                      >
+                        {profile.role}
+                      </Badge>
+                    </div>
                   </div>
-                  <Link to={profile.role === 'admin' ? '/admin' : '/dashboard'} onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start">
-                      Dashboard
+
+                  <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-primary hover:bg-muted">
+                      View Profile
                     </Button>
                   </Link>
-                  <Button variant="outline" onClick={() => { signOut(); setIsMenuOpen(false); }} className="w-full justify-start">
+                  <Button
+                    variant="outline"
+                    onClick={() => { signOut(); setIsMenuOpen(false); }}
+                    className="w-full justify-start border-border hover:bg-muted"
+                  >
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
                   </Button>
                 </div>
               ) : (
-                <div className="flex flex-col space-y-2 pt-4">
+                <div className="flex flex-col space-y-3 pt-4 border-t border-border">
                   <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start">
+                    <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-primary hover:bg-muted">
                       Sign In
                     </Button>
                   </Link>
                   <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
-                    <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600">
+                    <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
                       Get Started
                     </Button>
                   </Link>

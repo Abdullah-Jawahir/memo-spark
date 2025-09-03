@@ -1,8 +1,11 @@
 
 import { Link } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const Footer = () => {
+  const { t } = useTranslation();
+
   return (
     <footer className="bg-gray-900 text-white py-16">
       <div className="max-w-7xl mx-auto px-6">
@@ -14,41 +17,39 @@ const Footer = () => {
               </div>
               <span className="text-2xl font-bold">MemoSpark</span>
             </Link>
-            <p className="text-gray-400 mb-6">
-              Empowering learners worldwide with AI-driven flashcards and multilingual support.
-            </p>
+            <p className="text-gray-400 mb-6">{t('footer.description')}</p>
           </div>
 
           <div>
-            <h3 className="font-semibold mb-4">Product</h3>
+            <h3 className="font-semibold mb-4">{t('footer.product')}</h3>
             <div className="space-y-3">
-              <Link to="/features" className="block text-gray-400 hover:text-white transition-colors">Features</Link>
-              <Link to="/pricing" className="block text-gray-400 hover:text-white transition-colors">Pricing</Link>
-              <Link to="/demo" className="block text-gray-400 hover:text-white transition-colors">Demo</Link>
+              <Link to="/features" className="block text-gray-400 hover:text-white transition-colors">{t('nav.features')}</Link>
+              <Link to="/pricing" className="block text-gray-400 hover:text-white transition-colors">{t('nav.pricing')}</Link>
+              <Link to="/demo" className="block text-gray-400 hover:text-white transition-colors">{t('footer.demo')}</Link>
             </div>
           </div>
 
           <div>
-            <h3 className="font-semibold mb-4">Company</h3>
+            <h3 className="font-semibold mb-4">{t('footer.company')}</h3>
             <div className="space-y-3">
-              <Link to="/about" className="block text-gray-400 hover:text-white transition-colors">About</Link>
-              <Link to="/contact" className="block text-gray-400 hover:text-white transition-colors">Contact</Link>
-              <Link to="/careers" className="block text-gray-400 hover:text-white transition-colors">Careers</Link>
+              <Link to="/about" className="block text-gray-400 hover:text-white transition-colors">{t('nav.about')}</Link>
+              <Link to="/contact" className="block text-gray-400 hover:text-white transition-colors">{t('nav.contact')}</Link>
+              <Link to="/careers" className="block text-gray-400 hover:text-white transition-colors">{t('footer.careers')}</Link>
             </div>
           </div>
 
           <div>
-            <h3 className="font-semibold mb-4">Support</h3>
+            <h3 className="font-semibold mb-4">{t('footer.support')}</h3>
             <div className="space-y-3">
-              <Link to="/help" className="block text-gray-400 hover:text-white transition-colors">Help Center</Link>
-              <Link to="/privacy" className="block text-gray-400 hover:text-white transition-colors">Privacy</Link>
-              <Link to="/terms" className="block text-gray-400 hover:text-white transition-colors">Terms</Link>
+              <Link to="/help" className="block text-gray-400 hover:text-white transition-colors">{t('footer.help')}</Link>
+              <Link to="/privacy" className="block text-gray-400 hover:text-white transition-colors">{t('footer.privacy')}</Link>
+              <Link to="/terms" className="block text-gray-400 hover:text-white transition-colors">{t('footer.terms')}</Link>
             </div>
           </div>
         </div>
 
         <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 MemoSpark. All rights reserved.</p>
+          <p>{t('footer.copy', { year: new Date().getFullYear() })}</p>
         </div>
       </div>
     </footer>
