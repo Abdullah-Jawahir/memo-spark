@@ -7,6 +7,7 @@ export interface GeneratedCard {
   cardIndex?: number;
   type: string;
   question: string;
+  instruction?: string; // For exercise types
   answer: string;
   difficulty: string;
   options?: string[]; // For quiz types
@@ -48,6 +49,15 @@ class DeckManagementService {
     session?: { access_token: string } | null
   ): Promise<ApiResponse<GeneratedCard>> {
     try {
+      // Map data based on card type
+      const mappedData: any = { ...data };
+
+      // For exercises, map 'question' to 'instruction' if needed
+      if (data.type === 'exercise' && data.question && !data.instruction) {
+        mappedData.instruction = data.question;
+        delete mappedData.question;
+      }
+
       const response = await fetchWithAuth(
         `${API_BASE_URL}/api/study-materials/${materialId}/flashcards/${cardIndex}`,
         {
@@ -55,7 +65,7 @@ class DeckManagementService {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(data),
+          body: JSON.stringify(mappedData),
         },
         session
       );
@@ -113,6 +123,15 @@ class DeckManagementService {
     session?: { access_token: string } | null
   ): Promise<ApiResponse<GeneratedCard>> {
     try {
+      // Map data based on card type
+      const mappedData: any = { ...data };
+
+      // For exercises, map 'question' to 'instruction' if needed
+      if (data.type === 'exercise' && data.question && !data.instruction) {
+        mappedData.instruction = data.question;
+        delete mappedData.question;
+      }
+
       const response = await fetchWithAuth(
         `${API_BASE_URL}/api/study-materials/${materialId}/flashcards`,
         {
@@ -120,7 +139,7 @@ class DeckManagementService {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(data),
+          body: JSON.stringify(mappedData),
         },
         session
       );
@@ -305,8 +324,15 @@ class DeckManagementService {
       // Process exercises if they exist
       if (response.exercises && Array.isArray(response.exercises)) {
         response.exercises.forEach((exercise: any, index: number) => {
-          allFlashcards.push({
+          // Map 'instruction' to 'question' for UI consistency
+          const mappedExercise = {
             ...exercise,
+            question: exercise.instruction || exercise.question, // Use instruction as question
+            instruction: exercise.instruction // Keep original instruction
+          };
+
+          allFlashcards.push({
+            ...mappedExercise,
             id: exercise.id || `exercise-${index}`,
             materialId: 'exercises', // Keep synthetic ID for display grouping
             realMaterialId: exercise.id?.toString(), // Store real ID for API calls
