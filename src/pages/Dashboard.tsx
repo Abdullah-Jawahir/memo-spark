@@ -1025,12 +1025,24 @@ const Dashboard = () => {
                                       <Progress value={deck.progress} className="h-2 bg-gray-200 dark:bg-gray-700" />
                                     </div>
                                   </div>
-                                  <Link to={deck.id ? `/study?deckId=${deck.id}` : `/study?deck=${encodeURIComponent(deck.name)}`} className="lg:ml-6">
-                                    <Button className="w-full lg:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg">
-                                      <Target className="h-4 w-4 mr-2" />
-                                      Study Now
-                                    </Button>
-                                  </Link>
+                                  <div className="lg:ml-6 flex flex-col sm:flex-row gap-2">
+                                    {/* Temporarily disabled until backend endpoints are implemented */}
+                                    <Link to={`/deck-management/${deck.id}`} className="w-full sm:w-auto">
+                                      <Button
+                                        variant="outline"
+                                        className="w-full sm:w-auto border-gray-300 hover:border-gray-400"
+                                      >
+                                        <Edit className="h-4 w-4 mr-2" />
+                                        Edit Deck
+                                      </Button>
+                                    </Link>
+                                    <Link to={deck.id ? `/study?deckId=${deck.id}` : `/study?deck=${encodeURIComponent(deck.name)}`} className="w-full sm:w-auto">
+                                      <Button className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg">
+                                        <Target className="h-4 w-4 mr-2" />
+                                        Study Now
+                                      </Button>
+                                    </Link>
+                                  </div>
                                 </div>
                               </div>
                             ))}
