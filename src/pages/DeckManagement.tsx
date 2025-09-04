@@ -215,9 +215,7 @@ const DeckManagement = () => {
         variant: "destructive"
       });
       return;
-    }
-
-    try {
+    } try {
       const response = await deckManagementService.deleteFlashcard(
         card.realMaterialId,
         card.cardIndex,
