@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import Upload from "./pages/Upload";
 import Study from "./pages/Study";
 import Search from "./pages/Search";
+import DeckManagement from "./pages/DeckManagement";
 import Features from "./pages/Features";
 import Pricing from "./pages/Pricing";
 import About from "./pages/About";
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/upload" element={<Upload />} />
               <Route path="/study" element={<Study />} />
               <Route path="/search" element={<Search />} />
+              <Route path="/deck-management/:deckId" element={<DeckManagement />} />
               <Route path="/features" element={<Features />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/about" element={<About />} />
