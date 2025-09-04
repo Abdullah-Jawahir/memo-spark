@@ -300,14 +300,16 @@ class DeckManagementService {
       // Process quizzes
       if (response.quizzes && Array.isArray(response.quizzes)) {
         response.quizzes.forEach((quiz: any, index: number) => {
-          allFlashcards.push({
+          const processedCard = {
             ...quiz,
             id: quiz.id || `quiz-${index}`,
             materialId: 'quizzes', // Keep synthetic ID for display grouping
             realMaterialId: quiz.id?.toString(), // Store real ID for API calls
             cardIndex: 0, // Each StudyMaterial contains only one card at index 0
             type: 'quiz'
-          });
+          };
+
+          allFlashcards.push(processedCard);
         });
 
         // Create a synthetic material entry for quizzes
@@ -331,17 +333,17 @@ class DeckManagementService {
             instruction: exercise.instruction // Keep original instruction
           };
 
-          allFlashcards.push({
+          const processedCard = {
             ...mappedExercise,
             id: exercise.id || `exercise-${index}`,
             materialId: 'exercises', // Keep synthetic ID for display grouping
             realMaterialId: exercise.id?.toString(), // Store real ID for API calls
             cardIndex: 0, // Each StudyMaterial contains only one card at index 0
             type: 'exercise'
-          });
-        });
+          };
 
-        // Create a synthetic material entry for exercises
+          allFlashcards.push(processedCard);
+        });        // Create a synthetic material entry for exercises
         if (response.exercises.length > 0) {
           materials.push({
             id: 'exercises',
