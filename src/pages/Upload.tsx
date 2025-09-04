@@ -6,13 +6,15 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload as UploadIcon, FileText, Image, File, Cloud, CheckCircle, AlertCircle, Info, UserPlus, Eye, BookOpen, Lock } from 'lucide-react';
+import { Upload as UploadIcon, FileText, Image, File, Cloud, CheckCircle, AlertCircle, Info, UserPlus, Eye, BookOpen, Lock, Edit, Trash2, Plus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
 import { useToast } from '@/components/ui/use-toast';
 import axios from 'axios';
 import { API_ENDPOINTS } from '@/config/api';
+import FlashcardEditModal from '@/components/FlashcardEditModal';
+import { DeckManagementService } from '@/services/deckManagementService';
 
 interface GeneratedCard {
   type: string;
@@ -75,6 +77,12 @@ const Upload = () => {
   const [deckName, setDeckName] = useState("");
   const [cardTypes, setCardTypes] = useState<string[]>(["flashcard", "quiz", "exercise"]); // default all types checked
   const [difficulty, setDifficulty] = useState<string>("intermediate");
+
+  // Edit modal state
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingCard, setEditingCard] = useState<GeneratedCard | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number>(-1);
+  const [deckManagementService] = useState(new DeckManagementService());
 
   interface Quiz {
     type: string;
@@ -328,6 +336,122 @@ const Upload = () => {
     }
   };
 
+  // Edit modal handlers
+  const handleEditCard = (card: GeneratedCard, index: number) => {
+    setEditingCard(card);
+    setEditingIndex(index);
+    setEditModalOpen(true);
+  };
+
+  const handleSaveCard = async (updatedCard: GeneratedCard, originalCard: GeneratedCard) => {
+    try {
+      // For upload preview, we're working with localStorage content
+      const updatedCards = deckManagementService.updateLocalFlashcard(
+        generatedCards,
+        editingIndex,
+        updatedCard
+      );
+
+      setGeneratedCards(updatedCards);
+
+      // Update the generated content in localStorage as well
+      const currentContent = generatedContentRef.current;
+      if (currentContent) {
+        const updatedContent = {
+          ...currentContent,
+          flashcards: updatedCards
+        };
+        setGeneratedContent(updatedContent);
+        generatedContentRef.current = updatedContent;
+        localStorage.setItem('generatedContent', JSON.stringify(updatedContent));
+      }
+
+      setEditModalOpen(false);
+      setEditingCard(null);
+      setEditingIndex(-1);
+    } catch (error) {
+      console.error('Error saving flashcard:', error);
+      throw error; // Re-throw to let the modal handle the error display
+    }
+  };
+
+  const handleDeleteCard = async (cardIndex: number) => {
+    try {
+      const updatedCards = deckManagementService.deleteLocalFlashcard(
+        generatedCards,
+        cardIndex
+      );
+
+      setGeneratedCards(updatedCards);
+
+      // Update the generated content in localStorage as well
+      const currentContent = generatedContentRef.current;
+      if (currentContent) {
+        const updatedContent = {
+          ...currentContent,
+          flashcards: updatedCards
+        };
+        setGeneratedContent(updatedContent);
+        generatedContentRef.current = updatedContent;
+        localStorage.setItem('generatedContent', JSON.stringify(updatedContent));
+      }
+
+      setEditModalOpen(false);
+      setEditingCard(null);
+      setEditingIndex(-1);
+
+      toast({
+        title: "Card Deleted",
+        description: "The flashcard has been removed from your deck."
+      });
+    } catch (error) {
+      console.error('Error deleting flashcard:', error);
+      throw error;
+    }
+  };
+
+  const handleAddCard = () => {
+    const newCard: GeneratedCard = {
+      type: 'flashcard',
+      question: '',
+      answer: '',
+      difficulty: 'intermediate'
+    };
+    setEditingCard(newCard);
+    setEditingIndex(-1); // -1 indicates new card
+    setEditModalOpen(true);
+  };
+
+  const handleCreateCard = async (newCard: GeneratedCard) => {
+    try {
+      const updatedCards = deckManagementService.addLocalFlashcard(
+        generatedCards,
+        newCard
+      );
+
+      setGeneratedCards(updatedCards);
+
+      // Update the generated content in localStorage as well
+      const currentContent = generatedContentRef.current;
+      if (currentContent) {
+        const updatedContent = {
+          ...currentContent,
+          flashcards: updatedCards
+        };
+        setGeneratedContent(updatedContent);
+        generatedContentRef.current = updatedContent;
+        localStorage.setItem('generatedContent', JSON.stringify(updatedContent));
+      }
+
+      setEditModalOpen(false);
+      setEditingCard(null);
+      setEditingIndex(-1);
+    } catch (error) {
+      console.error('Error creating flashcard:', error);
+      throw error;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
       {/* Navigation Header */}
@@ -557,6 +681,20 @@ const Upload = () => {
                         </div>
                       )}
 
+                      {/* Add Card Button */}
+                      <div className="mb-4 flex justify-between items-center">
+                        <h5 className="text-sm font-medium text-foreground">Flashcards ({generatedCards.length})</h5>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleAddCard}
+                          className="flex items-center gap-1 text-xs"
+                        >
+                          <Plus className="h-3 w-3" />
+                          Add Card
+                        </Button>
+                      </div>
+
                       <div className="max-h-96 overflow-y-auto space-y-4">
                         {generatedCards.map((card, index) => (
                           <Card key={index} className="text-left hover:shadow-md transition-shadow">
@@ -572,10 +710,9 @@ const Upload = () => {
                                     size="sm"
                                     className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                                     title="Edit card"
+                                    onClick={() => handleEditCard(card, index)}
                                   >
-                                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
+                                    <Edit className="h-3 w-3" />
                                   </Button>
                                 </div>
                               </div>
@@ -759,6 +896,20 @@ const Upload = () => {
           </div>
         </div>
       </div>
+
+      {/* Flashcard Edit Modal */}
+      <FlashcardEditModal
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setEditingCard(null);
+          setEditingIndex(-1);
+        }}
+        flashcard={editingCard}
+        onSave={editingIndex === -1 ? handleCreateCard : handleSaveCard}
+        onDelete={editingIndex !== -1 ? () => handleDeleteCard(editingIndex) : undefined}
+        mode={editingIndex === -1 ? 'create' : 'edit'}
+      />
     </div>
   );
 };
