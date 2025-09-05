@@ -6,11 +6,14 @@ export interface GeneratedCard {
   realMaterialId?: string; // The actual StudyMaterial ID for API calls
   cardIndex?: number;
   type: string;
-  question: string;
-  instruction?: string; // For exercise types
+  question?: string; // For flashcards and quizzes
+  instruction?: string; // For exercise types (main question/statement)
   answer: string;
   difficulty: string;
   options?: string[]; // For quiz types
+  concepts?: string[]; // For matching exercises
+  definitions?: string[]; // For matching exercises
+  exercise_type?: string; // Specific exercise type (fill_blank, true_false, etc.)
 }
 
 export interface FlashcardUpdate {
