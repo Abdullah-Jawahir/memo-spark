@@ -271,14 +271,16 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
       setHasUnsavedChanges(false);
       toast({
         title: mode === 'create' ? "Card Created" : "Card Updated",
-        description: mode === 'create' ? "New flashcard has been created successfully." : "Your flashcard has been updated successfully."
+        description: mode === 'create'
+          ? `New ${getCardTypeName(cardToSave.type)} has been created successfully.`
+          : `Your ${getCardTypeName(cardToSave.type)} has been updated successfully.`
       });
       onClose();
     } catch (error) {
-      console.error('Error saving flashcard:', error);
+      console.error(`Error saving ${getCardTypeName(editedCard.type)}:`, error);
       toast({
         title: "Save Failed",
-        description: error instanceof Error ? error.message : "Failed to save flashcard. Please try again.",
+        description: error instanceof Error ? error.message : `Failed to save ${getCardTypeName(editedCard.type)}. Please try again.`,
         variant: "destructive"
       });
     } finally {
@@ -294,14 +296,14 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
       await onDelete(flashcard.id);
       toast({
         title: "Card Deleted",
-        description: "The flashcard has been deleted successfully."
+        description: `The ${getCardTypeName(editedCard.type)} has been deleted successfully.`
       });
       onClose();
     } catch (error) {
-      console.error('Error deleting flashcard:', error);
+      console.error(`Error deleting ${getCardTypeName(editedCard.type)}:`, error);
       toast({
         title: "Delete Failed",
-        description: error instanceof Error ? error.message : "Failed to delete flashcard. Please try again.",
+        description: error instanceof Error ? error.message : `Failed to delete ${getCardTypeName(editedCard.type)}. Please try again.`,
         variant: "destructive"
       });
     } finally {
@@ -363,6 +365,15 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
     return mode === 'create'
       ? `Create a new ${cardType} for your deck.`
       : `Make changes to your ${cardType}. Click save when you're done.`;
+  };
+
+  const getCardTypeName = (type: string) => {
+    const typeMap: { [key: string]: string } = {
+      flashcard: 'flashcard',
+      quiz: 'quiz',
+      exercise: 'exercise'
+    };
+    return typeMap[type] || 'card';
   };
 
   if (!isOpen) return null;
