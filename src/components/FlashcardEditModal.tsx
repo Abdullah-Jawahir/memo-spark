@@ -343,6 +343,28 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
     }
   };
 
+  const getCardTypeTitle = (type: string, mode: string) => {
+    const typeMap: { [key: string]: string } = {
+      flashcard: 'Flashcard',
+      quiz: 'Quiz',
+      exercise: 'Exercise'
+    };
+    const cardType = typeMap[type] || 'Card';
+    return mode === 'create' ? `Create New ${cardType}` : `Edit ${cardType}`;
+  };
+
+  const getCardTypeDescription = (type: string, mode: string) => {
+    const typeMap: { [key: string]: string } = {
+      flashcard: 'flashcard',
+      quiz: 'quiz',
+      exercise: 'exercise'
+    };
+    const cardType = typeMap[type] || 'card';
+    return mode === 'create'
+      ? `Create a new ${cardType} for your deck.`
+      : `Make changes to your ${cardType}. Click save when you're done.`;
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -350,7 +372,7 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
-            <span>{mode === 'create' ? 'Create New Flashcard' : 'Edit Flashcard'}</span>
+            <span>{getCardTypeTitle(editedCard.type, mode)}</span>
             <div className="flex items-center gap-2">
               {hasUnsavedChanges && (
                 <Badge variant="secondary" className="text-xs">
@@ -369,10 +391,7 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
             </div>
           </DialogTitle>
           <DialogDescription>
-            {mode === 'create'
-              ? 'Create a new flashcard for your deck.'
-              : 'Make changes to your flashcard. Click save when you\'re done.'
-            }
+            {getCardTypeDescription(editedCard.type, mode)}
           </DialogDescription>
         </DialogHeader>
 
@@ -546,38 +565,18 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
           ) : (
             /* Edit Mode */
             <div className="space-y-4">
-              {/* Card Type and Difficulty */}
+              {/* Card Type Badge and Difficulty */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="card-type">Card Type</Label>
-                  <Select
-                    value={editedCard.type}
-                    onValueChange={(value) => {
-                      updateField('type', value);
-                      // Reset type-specific fields when type changes
-                      if (value === 'quiz') {
-                        setEditedCard(prev => ({
-                          ...prev,
-                          options: prev.options?.length ? prev.options : ['Option 1', 'Option 2']
-                        }));
-                      } else if (value === 'exercise' && editedCard.exercise_type === 'matching') {
-                        setEditedCard(prev => ({
-                          ...prev,
-                          concepts: prev.concepts?.length ? prev.concepts : ['Concept 1', 'Concept 2'],
-                          definitions: prev.definitions?.length ? prev.definitions : ['Definition 1', 'Definition 2']
-                        }));
+                  <div className="mt-1">
+                    <Badge variant="secondary" className="text-sm px-3 py-1">
+                      {editedCard.type === 'exercise' && editedCard.exercise_type
+                        ? `Exercise (${editedCard.exercise_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())})`
+                        : editedCard.type.charAt(0).toUpperCase() + editedCard.type.slice(1)
                       }
-                    }}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="flashcard">Flashcard</SelectItem>
-                      <SelectItem value="quiz">Quiz</SelectItem>
-                      <SelectItem value="exercise">Exercise</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    </Badge>
+                  </div>
                 </div>
 
                 <div>
