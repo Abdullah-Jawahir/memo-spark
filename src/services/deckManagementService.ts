@@ -6,9 +6,8 @@ export interface GeneratedCard {
   realMaterialId?: string; // The actual StudyMaterial ID for API calls
   cardIndex?: number;
   type: string;
-  question?: string; // For flashcards and quizzes
+  question?: string; // For flashcards, quizzes, and exercises
   instruction?: string; // For exercise types (generic instruction like "Fill in the blank.")
-  exercise_text?: string; // For exercise types (actual question text)
   answer: string;
   difficulty: string;
   options?: string[]; // For quiz types
@@ -55,12 +54,6 @@ class DeckManagementService {
     try {
       // Map data based on card type
       const mappedData: any = { ...data };
-
-      // For exercises, map 'question' to 'exercise_text' if needed
-      if (data.type === 'exercise' && data.question && !data.exercise_text) {
-        mappedData.exercise_text = data.question;
-        delete mappedData.question;
-      }
 
       const url = `${API_BASE_URL}/api/study-materials/${materialId}/flashcards/${cardIndex}`;
       console.log('PUT Request URL:', url);
@@ -134,12 +127,6 @@ class DeckManagementService {
     try {
       // Map data based on card type
       const mappedData: any = { ...data };
-
-      // For exercises, map 'question' to 'exercise_text' if needed
-      if (data.type === 'exercise' && data.question && !data.exercise_text) {
-        mappedData.exercise_text = data.question;
-        delete mappedData.question;
-      }
 
       const response = await fetchWithAuth(
         `${API_BASE_URL}/api/study-materials/${materialId}/flashcards`,
@@ -335,10 +322,10 @@ class DeckManagementService {
       // Process exercises if they exist
       if (response.exercises && Array.isArray(response.exercises)) {
         response.exercises.forEach((exercise: any, index: number) => {
-          // Map 'exercise_text' to 'question' for UI consistency (actual question text)
+          // Ensure proper exercise structure
           const mappedExercise = {
             ...exercise,
-            question: exercise.exercise_text || exercise.question, // Use exercise_text as question (actual question)
+            question: exercise.question, // Use the question field directly
             instruction: exercise.instruction, // Keep original instruction (generic type instruction)
             exercise_type: exercise.type || exercise.exercise_type // Map 'type' to 'exercise_type' for UI consistency
           };
