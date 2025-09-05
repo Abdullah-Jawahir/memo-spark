@@ -22,7 +22,6 @@
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Quick Start](#-quick-start)
 - [📁 Project Structure](#-project-structure)
-- [🔧 Configuration](#-configuration)
 - [📚 API Integration](#-api-integration)
 - [🌐 Internationalization](#-internationalization)
 - [🧪 Testing](#-testing)
@@ -168,28 +167,17 @@ Ensure you have the following installed:
    yarn install
    ```
 
-3. **Environment setup**
-
-   ```bash
-   cp .env.example .env.local
-   ```
-
-   Configure your environment variables:
-
-   ```env
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   VITE_FASTAPI_URL=http://localhost:8000
-   VITE_LARAVEL_URL=http://localhost:8001
-   ```
-
-4. **Start development server**
+3. **Start development server**
 
    ```bash
    npm run dev
    ```
 
-5. **## 📁 Project Structure
+4. **Open in browser**
+
+   Navigate to `http://localhost:8080` to view the application.
+
+## 📁 Project Structure
 
 ```
 memo-spark/
@@ -222,41 +210,6 @@ memo-spark/
 └── package.json              # Dependencies and scripts
 ```
 
-## 🔧 Configuration
-
-### Environment Variables
-
-Create a `.env.local` file in the root directory:
-
-```env
-# Supabase Configuration
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-
-# Backend Services
-VITE_FASTAPI_URL=http://localhost:8000
-VITE_LARAVEL_URL=http://localhost:8001
-
-# Application Settings
-VITE_APP_NAME=MemoSpark
-VITE_APP_VERSION=1.0.0
-VITE_APP_DESCRIPTION="AI-Powered Learning Platform"
-
-# Feature Flags
-VITE_ENABLE_ANALYTICS=true
-VITE_ENABLE_NOTIFICATIONS=true
-VITE_ENABLE_COLLABORATION=true
-```
-
-### Build Configuration
-
-The project uses Vite for building and development. Key configurations:
-
-- **Vite Config**: `vite.config.ts`
-- **TypeScript Config**: `tsconfig.json`
-- **Tailwind Config**: `tailwind.config.ts`
-- **ESLint Config**: `eslint.config.js`
-
 ## 📚 API Integration
 
 ### FastAPI Integration (AI Processing)
@@ -269,7 +222,7 @@ const uploadDocument = async (file: File, options: ProcessingOptions) => {
   formData.append('language', options.language);
   formData.append('difficulty', options.difficulty);
   
-  const response = await axios.post(`${FASTAPI_URL}/process-file`, formData);
+  const response = await axios.post('http://localhost:8000/process-file', formData);
   return response.data;
 };
 ```
@@ -279,7 +232,7 @@ const uploadDocument = async (file: File, options: ProcessingOptions) => {
 ```typescript
 // User data and study progress
 const getUserProgress = async (userId: string) => {
-  const response = await axios.get(`${LARAVEL_URL}/api/users/${userId}/progress`);
+  const response = await axios.get(`http://localhost:8001/api/users/${userId}/progress`);
   return response.data;
 };
 ```
@@ -291,8 +244,8 @@ const getUserProgress = async (userId: string) => {
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.VITE_SUPABASE_ANON_KEY!
+  'https://your-project.supabase.co',
+  'your-supabase-anon-key'
 );
 ```
 
@@ -401,9 +354,7 @@ npm run preview
    vercel
    ```
 
-2. **Configure environment variables** in Vercel dashboard
-
-3. **Auto-deployment** - Pushes to main branch trigger automatic deployments
+2. **Auto-deployment** - Pushes to main branch trigger automatic deployments
 
 ### Alternative Deployment Options
 
