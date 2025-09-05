@@ -133,6 +133,9 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
         if (!initialCard.definitions || initialCard.definitions.length === 0) {
           initialCard.definitions = ['Definition 1', 'Definition 2'];
         }
+        if (!initialCard.answer || initialCard.answer.trim() === '') {
+          initialCard.answer = 'Matching exercise with concept-definition pairs';
+        }
       }
 
       setEditedCard(initialCard);
@@ -173,19 +176,18 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
   const validateCard = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    // Common validation
-    if (!editedCard.answer.trim()) {
-      newErrors.answer = 'Answer is required';
-    } else if (editedCard.answer.trim().length < 2) {
-      newErrors.answer = 'Answer must be at least 2 characters long';
-    }
-
     // Type-specific validation
     if (editedCard.type === 'flashcard') {
       if (!editedCard.question?.trim()) {
         newErrors.question = 'Question is required';
       } else if (editedCard.question.trim().length < 5) {
         newErrors.question = 'Question must be at least 5 characters long';
+      }
+
+      if (!editedCard.answer.trim()) {
+        newErrors.answer = 'Answer is required';
+      } else if (editedCard.answer.trim().length < 2) {
+        newErrors.answer = 'Answer must be at least 2 characters long';
       }
     } else if (editedCard.type === 'quiz') {
       if (!editedCard.question?.trim()) {
@@ -220,6 +222,22 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
         } else if (editedCard.definitions.some(def => !def.trim())) {
           newErrors.definitions = 'All definitions must have content';
         }
+
+        if (editedCard.concepts && editedCard.definitions &&
+          editedCard.concepts.length !== editedCard.definitions.length) {
+          newErrors.concepts = 'Number of concepts must match number of definitions';
+          newErrors.definitions = 'Number of definitions must match number of concepts';
+        }
+
+        // For matching exercises, answer is automatically generated from concepts and definitions
+        // So we don't validate the answer field for matching exercises
+      } else {
+        // For other exercise types (fill_blank, true_false, short_answer)
+        if (!editedCard.answer.trim()) {
+          newErrors.answer = 'Answer is required';
+        } else if (editedCard.answer.trim().length < 2) {
+          newErrors.answer = 'Answer must be at least 2 characters long';
+        }
       }
     }
 
@@ -239,7 +257,15 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
 
     setIsSaving(true);
     try {
-      await onSave(editedCard, flashcard || editedCard);
+      // For matching exercises, generate answer from concepts and definitions
+      let cardToSave = { ...editedCard };
+      if (cardToSave.type === 'exercise' && cardToSave.exercise_type === 'matching') {
+        // Generate answer as a descriptive text about the matching pairs
+        const conceptCount = cardToSave.concepts?.length || 0;
+        cardToSave.answer = `Matching exercise with ${conceptCount} concept-definition pairs`;
+      }
+
+      await onSave(cardToSave, flashcard || cardToSave);
       setHasUnsavedChanges(false);
       toast({
         title: mode === 'create' ? "Card Created" : "Card Updated",
@@ -442,8 +468,17 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
                       if (value === 'matching') {
                         setEditedCard(prev => ({
                           ...prev,
-                          concepts: prev.concepts?.length ? prev.concepts : ['', ''],
-                          definitions: prev.definitions?.length ? prev.definitions : ['', '']
+                          concepts: prev.concepts?.length ? prev.concepts : ['Concept 1', 'Concept 2'],
+                          definitions: prev.definitions?.length ? prev.definitions : ['Definition 1', 'Definition 2'],
+                          answer: 'Matching exercise with concept-definition pairs'
+                        }));
+                      } else {
+                        // For non-matching exercises, clear concepts/definitions and reset answer
+                        setEditedCard(prev => ({
+                          ...prev,
+                          concepts: [],
+                          definitions: [],
+                          answer: ''
                         }));
                       }
                     }}
