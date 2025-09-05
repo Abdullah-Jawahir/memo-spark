@@ -125,9 +125,6 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
       // For exercises, prioritize exercise_text over instruction for the question field
       if (initialCard.type === 'exercise') {
 
-        // console.log(initialCard);
-
-
         // Always use exercise_text if available, fallback to instruction
         if (initialCard.exercise_text) {
           initialCard.question = initialCard.exercise_text;
@@ -135,11 +132,6 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
           initialCard.question = initialCard.instruction;
         }
       }
-
-      // console.log(initialCard.question);
-
-      console.log(editedCard);
-
 
       // Ensure quiz cards have proper default options if empty
       if (initialCard.type === 'quiz' && (!initialCard.options || initialCard.options.length === 0)) {
@@ -506,10 +498,10 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
                     <div className="mb-2 font-medium break-words">
                       Q1: {editedCard.instruction || 'No instruction entered'}
                     </div>
-                    {(editedCard.exercise_text || editedCard.question) && (
+                    {(editedCard.question || editedCard.exercise_text) && (
                       <div className="mb-4 p-3 bg-muted rounded-lg">
                         <p className="text-sm text-muted-foreground">
-                          {editedCard.exercise_text || editedCard.question}
+                          {editedCard.question || editedCard.exercise_text}
                         </p>
                       </div>
                     )}
