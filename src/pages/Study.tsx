@@ -75,6 +75,7 @@ const Study = () => {
   const [currentCard, setCurrentCard] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [tab, setTab] = useState<'flashcards' | 'quiz' | 'exercises' | 'review'>('flashcards');
+  const [userHasChangedTab, setUserHasChangedTab] = useState(false); // Track manual tab changes
   const [sessionStats, setSessionStats] = useState({
     correct: 0,
     difficult: 0,
@@ -231,6 +232,7 @@ const Study = () => {
         currentActivityType,
         currentDeckIdentifier,
         difficultCardIds: Array.from(difficultCardIds),
+        userHasChangedTab,
         timestamp: Date.now()
       };
 
@@ -283,6 +285,7 @@ const Study = () => {
       setCurrentActivityType(progressData.currentActivityType || null);
       setCurrentDeckIdentifier(progressData.currentDeckIdentifier || null);
       setDifficultCardIds(new Set(progressData.difficultCardIds || []));
+      setUserHasChangedTab(progressData.userHasChangedTab || false);
 
       console.log('Study progress restored successfully');
       return true;
@@ -333,7 +336,7 @@ const Study = () => {
     exerciseStep, exerciseAnswers, exerciseCompleted, showExerciseAnswers, bookmarkedCards,
     sessionComplete, reviewedDifficult, isQuizReviewMode, studyTime, overallStudyTime,
     isStudying, isTimerPaused, cardStudyStartTime, activityTimingHistory, currentActivityStartTime,
-    currentActivityType, currentDeckIdentifier, difficultCardIds, flashcards.length, quizzes.length, exercises.length
+    currentActivityType, currentDeckIdentifier, difficultCardIds, userHasChangedTab, flashcards.length, quizzes.length, exercises.length
   ]);
 
   // Handle page visibility changes to pause/resume timers only
@@ -431,6 +434,7 @@ const Study = () => {
         setExerciseStep(0);
         setExerciseAnswers([]);
         setExerciseCompleted(false);
+        setUserHasChangedTab(false); // Reset manual tab change tracking
         // Clear any persisted study session to avoid submitting reviews to the wrong session
         try { localStorage.removeItem('memo-spark-current-study-session'); } catch (e) { /* ignore */ }
         setStudySession(null);
@@ -456,6 +460,15 @@ const Study = () => {
         if (progressRestored) {
           console.log('Study progress restored successfully');
         }
+      }
+
+      // If no progress was restored and this is a fresh load (tab is still at default), 
+      // ensure we start with the first available content tab
+      if (!progressRestored && !userHasChangedTab && !hasInitiallyLoaded) {
+        const firstAvailableTab = parsed.flashcards?.length > 0 ? 'flashcards' :
+          parsed.quizzes?.length > 0 ? 'quiz' :
+            parsed.exercises?.length > 0 ? 'exercises' : 'review';
+        setTab(firstAvailableTab);
       }
 
       if ((!parsed.flashcards || parsed.flashcards.length === 0) &&
@@ -551,6 +564,7 @@ const Study = () => {
     }
 
     setTab(newTab);
+    setUserHasChangedTab(true); // Mark that user has manually changed tabs
   }; useEffect(() => {
     // Initial load only
     const data = localStorage.getItem('generatedContent');
@@ -639,6 +653,11 @@ const Study = () => {
           if (progressRestored) {
             console.log('Search flashcard progress restored successfully');
           }
+        }
+
+        // If no progress was restored and this is a fresh load, ensure we start with flashcards tab (since search only has flashcards)
+        if (!progressRestored && !userHasChangedTab && !hasInitiallyLoaded) {
+          setTab('flashcards');
         }
 
         // Only reset session stats if progress wasn't restored
@@ -874,6 +893,7 @@ const Study = () => {
       setExerciseStep(0);
       setExerciseAnswers([]);
       setExerciseCompleted(false);
+      setUserHasChangedTab(false); // Reset manual tab change tracking
       // Clear persisted study session and in-memory session to avoid submitting reviews to a stale session
       try { localStorage.removeItem('memo-spark-current-study-session'); } catch (e) { /* ignore */ }
       setStudySession(null);
@@ -900,6 +920,15 @@ const Study = () => {
       if (progressRestored) {
         console.log('Study progress restored successfully');
       }
+    }
+
+    // If no progress was restored and this is a fresh load (tab is still at default), 
+    // ensure we start with the first available content tab
+    if (!progressRestored && !userHasChangedTab && !hasInitiallyLoaded) {
+      const firstAvailableTab = parsed.flashcards?.length > 0 ? 'flashcards' :
+        parsed.quizzes?.length > 0 ? 'quiz' :
+          parsed.exercises?.length > 0 ? 'exercises' : 'review';
+      setTab(firstAvailableTab);
     }
 
     if (user && session && parsed.flashcards?.length) {
@@ -1000,20 +1029,29 @@ const Study = () => {
     }
   }, [isOverallComplete, isStudying]);
 
-  // Auto-switch to available tab when content changes
+  // Auto-switch to available tab when content changes (but preserve manual tab selections)
   useEffect(() => {
+    // Only auto-switch if user hasn't manually changed tabs
+    if (userHasChangedTab) return;
+
     // Check if current tab has content, if not switch to first available tab
     const availableTabs = [];
     if (flashcards.length > 0) availableTabs.push('flashcards');
     if (quizzes.length > 0) availableTabs.push('quiz');
     if (exercises.length > 0) availableTabs.push('exercises');
-    availableTabs.push('review'); // Review is always available
 
-    // If current tab is not available, switch to first available tab
+    // Review is always available
+    availableTabs.push('review');
+
+    // Only switch if current tab is truly not available (invalid)
+    // Don't interfere with manual user selections
     if (!availableTabs.includes(tab)) {
-      setTab(availableTabs[0] as any);
+      const firstContentTab = flashcards.length > 0 ? 'flashcards' :
+        quizzes.length > 0 ? 'quiz' :
+          exercises.length > 0 ? 'exercises' : 'review';
+      setTab(firstContentTab);
     }
-  }, [flashcards.length, quizzes.length, exercises.length, tab]);
+  }, [flashcards.length, quizzes.length, exercises.length, userHasChangedTab]); // Added userHasChangedTab to dependencies
 
   // Initialize the study session when component mounts
   useEffect(() => {
@@ -1838,6 +1876,7 @@ const Study = () => {
     setSessionRatings(Array(flashcards.length).fill(null));
     setSessionComplete(false);
     setReviewedDifficult(new Set()); // Reset reviewed difficult cards
+    setUserHasChangedTab(false); // Reset manual tab change tracking
 
     // Important: Reset time tracking
     setStudyTime(0);
