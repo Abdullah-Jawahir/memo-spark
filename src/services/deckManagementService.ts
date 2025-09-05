@@ -58,8 +58,13 @@ class DeckManagementService {
         delete mappedData.question;
       }
 
+      const url = `${API_BASE_URL}/api/study-materials/${materialId}/flashcards/${cardIndex}`;
+      console.log('PUT Request URL:', url);
+      console.log('PUT Request Data:', mappedData);
+      console.log('PUT Request Session:', session ? 'Present' : 'Missing');
+
       const response = await fetchWithAuth(
-        `${API_BASE_URL}/api/study-materials/${materialId}/flashcards/${cardIndex}`,
+        url,
         {
           method: 'PUT',
           headers: {
