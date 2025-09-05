@@ -7,7 +7,8 @@ export interface GeneratedCard {
   cardIndex?: number;
   type: string;
   question?: string; // For flashcards and quizzes
-  instruction?: string; // For exercise types (main question/statement)
+  instruction?: string; // For exercise types (generic instruction like "Fill in the blank.")
+  exercise_text?: string; // For exercise types (actual question text)
   answer: string;
   difficulty: string;
   options?: string[]; // For quiz types
@@ -55,9 +56,9 @@ class DeckManagementService {
       // Map data based on card type
       const mappedData: any = { ...data };
 
-      // For exercises, map 'question' to 'instruction' if needed
-      if (data.type === 'exercise' && data.question && !data.instruction) {
-        mappedData.instruction = data.question;
+      // For exercises, map 'question' to 'exercise_text' if needed
+      if (data.type === 'exercise' && data.question && !data.exercise_text) {
+        mappedData.exercise_text = data.question;
         delete mappedData.question;
       }
 
@@ -134,9 +135,9 @@ class DeckManagementService {
       // Map data based on card type
       const mappedData: any = { ...data };
 
-      // For exercises, map 'question' to 'instruction' if needed
-      if (data.type === 'exercise' && data.question && !data.instruction) {
-        mappedData.instruction = data.question;
+      // For exercises, map 'question' to 'exercise_text' if needed
+      if (data.type === 'exercise' && data.question && !data.exercise_text) {
+        mappedData.exercise_text = data.question;
         delete mappedData.question;
       }
 
@@ -334,11 +335,11 @@ class DeckManagementService {
       // Process exercises if they exist
       if (response.exercises && Array.isArray(response.exercises)) {
         response.exercises.forEach((exercise: any, index: number) => {
-          // Map 'instruction' to 'question' for UI consistency
+          // Map 'exercise_text' to 'question' for UI consistency (actual question text)
           const mappedExercise = {
             ...exercise,
-            question: exercise.instruction || exercise.question, // Use instruction as question
-            instruction: exercise.instruction // Keep original instruction
+            question: exercise.exercise_text || exercise.question, // Use exercise_text as question (actual question)
+            instruction: exercise.instruction // Keep original instruction (generic type instruction)
           };
 
           const processedCard = {
