@@ -16,7 +16,6 @@ interface GeneratedCard {
   type: string;
   question?: string;
   instruction?: string; // For exercises - main question/statement
-  exercise_text?: string; // For exercises - actual question text
   answer: string;
   difficulty: string;
   options?: string[]; // For quiz types
@@ -122,15 +121,9 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
     if (flashcard) {
       const initialCard = { ...flashcard };
 
-      // For exercises, prioritize exercise_text over instruction for the question field
-      if (initialCard.type === 'exercise') {
-
-        // Always use exercise_text if available, fallback to instruction
-        if (initialCard.exercise_text) {
-          initialCard.question = initialCard.exercise_text;
-        } else if (initialCard.instruction) {
-          initialCard.question = initialCard.instruction;
-        }
+      // For exercises, ensure we have a question field
+      if (initialCard.type === 'exercise' && !initialCard.question && initialCard.instruction) {
+        initialCard.question = initialCard.instruction;
       }
 
       // Ensure quiz cards have proper default options if empty
@@ -272,11 +265,6 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
     try {
       // For matching exercises, generate answer from concepts and definitions
       let cardToSave = { ...editedCard };
-
-      // For exercises, map question back to exercise_text
-      if (cardToSave.type === 'exercise' && cardToSave.question) {
-        cardToSave.exercise_text = cardToSave.question;
-      }
 
       if (cardToSave.type === 'exercise' && cardToSave.exercise_type === 'matching') {
         // Generate answer as a descriptive text about the matching pairs
@@ -498,10 +486,10 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
                     <div className="mb-2 font-medium break-words">
                       Q1: {editedCard.instruction || 'No instruction entered'}
                     </div>
-                    {(editedCard.question || editedCard.exercise_text) && (
+                    {editedCard.question && (
                       <div className="mb-4 p-3 bg-muted rounded-lg">
                         <p className="text-sm text-muted-foreground">
-                          {editedCard.question || editedCard.exercise_text}
+                          {editedCard.question}
                         </p>
                       </div>
                     )}

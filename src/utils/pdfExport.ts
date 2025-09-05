@@ -18,13 +18,14 @@ interface Quiz {
 }
 
 interface Exercise {
-  type: 'fill_blank' | 'true_false' | 'short_answer' | 'matching';
+  type: 'fill_blank' | 'true_false' | 'short_answer' | 'matching' | 'multiple_choice';
   instruction: string;
-  exercise_text?: string;
+  question?: string;
   answer: string | Record<string, string>;
   difficulty: string;
   concepts?: string[];
   definitions?: string[];
+  options?: string[];
 }
 
 interface SessionStats {

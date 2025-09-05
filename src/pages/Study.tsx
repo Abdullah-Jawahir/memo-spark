@@ -43,13 +43,14 @@ interface Quiz {
 }
 
 interface Exercise {
-  type: 'fill_blank' | 'true_false' | 'short_answer' | 'matching';
+  type: 'fill_blank' | 'true_false' | 'short_answer' | 'matching' | 'multiple_choice';
   instruction: string;
-  exercise_text?: string;
+  question?: string;
   answer: string | Record<string, string>;
   difficulty: string;
   concepts?: string[];
   definitions?: string[];
+  options?: string[];
 }
 
 interface GeneratedCard {
@@ -448,7 +449,7 @@ const Study = () => {
         correct_answer_option: q.correct_answer_option ?? q.correct_answer ?? q.answer ?? q.correctOption ?? q.correct ?? '',
       }));
       setQuizzes(normalizedQuizzes);
-      setExercises(parsed.exercises || []);
+      setExercises(processExerciseData(parsed.exercises || []));
       // Ensure sessionRatings matches the new flashcards length
       setSessionRatings(Array(parsed.flashcards?.length || 0).fill(null));
 
@@ -543,7 +544,7 @@ const Study = () => {
         return {
           flashcards: response.materials.flashcards || [],
           quizzes: response.materials.quizzes || [],
-          exercises: response.materials.exercises || [],
+          exercises: processExerciseData(response.materials.exercises || []),
         };
       } else {
         console.warn('Failed to enrich materials, using original data');
@@ -553,6 +554,37 @@ const Study = () => {
       console.error('Error enriching materials:', error);
       return materials; // Return original materials if enrichment fails
     }
+  };
+
+  // Function to process exercises data and extract question text and options
+  const processExerciseData = (exercises: any[]): Exercise[] => {
+    return exercises.map(exercise => {
+      const processed: Exercise = {
+        type: exercise.type,
+        instruction: exercise.instruction,
+        question: exercise.question,
+        answer: exercise.answer,
+        difficulty: exercise.difficulty,
+        concepts: exercise.concepts,
+        definitions: exercise.definitions,
+        options: exercise.options
+      };
+
+      // For multiple choice exercises, extract options from question if not provided separately
+      if (exercise.type === 'multiple_choice' && !exercise.options && exercise.question) {
+        const questionText = exercise.question;
+        // Look for pattern like "a) Option1 b) Option2 c) Option3 d) Option4"
+        const optionsMatch = questionText.match(/[a-z]\)\s*[^a-z)]+/g);
+        if (optionsMatch) {
+          processed.options = optionsMatch.map(opt => opt.replace(/^[a-z]\)\s*/, '').trim());
+          // Extract the actual question part (everything before the options)
+          const questionPart = questionText.split(/\s*[a-z]\)/)[0].trim();
+          processed.question = questionPart;
+        }
+      }
+
+      return processed;
+    });
   };
 
   // Function to handle tab switching with timer resumption
@@ -806,7 +838,7 @@ const Study = () => {
                 correct_answer_option: q.correct_answer_option ?? q.correct_answer ?? q.answer ?? q.correctOption ?? q.correct ?? '',
               }));
               setQuizzes(normalizedEnrichedQuizzes);
-              setExercises(enrichedMaterials.exercises || []);
+              setExercises(processExerciseData(enrichedMaterials.exercises || []));
               setSessionRatings(Array(enrichedMaterials.flashcards?.length || 0).fill(null));
 
               if (enrichedMaterials.flashcards?.length) {
@@ -909,7 +941,7 @@ const Study = () => {
       correct_answer_option: q.correct_answer_option ?? q.correct_answer ?? q.answer ?? q.correctOption ?? q.correct ?? '',
     }));
     setQuizzes(normalizedLocalQuizzes);
-    setExercises(parsed.exercises || []);
+    setExercises(processExerciseData(parsed.exercises || []));
     setSessionRatings(Array(parsed.flashcards?.length || 0).fill(null));
 
     // Try to restore study progress if this is the same deck/content
@@ -2649,13 +2681,8 @@ const Study = () => {
                               <CardContent className="p-2 sm:p-4 text-sm sm:text-base">
                                 <div className="flex items-center mb-2">
                                   <span className={`mr-2 text-lg ${isCorrect ? 'text-primary' : 'text-destructive'}`}>{isCorrect ? '✔️' : '❌'}</span>
-                                  <span className="font-semibold text-card-foreground">Q{idx + 1}: {exercise.instruction}</span>
+                                  <span className="font-semibold text-card-foreground">Q{idx + 1}: {exercise.question || exercise.instruction}</span>
                                 </div>
-                                {exercise.exercise_text && (
-                                  <div className="mb-2 text-sm text-muted-foreground">
-                                    {exercise.exercise_text}
-                                  </div>
-                                )}
                                 <div className="mb-1">
                                   <span className="font-medium text-card-foreground">Your answer: </span>
                                   <span className={isCorrect ? 'text-primary font-semibold' : 'text-destructive font-semibold'}>
@@ -2695,12 +2722,7 @@ const Study = () => {
                             <Badge variant="secondary">Exercise</Badge>
                             <Badge variant="outline">{capitalize(exercises[exerciseStep].difficulty) || "Unknown"}</Badge>
                           </div>
-                          <div className="mb-2 font-medium break-words">Q{exerciseStep + 1}: {exercises[exerciseStep].instruction}</div>
-                          {exercises[exerciseStep].exercise_text && (
-                            <div className="mb-4 p-3 bg-muted rounded-lg">
-                              <p className="text-sm text-muted-foreground">{exercises[exerciseStep].exercise_text}</p>
-                            </div>
-                          )}
+                          <div className="mb-2 font-medium break-words">Q{exerciseStep + 1}: {exercises[exerciseStep].question || exercises[exerciseStep].instruction}</div>
 
                           {exercises[exerciseStep].type === 'fill_blank' && (
                             <div className="mb-4">
@@ -2740,6 +2762,27 @@ const Study = () => {
                                 >
                                   False
                                 </Button>
+                              </div>
+                            </div>
+                          )}
+
+                          {exercises[exerciseStep].type === 'multiple_choice' && (
+                            <div className="mb-4">
+                              <div className="space-y-2">
+                                {exercises[exerciseStep].options?.map((option, idx) => (
+                                  <Button
+                                    key={idx}
+                                    variant={exerciseAnswers[exerciseStep] === option ? 'default' : 'outline'}
+                                    className="w-full text-left justify-start"
+                                    onClick={() => {
+                                      const updated = [...exerciseAnswers];
+                                      updated[exerciseStep] = option;
+                                      setExerciseAnswers(updated);
+                                    }}
+                                  >
+                                    {String.fromCharCode(97 + idx)}) {option}
+                                  </Button>
+                                ))}
                               </div>
                             </div>
                           )}

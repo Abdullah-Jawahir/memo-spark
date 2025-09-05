@@ -14,14 +14,7 @@ import { useToast } from '@/components/ui/use-toast';
 import axios from 'axios';
 import { API_ENDPOINTS } from '@/config/api';
 import FlashcardEditModal from '@/components/FlashcardEditModal';
-import { DeckManagementService } from '@/services/deckManagementService';
-
-interface GeneratedCard {
-  type: string;
-  question: string;
-  answer: string;
-  difficulty: string;
-}
+import { DeckManagementService, GeneratedCard } from '@/services/deckManagementService';
 
 interface ApiErrorResponse {
   error: string;
@@ -96,7 +89,7 @@ const Upload = () => {
   interface Exercise {
     type: 'fill_blank' | 'true_false' | 'short_answer' | 'matching';
     instruction: string;
-    exercise_text?: string;
+    question?: string;
     answer: string | Record<string, string>;
     difficulty: string;
     concepts?: string[];
@@ -352,14 +345,14 @@ const Upload = () => {
         updatedCard
       );
 
-      setGeneratedCards(updatedCards);
+      setGeneratedCards(updatedCards as GeneratedCard[]);
 
       // Update the generated content in localStorage as well
       const currentContent = generatedContentRef.current;
       if (currentContent) {
         const updatedContent = {
           ...currentContent,
-          flashcards: updatedCards
+          flashcards: updatedCards as GeneratedCard[]
         };
         setGeneratedContent(updatedContent);
         generatedContentRef.current = updatedContent;
@@ -382,14 +375,14 @@ const Upload = () => {
         cardIndex
       );
 
-      setGeneratedCards(updatedCards);
+      setGeneratedCards(updatedCards as GeneratedCard[]);
 
       // Update the generated content in localStorage as well
       const currentContent = generatedContentRef.current;
       if (currentContent) {
         const updatedContent = {
           ...currentContent,
-          flashcards: updatedCards
+          flashcards: updatedCards as GeneratedCard[]
         };
         setGeneratedContent(updatedContent);
         generatedContentRef.current = updatedContent;
@@ -429,14 +422,14 @@ const Upload = () => {
         newCard
       );
 
-      setGeneratedCards(updatedCards);
+      setGeneratedCards(updatedCards as GeneratedCard[]);
 
       // Update the generated content in localStorage as well
       const currentContent = generatedContentRef.current;
       if (currentContent) {
         const updatedContent = {
           ...currentContent,
-          flashcards: updatedCards
+          flashcards: updatedCards as GeneratedCard[]
         };
         setGeneratedContent(updatedContent);
         generatedContentRef.current = updatedContent;
