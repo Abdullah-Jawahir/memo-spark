@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Save, X, AlertCircle, Eye, EyeOff, Trash2, Plus } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2, Save, X, AlertCircle, Eye, EyeOff, Trash2, Plus, CheckCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface GeneratedCard {
@@ -15,6 +16,7 @@ interface GeneratedCard {
   type: string;
   question?: string;
   instruction?: string; // For exercises - main question/statement
+  exercise_text?: string; // For exercises - actual question text
   answer: string;
   difficulty: string;
   options?: string[]; // For quiz types
@@ -378,28 +380,168 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
           {/* Preview Mode */}
           {previewMode ? (
             <div className="space-y-4">
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg p-6 border-2 border-dashed border-blue-200 dark:border-blue-800">
-                <div className="flex items-center justify-between mb-4">
-                  <Badge variant="secondary" className="text-xs">
-                    {editedCard.type} • {mapAndCapitalizeDifficulty(editedCard.difficulty)}
-                  </Badge>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-sm font-medium text-blue-600">Question:</Label>
-                    <p className="text-sm text-foreground mt-1 leading-relaxed bg-white dark:bg-gray-900 p-3 rounded border">
-                      {editedCard.question || 'No question entered'}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-green-600">Answer:</Label>
-                    <p className="text-sm text-foreground mt-1 leading-relaxed bg-white dark:bg-gray-900 p-3 rounded border">
-                      {editedCard.answer || 'No answer entered'}
-                    </p>
-                  </div>
-                </div>
+              {/* Preview Header */}
+              <div className="flex items-center gap-2 mb-4">
+                <Badge variant="secondary" className="text-xs">
+                  {editedCard.type === 'exercise' ? `Exercise (${editedCard.exercise_type})` : editedCard.type}
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {mapAndCapitalizeDifficulty(editedCard.difficulty)}
+                </Badge>
               </div>
+
+              {/* Flashcard Preview */}
+              {editedCard.type === 'flashcard' && (
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg p-6 border-2 border-dashed border-blue-200 dark:border-blue-800">
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium text-blue-600">Question:</Label>
+                      <p className="text-sm text-foreground mt-1 leading-relaxed bg-white dark:bg-gray-900 p-3 rounded border">
+                        {editedCard.question || 'No question entered'}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-green-600">Answer:</Label>
+                      <p className="text-sm text-foreground mt-1 leading-relaxed bg-white dark:bg-gray-900 p-3 rounded border">
+                        {editedCard.answer || 'No answer entered'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Quiz Preview */}
+              {editedCard.type === 'quiz' && (
+                <Card className="w-full bg-card shadow-md">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="mb-4 font-medium break-words">
+                      Q1: {editedCard.question || 'No question entered'}
+                    </div>
+                    <hr className="my-3 border-muted" />
+                    <ul className="mb-4 space-y-2 sm:space-y-3 break-words">
+                      {(editedCard.options || []).map((option, i) => (
+                        <li key={i} className="w-full">
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start break-words whitespace-pre-line text-left px-3 py-3 sm:px-4 sm:py-4 text-sm sm:text-base min-h-fit border border-muted bg-muted/60 hover:bg-muted/80 transition rounded-md cursor-default"
+                            disabled
+                          >
+                            {option || `Option ${i + 1}`}
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-4 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span className="font-medium text-green-800 dark:text-green-200">Correct Answer:</span>
+                      </div>
+                      <p className="text-green-700 dark:text-green-300 font-semibold">
+                        {editedCard.answer || 'No answer set'}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Exercise Preview */}
+              {editedCard.type === 'exercise' && (
+                <Card className="w-full bg-card shadow-md">
+                  <CardContent className="p-3 sm:p-6">
+                    <div className="mb-2 font-medium break-words">
+                      Q1: {editedCard.instruction || 'No instruction entered'}
+                    </div>
+                    {(editedCard.exercise_text || editedCard.question) && (
+                      <div className="mb-4 p-3 bg-muted rounded-lg">
+                        <p className="text-sm text-muted-foreground">
+                          {editedCard.exercise_text || editedCard.question}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Fill Blank Exercise */}
+                    {editedCard.exercise_type === 'fill_blank' && (
+                      <div className="mb-4">
+                        <Input
+                          type="text"
+                          placeholder="Enter your answer"
+                          disabled
+                          className="cursor-not-allowed"
+                        />
+                      </div>
+                    )}
+
+                    {/* True/False Exercise */}
+                    {editedCard.exercise_type === 'true_false' && (
+                      <div className="mb-4">
+                        <div className="flex items-center justify-center space-x-4">
+                          <Button variant="outline" disabled>True</Button>
+                          <Button variant="outline" disabled>False</Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Short Answer Exercise */}
+                    {editedCard.exercise_type === 'short_answer' && (
+                      <div className="mb-4">
+                        <Textarea
+                          placeholder="Enter your answer"
+                          disabled
+                          rows={4}
+                          className="cursor-not-allowed"
+                        />
+                      </div>
+                    )}
+
+                    {/* Matching Exercise */}
+                    {editedCard.exercise_type === 'matching' && (
+                      <div className="mb-4">
+                        <div className="space-y-3">
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Match each concept with its correct definition:
+                          </p>
+                          <div className="grid gap-3">
+                            {(editedCard.concepts || []).map((concept, idx) => (
+                              <div
+                                key={idx}
+                                className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-center sm:space-x-4 p-2 border rounded-lg bg-muted/50"
+                              >
+                                <span className="font-medium text-sm min-w-[100px] break-words sm:text-right sm:w-1/3">
+                                  {concept}:
+                                </span>
+                                <div className="flex-1 w-full">
+                                  <select
+                                    className="w-full p-2 border rounded text-sm bg-background text-foreground cursor-not-allowed"
+                                    disabled
+                                  >
+                                    <option value="">Select definition...</option>
+                                    {(editedCard.definitions || []).map((def, defIdx) => (
+                                      <option key={defIdx} value={def}>
+                                        {def.length > 60 ? def.slice(0, 60) + '...' : def}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Show Answer Section */}
+                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle className="h-4 w-4 text-blue-600" />
+                        <span className="font-medium text-blue-800 dark:text-blue-200">Expected Answer:</span>
+                      </div>
+                      <p className="text-blue-700 dark:text-blue-300 font-semibold">
+                        {editedCard.answer || 'No answer set'}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           ) : (
             /* Edit Mode */
