@@ -488,9 +488,16 @@ const DeckManagement = () => {
                             <Card key={card.id || index} className="hover:shadow-lg transition-shadow">
                               <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
-                                  <Badge variant="secondary" className="text-xs">
-                                    {mapAndCapitalizeDifficulty(card.difficulty)}
-                                  </Badge>
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="secondary" className="text-xs">
+                                      {mapAndCapitalizeDifficulty(card.difficulty)}
+                                    </Badge>
+                                    {card.type === 'exercise' && card.exercise_type && (
+                                      <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                                        {card.exercise_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                      </Badge>
+                                    )}
+                                  </div>
                                   <div className="flex items-center gap-1">
                                     <Button
                                       variant="ghost"
@@ -524,12 +531,29 @@ const DeckManagement = () => {
                                     {card.question}
                                   </p>
                                 </div>
-                                <div>
-                                  <Label className="text-sm font-medium text-green-600">Answer:</Label>
-                                  <p className="text-sm text-foreground mt-1 leading-relaxed line-clamp-3">
-                                    {card.answer}
-                                  </p>
-                                </div>
+
+                                {/* Special handling for matching exercises */}
+                                {card.type === 'exercise' && card.exercise_type === 'matching' && card.concepts && card.definitions ? (
+                                  <div>
+                                    <Label className="text-sm font-medium text-green-600">Concept-Definition Pairs:</Label>
+                                    <div className="text-sm text-foreground mt-1 space-y-1">
+                                      {card.concepts.map((concept, idx) => (
+                                        <div key={idx} className="flex items-center gap-2 text-xs">
+                                          <span className="font-medium text-purple-600">{concept}</span>
+                                          <span className="text-muted-foreground">→</span>
+                                          <span className="text-orange-600">{card.definitions?.[idx] || 'N/A'}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <Label className="text-sm font-medium text-green-600">Answer:</Label>
+                                    <p className="text-sm text-foreground mt-1 leading-relaxed line-clamp-3">
+                                      {card.answer}
+                                    </p>
+                                  </div>
+                                )}
                               </CardContent>
                             </Card>
                           ))}
