@@ -122,6 +122,25 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
     if (flashcard) {
       const initialCard = { ...flashcard };
 
+      // For exercises, prioritize exercise_text over instruction for the question field
+      if (initialCard.type === 'exercise') {
+
+        // console.log(initialCard);
+
+
+        // Always use exercise_text if available, fallback to instruction
+        if (initialCard.exercise_text) {
+          initialCard.question = initialCard.exercise_text;
+        } else if (initialCard.instruction) {
+          initialCard.question = initialCard.instruction;
+        }
+      }
+
+      // console.log(initialCard.question);
+
+      console.log(editedCard);
+
+
       // Ensure quiz cards have proper default options if empty
       if (initialCard.type === 'quiz' && (!initialCard.options || initialCard.options.length === 0)) {
         initialCard.options = ['Option 1', 'Option 2'];
@@ -206,10 +225,10 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
         newErrors.answer = 'Answer must match one of the options';
       }
     } else if (editedCard.type === 'exercise') {
-      if (!editedCard.instruction?.trim()) {
-        newErrors.instruction = 'Instruction/Question is required';
-      } else if (editedCard.instruction.trim().length < 5) {
-        newErrors.instruction = 'Instruction must be at least 5 characters long';
+      if (!editedCard.question?.trim()) {
+        newErrors.question = 'Question/Instruction is required';
+      } else if (editedCard.question.trim().length < 5) {
+        newErrors.question = 'Question must be at least 5 characters long';
       }
 
       if (editedCard.exercise_type === 'matching') {
@@ -261,6 +280,12 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
     try {
       // For matching exercises, generate answer from concepts and definitions
       let cardToSave = { ...editedCard };
+
+      // For exercises, map question back to exercise_text
+      if (cardToSave.type === 'exercise' && cardToSave.question) {
+        cardToSave.exercise_text = cardToSave.question;
+      }
+
       if (cardToSave.type === 'exercise' && cardToSave.exercise_type === 'matching') {
         // Generate answer as a descriptive text about the matching pairs
         const conceptCount = cardToSave.concepts?.length || 0;
@@ -791,28 +816,28 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
                 <>
                   {/* Exercise Instruction/Question */}
                   <div>
-                    <Label htmlFor="instruction">
+                    <Label htmlFor="question">
                       {editedCard.exercise_type === 'fill_blank' ? 'Fill-in-the-Blank Statement *' :
                         editedCard.exercise_type === 'true_false' ? 'True/False Statement *' :
                           editedCard.exercise_type === 'short_answer' ? 'Question *' :
                             editedCard.exercise_type === 'matching' ? 'Matching Instructions *' : 'Question/Instruction *'}
                     </Label>
                     <Textarea
-                      id="instruction"
+                      id="question"
                       placeholder={
                         editedCard.exercise_type === 'fill_blank' ? 'Enter statement with blanks (use _______ for blanks)...' :
                           editedCard.exercise_type === 'true_false' ? 'Enter a statement that can be true or false...' :
                             editedCard.exercise_type === 'short_answer' ? 'Enter the question...' :
                               editedCard.exercise_type === 'matching' ? 'Enter instructions for matching...' : 'Enter the instruction...'
                       }
-                      value={editedCard.instruction || ''}
-                      onChange={(e) => updateField('instruction', e.target.value)}
-                      className={`mt-1 min-h-[100px] ${errors.instruction ? 'border-red-500' : ''}`}
+                      value={editedCard.question || ''}
+                      onChange={(e) => updateField('question', e.target.value)}
+                      className={`mt-1 min-h-[100px] ${errors.question ? 'border-red-500' : ''}`}
                     />
-                    {errors.instruction && (
+                    {errors.question && (
                       <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
-                        {errors.instruction}
+                        {errors.question}
                       </p>
                     )}
                   </div>
@@ -913,7 +938,7 @@ const FlashcardEditModal: React.FC<FlashcardEditModalProps> = ({
               <div className="text-sm text-muted-foreground">
                 {editedCard.type === 'flashcard' && `Question: ${(editedCard.question || '').length} characters | Answer: ${editedCard.answer.length} characters`}
                 {editedCard.type === 'quiz' && `Question: ${(editedCard.question || '').length} characters | Options: ${(editedCard.options || []).length}`}
-                {editedCard.type === 'exercise' && `Instruction: ${(editedCard.instruction || '').length} characters | Answer: ${editedCard.answer.length} characters`}
+                {editedCard.type === 'exercise' && `Question: ${(editedCard.question || '').length} characters | Answer: ${editedCard.answer.length} characters`}
               </div>
             </div>
           )}
