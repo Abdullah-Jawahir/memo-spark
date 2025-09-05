@@ -50,6 +50,7 @@ const DeckManagement = () => {
   // Delete confirmation state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [cardToDelete, setCardToDelete] = useState<GeneratedCard | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (deckId) {
@@ -225,6 +226,7 @@ const DeckManagement = () => {
       return;
     }
 
+    setIsDeleting(true);
     try {
       const response = await deckManagementService.deleteFlashcard(
         card.realMaterialId,
@@ -232,7 +234,10 @@ const DeckManagement = () => {
         session
       );
       if (response.success) {
-        // Success message is handled by the modal
+        toast({
+          title: "Success",
+          description: `Your ${getCardTypeName(card.type)} has been deleted successfully.`
+        });
         await fetchDeckData(); // Reload data
       } else {
         throw new Error(response.error || `Failed to delete ${getCardTypeName(card.type)}`);
@@ -244,6 +249,8 @@ const DeckManagement = () => {
         description: error instanceof Error ? error.message : `Failed to delete ${getCardTypeName(card.type)}`,
         variant: "destructive"
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -261,6 +268,7 @@ const DeckManagement = () => {
   };
 
   const handleCancelDelete = () => {
+    if (isDeleting) return; // Prevent cancellation during deletion
     setDeleteConfirmOpen(false);
     setCardToDelete(null);
   };
@@ -602,7 +610,12 @@ const DeckManagement = () => {
         />
 
         {/* Delete Confirmation Dialog */}
-        <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <Dialog open={deleteConfirmOpen} onOpenChange={(open) => {
+          if (!open && !isDeleting) {
+            setDeleteConfirmOpen(false);
+            setCardToDelete(null);
+          }
+        }}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -614,11 +627,18 @@ const DeckManagement = () => {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={handleCancelDelete}>
+              <Button variant="outline" onClick={handleCancelDelete} disabled={isDeleting}>
                 Cancel
               </Button>
-              <Button variant="destructive" onClick={handleConfirmDelete}>
-                Delete {cardToDelete ? getCardTypeName(cardToDelete.type) : 'Card'}
+              <Button variant="destructive" onClick={handleConfirmDelete} disabled={isDeleting}>
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  `Delete ${cardToDelete ? getCardTypeName(cardToDelete.type) : 'Card'}`
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
