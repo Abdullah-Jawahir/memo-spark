@@ -471,13 +471,13 @@ const GoalSettings: React.FC = () => {
 
   if (loading && !overview) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={() => navigate('/admin')}>
+      <div className="container mx-auto p-3 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 mb-6">
+          <Button variant="ghost" onClick={() => navigate('/admin')} className="shrink-0">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>
-          <h1 className="text-3xl font-bold">Goal Settings</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Goal Settings</h1>
         </div>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -487,17 +487,18 @@ const GoalSettings: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-full overflow-hidden">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate('/admin')}>
+    <div className="container mx-auto p-3 sm:p-6 max-w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 min-w-0 flex-1">
+          <Button variant="ghost" onClick={() => navigate('/admin')} className="shrink-0">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
+            <span className="hidden sm:inline">Back to Dashboard</span>
+            <span className="sm:hidden">Back</span>
           </Button>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            Goal Settings
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 min-w-0">
+            <span className="truncate">Goal Settings</span>
             {refreshing && (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary opacity-60"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary opacity-60 shrink-0"></div>
             )}
           </h1>
         </div>
@@ -505,48 +506,71 @@ const GoalSettings: React.FC = () => {
           variant="outline"
           onClick={() => fetchGoalData(false)}
           disabled={refreshing || (Date.now() - lastRefresh < 2000)}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 shrink-0 w-full sm:w-auto"
         >
           <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? 'Refreshing...' : 'Refresh Data'}
+          <span className="hidden sm:inline">{refreshing ? 'Refreshing...' : 'Refresh Data'}</span>
+          <span className="sm:hidden">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
         </Button>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6 w-full max-w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <Target className="h-4 w-4" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="statistics" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            Statistics
-          </TabsTrigger>
-          <TabsTrigger value="goal-types" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Goal Types
-          </TabsTrigger>
-          <TabsTrigger value="user-goals" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            User Goals
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Settings
-          </TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6 w-full max-w-full">
+        <div className="w-full overflow-x-auto">
+          <TabsList className="flex w-full min-w-max sm:grid sm:grid-cols-5 gap-1 sm:gap-0 h-auto sm:h-10 p-1 bg-muted rounded-lg">
+            <TabsTrigger
+              value="overview"
+              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm px-3 py-2 min-w-[80px] sm:min-w-0 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground shadow-none data-[state=active]:shadow-sm transition-all"
+            >
+              <Target className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Overview</span>
+              <span className="sm:hidden">Stats</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="statistics"
+              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm px-3 py-2 min-w-[80px] sm:min-w-0 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground shadow-none data-[state=active]:shadow-sm transition-all"
+            >
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Statistics</span>
+              <span className="sm:hidden">Trends</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="goal-types"
+              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm px-3 py-2 min-w-[80px] sm:min-w-0 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground shadow-none data-[state=active]:shadow-sm transition-all"
+            >
+              <Settings className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Goal Types</span>
+              <span className="sm:hidden">Types</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="user-goals"
+              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm px-3 py-2 min-w-[80px] sm:min-w-0 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground shadow-none data-[state=active]:shadow-sm transition-all"
+            >
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="hidden sm:inline">User Goals</span>
+              <span className="sm:hidden">Users</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="settings"
+              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm px-3 py-2 min-w-[80px] sm:min-w-0 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground shadow-none data-[state=active]:shadow-sm transition-all"
+            >
+              <Settings className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Settings</span>
+              <span className="sm:hidden">Config</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-        <TabsContent value="overview" className="space-y-6 w-full max-w-full overflow-hidden">
+        <TabsContent value="overview" className="space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
           {overview && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
                 <Card className="w-full">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Users</CardTitle>
                     <Users className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{overview.total_users}</div>
+                    <div className="text-xl sm:text-2xl font-bold">{overview.total_users}</div>
                     <p className="text-xs text-muted-foreground">
                       {overview.total_users_with_goals} with goals set
                     </p>
@@ -559,20 +583,20 @@ const GoalSettings: React.FC = () => {
                     <Target className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{overview.average_daily_goal}</div>
+                    <div className="text-xl sm:text-2xl font-bold">{overview.average_daily_goal}</div>
                     <p className="text-xs text-muted-foreground">
                       flashcards per day
                     </p>
                   </CardContent>
                 </Card>
 
-                <Card className="w-full">
+                <Card className="w-full sm:col-span-2 lg:col-span-1">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Recent Updates</CardTitle>
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{overview.recent_goal_updates}</div>
+                    <div className="text-xl sm:text-2xl font-bold">{overview.recent_goal_updates}</div>
                     <p className="text-xs text-muted-foreground">
                       in the last 30 days
                     </p>
@@ -582,24 +606,24 @@ const GoalSettings: React.FC = () => {
 
               <Card className="w-full">
                 <CardHeader>
-                  <CardTitle>Goal Distribution</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-lg sm:text-xl">Goal Distribution</CardTitle>
+                  <CardDescription className="text-sm">
                     How users are distributed across different daily goal ranges
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {overview.goal_distribution.map((range, index) => (
-                      <div key={index} className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <Badge variant="outline" className="shrink-0">{range.goal_range} cards</Badge>
+                      <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                          <Badge variant="outline" className="shrink-0 text-xs">{range.goal_range} cards</Badge>
                           <span className="text-sm text-muted-foreground truncate">
                             {range.count} users
                           </span>
                         </div>
-                        <div className="w-20 bg-muted rounded-full h-2 shrink-0">
+                        <div className="w-full sm:w-20 bg-muted rounded-full h-2 shrink-0">
                           <div
-                            className="bg-primary h-2 rounded-full"
+                            className="bg-primary h-2 rounded-full transition-all duration-300"
                             style={{
                               width: `${Math.min((range.count / overview.total_users_with_goals) * 100, 100)}%`
                             }}
@@ -614,27 +638,27 @@ const GoalSettings: React.FC = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="statistics" className="space-y-6 w-full max-w-full overflow-hidden">
+        <TabsContent value="statistics" className="space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
           {statistics && (
             <>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Goals by User Type</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-lg sm:text-xl">Goals by User Type</CardTitle>
+                    <CardDescription className="text-sm">
                       Goal setting patterns across different user types
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                       {statistics.goals_by_user_type.map((type, index) => (
-                        <div key={index} className="flex items-center justify-between">
+                        <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                           <div>
-                            <Badge variant="secondary" className="capitalize">
+                            <Badge variant="secondary" className="capitalize text-xs">
                               {type.user_type}
                             </Badge>
                           </div>
-                          <div className="text-right">
+                          <div className="text-left sm:text-right">
                             <div className="text-sm font-medium">{type.goals_count} goals</div>
                             <div className="text-xs text-muted-foreground">
                               Avg: {type.avg_goal ? Math.round(type.avg_goal) : 0} cards/day
@@ -648,21 +672,21 @@ const GoalSettings: React.FC = () => {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Top Active Users</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-lg sm:text-xl">Top Active Users</CardTitle>
+                    <CardDescription className="text-sm">
                       Users with the highest daily goals set
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
                       {statistics.active_users.slice(0, 5).map((user, index) => (
-                        <div key={index} className="flex items-center justify-between">
-                          <div>
-                            <div className="text-sm font-medium">{user.name}</div>
-                            <div className="text-xs text-muted-foreground">{user.email}</div>
+                        <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium truncate">{user.name}</div>
+                            <div className="text-xs text-muted-foreground truncate">{user.email}</div>
                           </div>
-                          <div className="text-right">
-                            <Badge>{user.daily_goal} cards/day</Badge>
+                          <div className="shrink-0">
+                            <Badge className="text-xs">{user.daily_goal} cards/day</Badge>
                           </div>
                         </div>
                       ))}
@@ -673,22 +697,22 @@ const GoalSettings: React.FC = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Goal Trends</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-lg sm:text-xl">Goal Trends</CardTitle>
+                  <CardDescription className="text-sm">
                     Goal creation and average goal trends over the last 6 months
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {statistics.goal_trends.map((trend, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <div className="text-sm font-medium">{trend.month}</div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">Goals created:</span> {trend.goals_created}
+                      <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
+                        <div className="text-sm font-medium shrink-0">{trend.month}</div>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Goals created:</span> <span className="font-medium">{trend.goals_created}</span>
                           </div>
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">Avg goal:</span> {Math.round(trend.avg_goal)} cards/day
+                          <div>
+                            <span className="text-muted-foreground">Avg goal:</span> <span className="font-medium">{Math.round(trend.avg_goal)} cards/day</span>
                           </div>
                         </div>
                       </div>
@@ -700,9 +724,9 @@ const GoalSettings: React.FC = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="goal-types" className="space-y-6 w-full max-w-full overflow-hidden">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold">Goal Types Management</h2>
+        <TabsContent value="goal-types" className="space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
+            <h2 className="text-xl sm:text-2xl font-bold">Goal Types Management</h2>
             <Dialog open={isGoalTypeDialogOpen} onOpenChange={setIsGoalTypeDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={() => {
@@ -716,55 +740,95 @@ const GoalSettings: React.FC = () => {
                     min_value: 0,
                     max_value: 1000
                   });
-                }}>
+                }} className="w-full sm:w-auto">
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Goal Type
+                  <span className="hidden sm:inline">Add Goal Type</span>
+                  <span className="sm:hidden">Add Type</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="sm:max-w-[500px] w-[calc(100vw-2rem)] max-w-[500px] mx-auto max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>{editingGoalType ? 'Edit Goal Type' : 'Create New Goal Type'}</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-lg sm:text-xl">{editingGoalType ? 'Edit Goal Type' : 'Create New Goal Type'}</DialogTitle>
+                  <DialogDescription className="text-sm">
                     Define a new type of goal that users can set for themselves.
                   </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="goal-name">Goal Name</Label>
+                    <Label htmlFor="goal-name" className="text-sm font-medium">Goal Name</Label>
                     <Input
                       id="goal-name"
                       value={newGoalType.name}
                       onChange={(e) => setNewGoalType(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="e.g., Daily Flashcards"
+                      style={{
+                        boxShadow: 'none',
+                        outline: 'none',
+                        transition: 'none'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = 'none';
+                        e.target.style.borderColor = 'none';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'none';
+                      }}
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="goal-description">Description</Label>
+                    <Label htmlFor="goal-description" className="text-sm font-medium">Description</Label>
                     <Input
                       id="goal-description"
                       value={newGoalType.description}
                       onChange={(e) => setNewGoalType(prev => ({ ...prev, description: e.target.value }))}
                       placeholder="e.g., Number of flashcards to review daily"
+                      style={{
+                        boxShadow: 'none',
+                        outline: 'none',
+                        transition: 'none'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = 'none';
+                        e.target.style.borderColor = 'none';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'none';
+                      }}
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="goal-unit">Unit</Label>
+                      <Label htmlFor="goal-unit" className="text-sm font-medium">Unit</Label>
                       <Input
                         id="goal-unit"
                         value={newGoalType.unit}
                         onChange={(e) => setNewGoalType(prev => ({ ...prev, unit: e.target.value }))}
                         placeholder="e.g., cards, minutes, points"
+                        style={{
+                          boxShadow: 'none',
+                          outline: 'none',
+                          transition: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.outline = 'none';
+                          e.target.style.boxShadow = 'none';
+                          e.target.style.borderColor = 'none';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'none';
+                        }}
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="goal-category">Category</Label>
+                      <Label htmlFor="goal-category" className="text-sm font-medium">Category</Label>
                       <Select value={newGoalType.category} onValueChange={(value) => setNewGoalType(prev => ({ ...prev, category: value as any }))}>
-                        <SelectTrigger>
+                        <SelectTrigger className="focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none" style={{ boxShadow: 'none', outline: 'none' }}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -777,44 +841,83 @@ const GoalSettings: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <Label htmlFor="default-value">Default Value</Label>
+                      <Label htmlFor="default-value" className="text-sm font-medium">Default Value</Label>
                       <Input
                         id="default-value"
                         type="number"
                         value={newGoalType.default_value}
                         onChange={(e) => setNewGoalType(prev => ({ ...prev, default_value: parseInt(e.target.value) || 0 }))}
+                        style={{
+                          boxShadow: 'none',
+                          outline: 'none',
+                          transition: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.outline = 'none';
+                          e.target.style.boxShadow = 'none';
+                          e.target.style.borderColor = 'none';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'none';
+                        }}
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="min-value">Min Value</Label>
+                      <Label htmlFor="min-value" className="text-sm font-medium">Min Value</Label>
                       <Input
                         id="min-value"
                         type="number"
                         value={newGoalType.min_value}
                         onChange={(e) => setNewGoalType(prev => ({ ...prev, min_value: parseInt(e.target.value) || 0 }))}
+                        style={{
+                          boxShadow: 'none',
+                          outline: 'none',
+                          transition: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.outline = 'none';
+                          e.target.style.boxShadow = 'none';
+                          e.target.style.borderColor = 'none';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'none';
+                        }}
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="max-value">Max Value</Label>
+                      <Label htmlFor="max-value" className="text-sm font-medium">Max Value</Label>
                       <Input
                         id="max-value"
                         type="number"
                         value={newGoalType.max_value}
                         onChange={(e) => setNewGoalType(prev => ({ ...prev, max_value: parseInt(e.target.value) || 1000 }))}
+                        style={{
+                          boxShadow: 'none',
+                          outline: 'none',
+                          transition: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.outline = 'none';
+                          e.target.style.boxShadow = 'none';
+                          e.target.style.borderColor = 'none';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'none';
+                        }}
                       />
                     </div>
                   </div>
                 </div>
 
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsGoalTypeDialogOpen(false)}>
+                <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
+                  <Button variant="outline" onClick={() => setIsGoalTypeDialogOpen(false)} className="w-full sm:w-auto">
                     Cancel
                   </Button>
-                  <Button onClick={editingGoalType ? handleUpdateGoalType : handleCreateGoalType}>
+                  <Button onClick={editingGoalType ? handleUpdateGoalType : handleCreateGoalType} className="w-full sm:w-auto">
                     {editingGoalType ? 'Update' : 'Create'} Goal Type
                   </Button>
                 </DialogFooter>
@@ -824,8 +927,8 @@ const GoalSettings: React.FC = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Available Goal Types</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg sm:text-xl">Available Goal Types</CardTitle>
+              <CardDescription className="text-sm">
                 Manage the different types of goals users can set for themselves.
               </CardDescription>
             </CardHeader>
@@ -834,37 +937,40 @@ const GoalSettings: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Unit</TableHead>
-                      <TableHead>Default</TableHead>
-                      <TableHead>Range</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="min-w-[150px]">Name</TableHead>
+                      <TableHead className="hidden sm:table-cell">Category</TableHead>
+                      <TableHead className="hidden md:table-cell">Unit</TableHead>
+                      <TableHead className="hidden lg:table-cell">Default</TableHead>
+                      <TableHead className="hidden lg:table-cell">Range</TableHead>
+                      <TableHead className="hidden sm:table-cell">Status</TableHead>
+                      <TableHead className="text-right w-[80px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {goalTypes.map((goalType) => (
                       <TableRow key={goalType.id}>
-                        <TableCell>
+                        <TableCell className="min-w-[150px]">
                           <div>
-                            <div className="font-medium">{goalType.name}</div>
-                            <div className="text-sm text-muted-foreground">{goalType.description}</div>
+                            <div className="font-medium text-sm">{goalType.name}</div>
+                            <div className="text-xs text-muted-foreground sm:hidden">
+                              {goalType.category} • {goalType.unit}
+                            </div>
+                            <div className="text-xs text-muted-foreground line-clamp-2">{goalType.description}</div>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="capitalize">{goalType.category}</Badge>
+                        <TableCell className="hidden sm:table-cell">
+                          <Badge variant="outline" className="capitalize text-xs">{goalType.category}</Badge>
                         </TableCell>
-                        <TableCell>{goalType.unit}</TableCell>
-                        <TableCell>{goalType.default_value}</TableCell>
-                        <TableCell>{goalType.min_value} - {goalType.max_value}</TableCell>
-                        <TableCell>
-                          <Badge variant={goalType.is_active ? "default" : "secondary"}>
+                        <TableCell className="hidden md:table-cell text-sm">{goalType.unit}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-sm">{goalType.default_value}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-sm">{goalType.min_value} - {goalType.max_value}</TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <Badge variant={goalType.is_active ? "default" : "secondary"} className="text-xs">
                             {goalType.is_active ? "Active" : "Inactive"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-1">
                             <Button
                               variant="outline"
                               size="sm"
@@ -881,8 +987,9 @@ const GoalSettings: React.FC = () => {
                                 });
                                 setIsGoalTypeDialogOpen(true);
                               }}
+                              className="h-8 w-8 p-0"
                             >
-                              <Edit className="h-4 w-4" />
+                              <Edit className="h-3 w-3" />
                             </Button>
                             <Button
                               variant="outline"
@@ -895,9 +1002,9 @@ const GoalSettings: React.FC = () => {
                                 });
                                 setIsDeleteConfirmDialogOpen(true);
                               }}
-                              className="text-red-600 hover:text-red-700"
+                              className="text-red-600 hover:text-red-700 h-8 w-8 p-0"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
                         </TableCell>
@@ -910,29 +1017,30 @@ const GoalSettings: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="user-goals" className="space-y-6 w-full max-w-full overflow-hidden">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold">User Goals Management</h2>
+        <TabsContent value="user-goals" className="space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
+            <h2 className="text-xl sm:text-2xl font-bold">User Goals Management</h2>
             <Dialog open={isUserGoalDialogOpen} onOpenChange={setIsUserGoalDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button className="w-full sm:w-auto">
                   <Plus className="h-4 w-4 mr-2" />
-                  Assign Goal to User
+                  <span className="hidden sm:inline">Assign Goal to User</span>
+                  <span className="sm:hidden">Assign Goal</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="sm:max-w-[500px] w-[calc(100vw-2rem)] max-w-[500px] mx-auto max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Assign Goal to User</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-lg sm:text-xl">Assign Goal to User</DialogTitle>
+                  <DialogDescription className="text-sm">
                     Set a specific goal for a user.
                   </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="user-select">Select User</Label>
+                    <Label htmlFor="user-select" className="text-sm font-medium">Select User</Label>
                     <Select value={newUserGoal.user_id} onValueChange={(value) => setNewUserGoal(prev => ({ ...prev, user_id: value }))}>
-                      <SelectTrigger>
+                      <SelectTrigger className="focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none" style={{ boxShadow: 'none', outline: 'none' }}>
                         <SelectValue placeholder="Choose a user" />
                       </SelectTrigger>
                       <SelectContent>
@@ -946,9 +1054,9 @@ const GoalSettings: React.FC = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="goal-type-select">Select Goal Type</Label>
+                    <Label htmlFor="goal-type-select" className="text-sm font-medium">Select Goal Type</Label>
                     <Select value={newUserGoal.goal_type_id} onValueChange={(value) => setNewUserGoal(prev => ({ ...prev, goal_type_id: value }))}>
-                      <SelectTrigger>
+                      <SelectTrigger className="focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none" style={{ boxShadow: 'none', outline: 'none' }}>
                         <SelectValue placeholder="Choose a goal type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -962,22 +1070,35 @@ const GoalSettings: React.FC = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="target-value">Target Value</Label>
+                    <Label htmlFor="target-value" className="text-sm font-medium">Target Value</Label>
                     <Input
                       id="target-value"
                       type="number"
                       value={newUserGoal.target_value}
                       onChange={(e) => setNewUserGoal(prev => ({ ...prev, target_value: parseInt(e.target.value) || 0 }))}
                       placeholder="Enter target value"
+                      style={{
+                        boxShadow: 'none',
+                        outline: 'none',
+                        transition: 'none'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = 'none';
+                        e.target.style.borderColor = 'none';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'none';
+                      }}
                     />
                   </div>
                 </div>
 
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsUserGoalDialogOpen(false)}>
+                <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
+                  <Button variant="outline" onClick={() => setIsUserGoalDialogOpen(false)} className="w-full sm:w-auto">
                     Cancel
                   </Button>
-                  <Button onClick={handleCreateUserGoal}>
+                  <Button onClick={handleCreateUserGoal} className="w-full sm:w-auto">
                     Assign Goal
                   </Button>
                 </DialogFooter>
@@ -985,9 +1106,9 @@ const GoalSettings: React.FC = () => {
             </Dialog>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="flex flex-col gap-4 mb-6">
             <div className="flex-1">
-              <Label htmlFor="search-email">Search by Email</Label>
+              <Label htmlFor="search-email" className="text-sm font-medium">Search by Email</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -996,14 +1117,27 @@ const GoalSettings: React.FC = () => {
                   value={searchEmail}
                   onChange={(e) => setSearchEmail(e.target.value)}
                   className="pl-9"
+                  style={{
+                    boxShadow: 'none',
+                    outline: 'none',
+                    transition: 'none'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.outline = 'none';
+                    e.target.style.boxShadow = 'none';
+                    e.target.style.borderColor = 'none';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = 'none';
+                  }}
                 />
               </div>
             </div>
 
-            <div className="sm:w-48">
-              <Label htmlFor="user-filter">Filter by User</Label>
+            <div className="w-full sm:w-48">
+              <Label htmlFor="user-filter" className="text-sm font-medium">Filter by User</Label>
               <Select value={selectedUser} onValueChange={setSelectedUser}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none" style={{ boxShadow: 'none', outline: 'none' }}>
                   <SelectValue placeholder="All users" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1020,8 +1154,8 @@ const GoalSettings: React.FC = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>User Goals</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg sm:text-xl">User Goals</CardTitle>
+              <CardDescription className="text-sm">
                 View and manage goals assigned to users.
               </CardDescription>
             </CardHeader>
@@ -1030,13 +1164,13 @@ const GoalSettings: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Goal Type</TableHead>
-                      <TableHead>Target</TableHead>
-                      <TableHead>Current</TableHead>
-                      <TableHead>Progress</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="min-w-[200px]">User</TableHead>
+                      <TableHead className="hidden md:table-cell">Goal Type</TableHead>
+                      <TableHead className="hidden sm:table-cell">Target</TableHead>
+                      <TableHead className="hidden sm:table-cell">Current</TableHead>
+                      <TableHead className="hidden lg:table-cell">Progress</TableHead>
+                      <TableHead className="hidden sm:table-cell">Status</TableHead>
+                      <TableHead className="text-right w-[80px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1051,39 +1185,59 @@ const GoalSettings: React.FC = () => {
                         const progress = userGoal.target_value > 0 ? (userGoal.current_value / userGoal.target_value) * 100 : 0;
                         return (
                           <TableRow key={userGoal.id}>
-                            <TableCell>
+                            <TableCell className="min-w-[200px]">
                               <div>
-                                <div className="font-medium">{userGoal.user?.name || 'Unknown User'}</div>
-                                <div className="text-sm text-muted-foreground">{userGoal.user?.email || 'No email'}</div>
-                                <Badge variant="outline" className="text-xs">{userGoal.user?.user_type || 'Unknown'}</Badge>
+                                <div className="font-medium text-sm">{userGoal.user?.name || 'Unknown User'}</div>
+                                <div className="text-xs text-muted-foreground truncate">{userGoal.user?.email || 'No email'}</div>
+                                <div className="flex flex-wrap items-center gap-1 mt-1">
+                                  <Badge variant="outline" className="text-xs">{userGoal.user?.user_type || 'Unknown'}</Badge>
+                                  <div className="md:hidden text-xs text-muted-foreground">
+                                    {userGoal.goal_type?.name || 'Unknown Goal Type'}
+                                  </div>
+                                </div>
+                                <div className="sm:hidden mt-1 text-xs">
+                                  <span className="text-muted-foreground">Target:</span> {userGoal.target_value} {userGoal.goal_type?.unit || ''}
+                                  <span className="ml-2 text-muted-foreground">Current:</span> {userGoal.current_value} {userGoal.goal_type?.unit || ''}
+                                </div>
+                                <div className="lg:hidden sm:block mt-1">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-16 sm:w-20 bg-muted rounded-full h-1.5 sm:h-2">
+                                      <div
+                                        className="bg-primary h-1.5 sm:h-2 rounded-full transition-all duration-300"
+                                        style={{ width: `${Math.min(progress, 100)}%` }}
+                                      ></div>
+                                    </div>
+                                    <span className="text-xs">{Math.round(progress)}%</span>
+                                  </div>
+                                </div>
                               </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="hidden md:table-cell">
                               <div>
-                                <div className="font-medium">{userGoal.goal_type?.name || 'Unknown Goal Type'}</div>
-                                <div className="text-sm text-muted-foreground">{userGoal.goal_type?.category || 'N/A'}</div>
+                                <div className="font-medium text-sm">{userGoal.goal_type?.name || 'Unknown Goal Type'}</div>
+                                <div className="text-xs text-muted-foreground">{userGoal.goal_type?.category || 'N/A'}</div>
                               </div>
                             </TableCell>
-                            <TableCell>{userGoal.target_value} {userGoal.goal_type?.unit || ''}</TableCell>
-                            <TableCell>{userGoal.current_value} {userGoal.goal_type?.unit || ''}</TableCell>
-                            <TableCell>
+                            <TableCell className="hidden sm:table-cell text-sm">{userGoal.target_value} {userGoal.goal_type?.unit || ''}</TableCell>
+                            <TableCell className="hidden sm:table-cell text-sm">{userGoal.current_value} {userGoal.goal_type?.unit || ''}</TableCell>
+                            <TableCell className="hidden lg:table-cell">
                               <div className="flex items-center gap-2">
                                 <div className="w-20 bg-muted rounded-full h-2">
                                   <div
-                                    className="bg-primary h-2 rounded-full"
+                                    className="bg-primary h-2 rounded-full transition-all duration-300"
                                     style={{ width: `${Math.min(progress, 100)}%` }}
                                   ></div>
                                 </div>
                                 <span className="text-sm">{Math.round(progress)}%</span>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <Badge variant={userGoal.is_active ? "default" : "secondary"}>
+                            <TableCell className="hidden sm:table-cell">
+                              <Badge variant={userGoal.is_active ? "default" : "secondary"} className="text-xs">
                                 {userGoal.is_active ? "Active" : "Inactive"}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
+                              <div className="flex justify-end gap-1">
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -1092,8 +1246,9 @@ const GoalSettings: React.FC = () => {
                                     setEditTargetValue(userGoal.target_value);
                                     setIsEditUserGoalDialogOpen(true);
                                   }}
+                                  className="h-8 w-8 p-0"
                                 >
-                                  <Edit className="h-4 w-4" />
+                                  <Edit className="h-3 w-3" />
                                 </Button>
                                 <Button
                                   variant="outline"
@@ -1106,9 +1261,9 @@ const GoalSettings: React.FC = () => {
                                     });
                                     setIsDeleteConfirmDialogOpen(true);
                                   }}
-                                  className="text-red-600 hover:text-red-700"
+                                  className="text-red-600 hover:text-red-700 h-8 w-8 p-0"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-3 w-3" />
                                 </Button>
                               </div>
                             </TableCell>
@@ -1122,18 +1277,18 @@ const GoalSettings: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="settings" className="space-y-6 w-full max-w-full overflow-hidden">
+        <TabsContent value="settings" className="space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
           <Card>
             <CardHeader>
-              <CardTitle>Default Goal Recommendations</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg sm:text-xl">Default Goal Recommendations</CardTitle>
+              <CardDescription className="text-sm">
                 Set default daily goal recommendations for new users by type
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CardContent className="space-y-4 sm:space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="student_default">Student Default (cards/day)</Label>
+                  <Label htmlFor="student_default" className="text-sm font-medium">Student Default (cards/day)</Label>
                   <Input
                     id="student_default"
                     type="number"
@@ -1144,14 +1299,27 @@ const GoalSettings: React.FC = () => {
                       ...prev,
                       student_default: parseInt(e.target.value) || 1
                     }))}
+                    style={{
+                      boxShadow: 'none',
+                      outline: 'none',
+                      transition: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.outline = 'none';
+                      e.target.style.boxShadow = 'none';
+                      e.target.style.borderColor = 'none';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'none';
+                    }}
                   />
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Recommended daily goal for new student users
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="admin_default">Admin Default (cards/day)</Label>
+                  <Label htmlFor="admin_default" className="text-sm font-medium">Admin Default (cards/day)</Label>
                   <Input
                     id="admin_default"
                     type="number"
@@ -1162,8 +1330,21 @@ const GoalSettings: React.FC = () => {
                       ...prev,
                       admin_default: parseInt(e.target.value) || 1
                     }))}
+                    style={{
+                      boxShadow: 'none',
+                      outline: 'none',
+                      transition: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.outline = 'none';
+                      e.target.style.boxShadow = 'none';
+                      e.target.style.borderColor = 'none';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'none';
+                    }}
                   />
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Recommended daily goal for new admin users
                   </p>
                 </div>
@@ -1183,17 +1364,17 @@ const GoalSettings: React.FC = () => {
 
       {/* Edit User Goal Modal */}
       <Dialog open={isEditUserGoalDialogOpen} onOpenChange={setIsEditUserGoalDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px] w-[calc(100vw-2rem)] max-w-[500px] mx-auto max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit User Goal</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">Edit User Goal</DialogTitle>
+            <DialogDescription className="text-sm">
               Update the target value for {editingUserGoal?.user?.name}'s {editingUserGoal?.goal_type?.name} goal.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="edit-target-value">Target Value ({editingUserGoal?.goal_type?.unit})</Label>
+              <Label htmlFor="edit-target-value" className="text-sm font-medium">Target Value ({editingUserGoal?.goal_type?.unit})</Label>
               <Input
                 id="edit-target-value"
                 type="number"
@@ -1202,20 +1383,33 @@ const GoalSettings: React.FC = () => {
                 placeholder="Enter target value"
                 min={editingUserGoal?.goal_type?.min_value || 0}
                 max={editingUserGoal?.goal_type?.max_value || 1000}
+                style={{
+                  boxShadow: 'none',
+                  outline: 'none',
+                  transition: 'none'
+                }}
+                onFocus={(e) => {
+                  e.target.style.outline = 'none';
+                  e.target.style.boxShadow = 'none';
+                  e.target.style.borderColor = 'none';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'none';
+                }}
               />
               {editingUserGoal?.goal_type && (
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                   Range: {editingUserGoal.goal_type.min_value} - {editingUserGoal.goal_type.max_value} {editingUserGoal.goal_type.unit}
                 </p>
               )}
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditUserGoalDialogOpen(false)}>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsEditUserGoalDialogOpen(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={handleEditUserGoal}>
+            <Button onClick={handleEditUserGoal} className="w-full sm:w-auto">
               Update Goal
             </Button>
           </DialogFooter>
@@ -1224,22 +1418,22 @@ const GoalSettings: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       <Dialog open={isDeleteConfirmDialogOpen} onOpenChange={setIsDeleteConfirmDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px] w-[calc(100vw-2rem)] max-w-[425px] mx-auto">
           <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">Confirm Deletion</DialogTitle>
+            <DialogDescription className="text-sm">
               Are you sure you want to delete "{deletingItem?.name}"? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
 
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => {
               setIsDeleteConfirmDialogOpen(false);
               setDeletingItem(null);
-            }}>
+            }} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
+            <Button variant="destructive" onClick={confirmDelete} className="w-full sm:w-auto">
               Delete
             </Button>
           </DialogFooter>

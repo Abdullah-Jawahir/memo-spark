@@ -75,6 +75,7 @@ const Study = () => {
   const [currentCard, setCurrentCard] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [tab, setTab] = useState<'flashcards' | 'quiz' | 'exercises' | 'review'>('flashcards');
+  const [userHasChangedTab, setUserHasChangedTab] = useState(false); // Track manual tab changes
   const [sessionStats, setSessionStats] = useState({
     correct: 0,
     difficult: 0,
@@ -100,6 +101,7 @@ const Study = () => {
   const [reviewedDifficult, setReviewedDifficult] = useState<Set<number>>(new Set());
   const [isLoadingFromStorage, setIsLoadingFromStorage] = useState(true); // Add this state for localStorage loading
   const [isQuizReviewMode, setIsQuizReviewMode] = useState(false); // Add this state for quiz review mode
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false); // Track if initial load is complete
 
   // Study tracking specific state
   const [studyTime, setStudyTime] = useState(0);  // Time spent on current activity (flashcards, quiz, exercises)
@@ -230,6 +232,7 @@ const Study = () => {
         currentActivityType,
         currentDeckIdentifier,
         difficultCardIds: Array.from(difficultCardIds),
+        userHasChangedTab,
         timestamp: Date.now()
       };
 
@@ -282,6 +285,7 @@ const Study = () => {
       setCurrentActivityType(progressData.currentActivityType || null);
       setCurrentDeckIdentifier(progressData.currentDeckIdentifier || null);
       setDifficultCardIds(new Set(progressData.difficultCardIds || []));
+      setUserHasChangedTab(progressData.userHasChangedTab || false);
 
       console.log('Study progress restored successfully');
       return true;
@@ -332,10 +336,10 @@ const Study = () => {
     exerciseStep, exerciseAnswers, exerciseCompleted, showExerciseAnswers, bookmarkedCards,
     sessionComplete, reviewedDifficult, isQuizReviewMode, studyTime, overallStudyTime,
     isStudying, isTimerPaused, cardStudyStartTime, activityTimingHistory, currentActivityStartTime,
-    currentActivityType, currentDeckIdentifier, difficultCardIds, flashcards.length, quizzes.length, exercises.length
+    currentActivityType, currentDeckIdentifier, difficultCardIds, userHasChangedTab, flashcards.length, quizzes.length, exercises.length
   ]);
 
-  // Handle page visibility changes to pause/resume timers
+  // Handle page visibility changes to pause/resume timers only
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -349,6 +353,7 @@ const Study = () => {
         if (isStudying && !isOverallComplete) {
           setIsTimerPaused(false);
         }
+        // No automatic background refresh - user progress is preserved
       }
     };
 
@@ -357,9 +362,7 @@ const Study = () => {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isStudying, isOverallComplete]);
-
-  const fetchMaterials = async (force = false) => {
+  }, [isStudying, isOverallComplete]); const fetchMaterials = async (force = false) => {
     if (!session?.access_token) return;
     if (!force && (isLoadingMaterials || isRefreshing)) return;
 
@@ -370,7 +373,7 @@ const Study = () => {
     setMaterialsNotFound(false);
     if (force) {
       setIsRefreshing(true);
-    } else {
+    } else if (!hasInitiallyLoaded) {
       setIsLoadingMaterials(true);
     }
 
@@ -431,6 +434,7 @@ const Study = () => {
         setExerciseStep(0);
         setExerciseAnswers([]);
         setExerciseCompleted(false);
+        setUserHasChangedTab(false); // Reset manual tab change tracking
         // Clear any persisted study session to avoid submitting reviews to the wrong session
         try { localStorage.removeItem('memo-spark-current-study-session'); } catch (e) { /* ignore */ }
         setStudySession(null);
@@ -456,6 +460,15 @@ const Study = () => {
         if (progressRestored) {
           console.log('Study progress restored successfully');
         }
+      }
+
+      // If no progress was restored and this is a fresh load (tab is still at default), 
+      // ensure we start with the first available content tab
+      if (!progressRestored && !userHasChangedTab && !hasInitiallyLoaded) {
+        const firstAvailableTab = parsed.flashcards?.length > 0 ? 'flashcards' :
+          parsed.quizzes?.length > 0 ? 'quiz' :
+            parsed.exercises?.length > 0 ? 'exercises' : 'review';
+        setTab(firstAvailableTab);
       }
 
       if ((!parsed.flashcards || parsed.flashcards.length === 0) &&
@@ -500,6 +513,10 @@ const Study = () => {
       setIsRefreshing(false);
       // Ensure the overall loading gate is cleared after network fetch
       setIsLoadingFromStorage(false);
+      // Mark that initial loading is complete
+      if (!hasInitiallyLoaded) {
+        setHasInitiallyLoaded(true);
+      }
     }
   };
 
@@ -547,6 +564,7 @@ const Study = () => {
     }
 
     setTab(newTab);
+    setUserHasChangedTab(true); // Mark that user has manually changed tabs
   }; useEffect(() => {
     // Initial load only
     const data = localStorage.getItem('generatedContent');
@@ -637,6 +655,11 @@ const Study = () => {
           }
         }
 
+        // If no progress was restored and this is a fresh load, ensure we start with flashcards tab (since search only has flashcards)
+        if (!progressRestored && !userHasChangedTab && !hasInitiallyLoaded) {
+          setTab('flashcards');
+        }
+
         // Only reset session stats if progress wasn't restored
         if (!progressRestored) {
           console.log('Starting fresh search flashcard session');
@@ -654,6 +677,11 @@ const Study = () => {
           topic: parsedSearchData.topic,
           session_id: null // Will be updated when authenticated session starts
         }));
+
+        // Mark initial loading as complete for search flashcards
+        if (!hasInitiallyLoaded) {
+          setHasInitiallyLoaded(true);
+        }
 
         // Start study session for search flashcards
         if (session?.access_token && parsedSearchData.search_id) {
@@ -695,6 +723,10 @@ const Study = () => {
       }
 
       setIsLoadingFromStorage(false);
+      // Mark initial loading as complete even when no search flashcards loaded
+      if (!hasInitiallyLoaded) {
+        setHasInitiallyLoaded(true);
+      }
       return false; // Return false if no search flashcards were loaded
     };
 
@@ -709,6 +741,10 @@ const Study = () => {
       }).catch(error => {
         console.error('Error handling search flashcard session:', error);
         setIsLoadingFromStorage(false);
+        // Mark initial loading as complete even on error
+        if (!hasInitiallyLoaded) {
+          setHasInitiallyLoaded(true);
+        }
       });
       return; // Exit useEffect early for search flashcards
     }
@@ -717,10 +753,14 @@ const Study = () => {
       // If no session/token yet, avoid being stuck in loading
       if (!session?.access_token) {
         setIsLoadingFromStorage(false);
+        // Mark initial loading as complete even if no session
+        if (!hasInitiallyLoaded) {
+          setHasInitiallyLoaded(true);
+        }
         // Optional: mark as not found so the CTA displays if no local data
         if (!data) setMaterialsNotFound(true);
       } else {
-        fetchMaterials(false);
+        fetchMaterials(false); // Initial load
       }
     } else if (data) {
       const parsed: GeneratedContent = JSON.parse(data);
@@ -777,6 +817,10 @@ const Study = () => {
               }
               setLastUpdated(new Date());
               setIsLoadingFromStorage(false); // Set loading to false after data is loaded
+              // Mark initial loading as complete
+              if (!hasInitiallyLoaded) {
+                setHasInitiallyLoaded(true);
+              }
             })
             .catch(error => {
               console.error('Failed to enrich materials, using original data:', error);
@@ -794,6 +838,10 @@ const Study = () => {
     } else {
       // No data in localStorage, set loading to false
       setIsLoadingFromStorage(false);
+      // Mark initial loading as complete
+      if (!hasInitiallyLoaded) {
+        setHasInitiallyLoaded(true);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]); // Add session dependency to re-run when authentication is available
@@ -845,6 +893,7 @@ const Study = () => {
       setExerciseStep(0);
       setExerciseAnswers([]);
       setExerciseCompleted(false);
+      setUserHasChangedTab(false); // Reset manual tab change tracking
       // Clear persisted study session and in-memory session to avoid submitting reviews to a stale session
       try { localStorage.removeItem('memo-spark-current-study-session'); } catch (e) { /* ignore */ }
       setStudySession(null);
@@ -873,6 +922,15 @@ const Study = () => {
       }
     }
 
+    // If no progress was restored and this is a fresh load (tab is still at default), 
+    // ensure we start with the first available content tab
+    if (!progressRestored && !userHasChangedTab && !hasInitiallyLoaded) {
+      const firstAvailableTab = parsed.flashcards?.length > 0 ? 'flashcards' :
+        parsed.quizzes?.length > 0 ? 'quiz' :
+          parsed.exercises?.length > 0 ? 'exercises' : 'review';
+      setTab(firstAvailableTab);
+    }
+
     if (user && session && parsed.flashcards?.length) {
       const legacyDeckId = searchParams.get('deck') || 'default-deck';
       setIsStudying(true);
@@ -895,6 +953,10 @@ const Study = () => {
     }
     setLastUpdated(new Date());
     setIsLoadingFromStorage(false); // Set loading to false after setup is complete
+    // Mark initial loading as complete
+    if (!hasInitiallyLoaded) {
+      setHasInitiallyLoaded(true);
+    }
   };
   const currentCardData = flashcards[currentCard];
   const progress = flashcards.length > 0 ? ((currentCard + 1) / flashcards.length) * 100 : 0;
@@ -967,20 +1029,29 @@ const Study = () => {
     }
   }, [isOverallComplete, isStudying]);
 
-  // Auto-switch to available tab when content changes
+  // Auto-switch to available tab when content changes (but preserve manual tab selections)
   useEffect(() => {
+    // Only auto-switch if user hasn't manually changed tabs
+    if (userHasChangedTab) return;
+
     // Check if current tab has content, if not switch to first available tab
     const availableTabs = [];
     if (flashcards.length > 0) availableTabs.push('flashcards');
     if (quizzes.length > 0) availableTabs.push('quiz');
     if (exercises.length > 0) availableTabs.push('exercises');
-    availableTabs.push('review'); // Review is always available
 
-    // If current tab is not available, switch to first available tab
+    // Review is always available
+    availableTabs.push('review');
+
+    // Only switch if current tab is truly not available (invalid)
+    // Don't interfere with manual user selections
     if (!availableTabs.includes(tab)) {
-      setTab(availableTabs[0] as any);
+      const firstContentTab = flashcards.length > 0 ? 'flashcards' :
+        quizzes.length > 0 ? 'quiz' :
+          exercises.length > 0 ? 'exercises' : 'review';
+      setTab(firstContentTab);
     }
-  }, [flashcards.length, quizzes.length, exercises.length, tab]);
+  }, [flashcards.length, quizzes.length, exercises.length, userHasChangedTab]); // Added userHasChangedTab to dependencies
 
   // Initialize the study session when component mounts
   useEffect(() => {
@@ -1178,8 +1249,8 @@ const Study = () => {
     }
   }, [flashcards, sessionRatings, tab, difficultCardIds, reviewedDifficult]); // Include all dependencies
 
-  // Loading state while fetching materials
-  if (isLoadingMaterials || isLoadingFromStorage) {
+  // Loading state while fetching materials - only show on initial load
+  if ((isLoadingMaterials || isLoadingFromStorage) && !hasInitiallyLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
         <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
@@ -1805,6 +1876,7 @@ const Study = () => {
     setSessionRatings(Array(flashcards.length).fill(null));
     setSessionComplete(false);
     setReviewedDifficult(new Set()); // Reset reviewed difficult cards
+    setUserHasChangedTab(false); // Reset manual tab change tracking
 
     // Important: Reset time tracking
     setStudyTime(0);
@@ -1919,6 +1991,14 @@ const Study = () => {
           </Link>
 
           <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Background refresh indicator */}
+            {isRefreshing && (
+              <div className="flex items-center text-xs text-blue-600 dark:text-blue-400">
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                <span className="hidden sm:inline">Updating...</span>
+              </div>
+            )}
+
             {/* Overall study time always shown in nav bar */}
             <div className="flex items-center mr-1 sm:mr-2 text-xs sm:text-sm">
               <Clock className={`h-3 w-3 sm:h-4 sm:w-4 ${isStudying ? 'text-green-500' : 'text-blue-600'} mr-1`} />
@@ -1927,7 +2007,7 @@ const Study = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => fetchMaterials(true)}
+              onClick={() => fetchMaterials(true)} // force=true for manual refresh
               disabled={isRefreshing}
               className="bg-white/80 dark:bg-gray-800/80 mr-1 sm:mr-2 px-2 sm:px-3"
             >
@@ -3101,9 +3181,9 @@ const Study = () => {
         {/* Study Stats */}
         <div className="max-w-full sm:max-w-4xl mx-auto mt-8">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-semibold text-foreground">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center mb-4">
+                <h3 className="font-semibold text-foreground text-lg">
                   Session Stats
                   {isGuestUser && (
                     <Badge variant="outline" className="ml-2 text-xs">
@@ -3113,45 +3193,47 @@ const Study = () => {
                 </h3>
 
                 {/* Activity Study Timer */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <span className="text-xs text-muted-foreground mr-2">Current Activity:</span>
-                    <StudyTimer
-                      key={timerKey}
-                      isActive={isStudying && !sessionComplete && !isTimerPaused}
-                      initialTime={studyTime}
-                      onTimeUpdate={setStudyTime}
-                      className="text-sm font-medium bg-muted/30 px-2 py-1 rounded"
-                    />
-                    {isTimerPaused && (
-                      <Badge variant="outline" className="ml-2 text-xs">
-                        Paused
-                      </Badge>
-                    )}
+                <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0">
+                    <span className="text-xs text-muted-foreground sm:mr-2">Current Activity:</span>
+                    <div className="flex items-center">
+                      <StudyTimer
+                        key={timerKey}
+                        isActive={isStudying && !sessionComplete && !isTimerPaused}
+                        initialTime={studyTime}
+                        onTimeUpdate={setStudyTime}
+                        className="text-sm font-medium bg-muted/30 px-2 py-1 rounded"
+                      />
+                      {isTimerPaused && (
+                        <Badge variant="outline" className="ml-2 text-xs">
+                          Paused
+                        </Badge>
+                      )}
+                    </div>
                   </div>
 
                   {/* Timer Control Buttons */}
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2 sm:gap-1 justify-center sm:justify-end">
                     {!isTimerPaused ? (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={handlePauseTimer}
                         disabled={!isStudying || isOverallComplete}
-                        className="text-xs px-2 py-1 h-7"
+                        className="text-xs px-3 py-1.5 sm:px-2 sm:py-1 h-8 sm:h-7"
                         title="Pause timer"
                       >
-                        <Pause className="h-3 w-3" />
+                        <Pause className="h-4 w-4 sm:h-3 sm:w-3" />
                       </Button>
                     ) : (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={handleResumeTimer}
-                        className="text-xs px-2 py-1 h-7"
+                        className="text-xs px-3 py-1.5 sm:px-2 sm:py-1 h-8 sm:h-7"
                         title="Resume timer"
                       >
-                        <Play className="h-3 w-3" />
+                        <Play className="h-4 w-4 sm:h-3 sm:w-3" />
                       </Button>
                     )}
                     <Button
@@ -3159,43 +3241,43 @@ const Study = () => {
                       size="sm"
                       onClick={handleStopTimer}
                       disabled={!isStudying}
-                      className="text-xs px-2 py-1 h-7"
+                      className="text-xs px-3 py-1.5 sm:px-2 sm:py-1 h-8 sm:h-7"
                       title="Stop timer"
                     >
-                      <Square className="h-3 w-3" />
+                      <Square className="h-4 w-4 sm:h-3 sm:w-3" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleResetTimer}
-                      className="text-xs px-2 py-1 h-7"
+                      className="text-xs px-3 py-1.5 sm:px-2 sm:py-1 h-8 sm:h-7"
                       title="Reset timer"
                     >
-                      <RotateCcw className="h-3 w-3" />
+                      <RotateCcw className="h-4 w-4 sm:h-3 sm:w-3" />
                     </Button>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                 {/* Only show correct/difficult counts for flashcards and review tabs */}
                 {(tab === 'flashcards' || tab === 'review') && (
                   <>
-                    <div>
-                      <div className="text-2xl font-bold text-green-600">{sessionStats.correct}</div>
-                      <div className="text-sm text-muted-foreground">Correct</div>
+                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                      <div className="text-3xl sm:text-2xl font-bold text-green-600">{sessionStats.correct}</div>
+                      <div className="text-sm text-muted-foreground mt-1">Correct</div>
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-orange-600">{sessionStats.difficult}</div>
-                      <div className="text-sm text-muted-foreground">Marked Difficult</div>
+                    <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                      <div className="text-3xl sm:text-2xl font-bold text-orange-600">{sessionStats.difficult}</div>
+                      <div className="text-sm text-muted-foreground mt-1">Marked Difficult</div>
                     </div>
                   </>
                 )}
 
                 {/* Always show total time, but adjust grid layout based on what's visible */}
-                <div className={`${(tab === 'flashcards' || tab === 'review') ? '' : 'col-span-3'}`}>
-                  <div className="text-2xl font-bold text-blue-600">{formatTime(overallStudyTime)}</div>
-                  <div className="text-sm text-muted-foreground">Total Time</div>
+                <div className={`bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800 ${(tab === 'flashcards' || tab === 'review') ? '' : 'sm:col-span-3'}`}>
+                  <div className="text-3xl sm:text-2xl font-bold text-blue-600">{formatTime(overallStudyTime)}</div>
+                  <div className="text-sm text-muted-foreground mt-1">Total Time</div>
                 </div>
               </div>
 

@@ -531,6 +531,19 @@ const UserManagement = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
+                  style={{
+                    boxShadow: 'none',
+                    outline: 'none',
+                    transition: 'none'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.outline = 'none';
+                    e.target.style.boxShadow = 'none';
+                    e.target.style.borderColor = 'none';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = 'none';
+                  }}
                 />
               </div>
               <Button variant="outline">Filter by Role</Button>
@@ -688,6 +701,19 @@ const UserManagement = () => {
                 value={editForm.name}
                 onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
                 className="col-span-3"
+                style={{
+                  boxShadow: 'none',
+                  outline: 'none',
+                  transition: 'none'
+                }}
+                onFocus={(e) => {
+                  e.target.style.outline = 'none';
+                  e.target.style.boxShadow = 'none';
+                  e.target.style.borderColor = 'none';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'none';
+                }}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -700,6 +726,19 @@ const UserManagement = () => {
                 value={editForm.email}
                 onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
                 className="col-span-3"
+                style={{
+                  boxShadow: 'none',
+                  outline: 'none',
+                  transition: 'none'
+                }}
+                onFocus={(e) => {
+                  e.target.style.outline = 'none';
+                  e.target.style.boxShadow = 'none';
+                  e.target.style.borderColor = 'none';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'none';
+                }}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -712,7 +751,10 @@ const UserManagement = () => {
                   setEditForm(prev => ({ ...prev, user_type: value }))
                 }
               >
-                <SelectTrigger className="col-span-3">
+                <SelectTrigger
+                  className="col-span-3 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
+                  style={{ boxShadow: 'none', outline: 'none' }}
+                >
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -732,6 +774,19 @@ const UserManagement = () => {
                 value={editForm.points}
                 onChange={(e) => setEditForm(prev => ({ ...prev, points: parseInt(e.target.value) || 0 }))}
                 className="col-span-3"
+                style={{
+                  boxShadow: 'none',
+                  outline: 'none',
+                  transition: 'none'
+                }}
+                onFocus={(e) => {
+                  e.target.style.outline = 'none';
+                  e.target.style.boxShadow = 'none';
+                  e.target.style.borderColor = 'none';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'none';
+                }}
               />
             </div>
           </div>
@@ -912,6 +967,19 @@ const UserManagement = () => {
                     onChange={(e) => setAdminProfileData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="Enter your full name"
                     disabled={adminProfileLoading}
+                    style={{
+                      boxShadow: 'none',
+                      outline: 'none',
+                      transition: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.outline = 'none';
+                      e.target.style.boxShadow = 'none';
+                      e.target.style.borderColor = 'none';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'none';
+                    }}
                   />
                 </div>
 
@@ -924,6 +992,19 @@ const UserManagement = () => {
                     onChange={(e) => setAdminProfileData(prev => ({ ...prev, email: e.target.value }))}
                     placeholder="Enter your email address"
                     disabled={adminProfileLoading}
+                    style={{
+                      boxShadow: 'none',
+                      outline: 'none',
+                      transition: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.outline = 'none';
+                      e.target.style.boxShadow = 'none';
+                      e.target.style.borderColor = 'none';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'none';
+                    }}
                   />
                 </div>
 
@@ -931,6 +1012,19 @@ const UserManagement = () => {
                   onClick={updateAdminProfile}
                   disabled={adminProfileLoading || !adminProfileData.name.trim() || !adminProfileData.email.trim()}
                   className="w-full"
+                  style={{
+                    boxShadow: 'none',
+                    outline: 'none',
+                    transition: 'none'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.outline = 'none';
+                    e.target.style.boxShadow = 'none';
+                    e.target.style.borderColor = 'none';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = 'none';
+                  }}
                 >
                   {adminProfileLoading ? (
                     <>
@@ -959,6 +1053,19 @@ const UserManagement = () => {
                       onChange={(e) => setAdminPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
                       placeholder="Enter your current password"
                       disabled={adminProfileLoading}
+                      style={{
+                        boxShadow: 'none',
+                        outline: 'none',
+                        transition: 'none'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = 'none';
+                        e.target.style.borderColor = 'none';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'none';
+                      }}
                     />
                     <Button
                       type="button"
@@ -967,6 +1074,19 @@ const UserManagement = () => {
                       className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                       onClick={() => setShowAdminCurrentPassword(!showAdminCurrentPassword)}
                       disabled={adminProfileLoading}
+                      style={{
+                        boxShadow: 'none',
+                        outline: 'none',
+                        transition: 'none'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = 'none';
+                        e.target.style.borderColor = 'none';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'none';
+                      }}
                     >
                       {showAdminCurrentPassword ? (
                         <EyeOff className="h-4 w-4" />
@@ -987,6 +1107,19 @@ const UserManagement = () => {
                       onChange={(e) => setAdminPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
                       placeholder="Enter your new password (min. 8 characters)"
                       disabled={adminProfileLoading}
+                      style={{
+                        boxShadow: 'none',
+                        outline: 'none',
+                        transition: 'none'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = 'none';
+                        e.target.style.borderColor = 'none';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'none';
+                      }}
                     />
                     <Button
                       type="button"
@@ -995,6 +1128,19 @@ const UserManagement = () => {
                       className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                       onClick={() => setShowAdminNewPassword(!showAdminNewPassword)}
                       disabled={adminProfileLoading}
+                      style={{
+                        boxShadow: 'none',
+                        outline: 'none',
+                        transition: 'none'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = 'none';
+                        e.target.style.borderColor = 'none';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'none';
+                      }}
                     >
                       {showAdminNewPassword ? (
                         <EyeOff className="h-4 w-4" />
@@ -1015,6 +1161,19 @@ const UserManagement = () => {
                       onChange={(e) => setAdminPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                       placeholder="Confirm your new password"
                       disabled={adminProfileLoading}
+                      style={{
+                        boxShadow: 'none',
+                        outline: 'none',
+                        transition: 'none'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = 'none';
+                        e.target.style.borderColor = 'none';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'none';
+                      }}
                     />
                     <Button
                       type="button"
@@ -1023,6 +1182,19 @@ const UserManagement = () => {
                       className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                       onClick={() => setShowAdminConfirmPassword(!showAdminConfirmPassword)}
                       disabled={adminProfileLoading}
+                      style={{
+                        boxShadow: 'none',
+                        outline: 'none',
+                        transition: 'none'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.boxShadow = 'none';
+                        e.target.style.borderColor = 'none';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'none';
+                      }}
                     >
                       {showAdminConfirmPassword ? (
                         <EyeOff className="h-4 w-4" />

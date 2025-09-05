@@ -20,26 +20,26 @@ const Index = () => {
   const features = [
     {
       icon: FileText,
-      title: "Smart Document Processing",
-      description: "Upload PDFs, images, or text documents and our AI instantly creates flashcards in multiple languages.",
+      title: t('features.smart_processing.title'),
+      description: t('features.smart_processing.description'),
       color: "from-blue-500 to-cyan-500"
     },
     {
       icon: BookOpen,
-      title: "Adaptive Learning",
-      description: "Personalized spaced repetition using the SM-2 algorithm to optimize your learning efficiency.",
+      title: t('features.adaptive_learning.title'),
+      description: t('features.adaptive_learning.description'),
       color: "from-purple-500 to-pink-500"
     },
     {
       icon: Search,
-      title: "Multilingual Support",
-      description: "Full support for English, Sinhala, and Tamil with advanced NLP processing.",
+      title: t('features.multilingual_support.title'),
+      description: t('features.multilingual_support.description'),
       color: "from-green-500 to-emerald-500"
     },
     {
       icon: CircleCheck,
-      title: "Progress Tracking",
-      description: "Beautiful analytics and insights to track your learning journey and achievements.",
+      title: t('features.progress_tracking.title'),
+      description: t('features.progress_tracking.description'),
       color: "from-orange-500 to-red-500"
     }
   ];
@@ -56,13 +56,13 @@ const Index = () => {
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <Badge variant="secondary" className="mb-4">
-                Features
+                {t('features.badge')}
               </Badge>
               <h2 className="text-4xl font-bold text-foreground mb-6">
-                Everything you need to learn smarter
+                {t('features.title')}
               </h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                MemoSpark combines cutting-edge AI with proven learning techniques to create the most effective study experience.
+                {t('features.description')}
               </p>
             </div>
 
@@ -93,12 +93,12 @@ const Index = () => {
                 <>
                   <Link to="/upload">
                     <Button size="lg" className="bg-card text-blue-600 hover:bg-muted px-8 py-3 text-lg font-semibold">
-                      Upload New Document
+                      {t('cta.upload_new')}
                     </Button>
                   </Link>
                   <Link to="/dashboard">
                     <Button size="lg" variant="outline" className="border-card text-card-foreground hover:bg-muted hover:text-primary px-8 py-3 text-lg font-semibold">
-                      Go to Dashboard
+                      {t('cta.go_dashboard')}
                     </Button>
                   </Link>
                 </>

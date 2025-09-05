@@ -32,7 +32,20 @@ export const API_ENDPOINTS = {
   DECKS: {
     LIST: `${API_BASE_URL}/api/decks`,
     GENERATE_MATERIALS: (deckId: string | number) => `${API_BASE_URL}/api/decks/${deckId}/generate-materials`,
+    GET_MATERIALS: (deckId: string | number) => `${API_BASE_URL}/api/decks/${deckId}/materials`,
+    CREATE: `${API_BASE_URL}/api/decks`,
+    // Note: Individual flashcard CRUD endpoints don't exist yet in backend
+    // These would need to be implemented in Phase 2
+    // UPDATE_DECK: (deckId: string | number) => `${API_BASE_URL}/api/decks/${deckId}`,
+    // GET_FLASHCARDS: (deckId: string | number) => `${API_BASE_URL}/api/decks/${deckId}/flashcards`,
+    // CREATE_FLASHCARD: (deckId: string | number) => `${API_BASE_URL}/api/decks/${deckId}/flashcards`,
   },
+  // Note: These flashcard endpoints don't exist in the backend yet
+  // FLASHCARDS: {
+  //   UPDATE: (flashcardId: string | number) => `${API_BASE_URL}/api/flashcards/${flashcardId}`,
+  //   DELETE: (flashcardId: string | number) => `${API_BASE_URL}/api/flashcards/${flashcardId}`,
+  //   BULK_UPDATE: `${API_BASE_URL}/api/flashcards/bulk-update`,
+  // },
   SEARCH_FLASHCARDS: {
     GENERATE: `${API_BASE_URL}/api/search-flashcards/generate`,
     JOB_STATUS: (jobId: string) => `${API_BASE_URL}/api/search-flashcards/job/${jobId}/status`,
