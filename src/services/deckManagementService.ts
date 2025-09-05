@@ -339,7 +339,8 @@ class DeckManagementService {
           const mappedExercise = {
             ...exercise,
             question: exercise.exercise_text || exercise.question, // Use exercise_text as question (actual question)
-            instruction: exercise.instruction // Keep original instruction (generic type instruction)
+            instruction: exercise.instruction, // Keep original instruction (generic type instruction)
+            exercise_type: exercise.type || exercise.exercise_type // Map 'type' to 'exercise_type' for UI consistency
           };
 
           const processedCard = {
