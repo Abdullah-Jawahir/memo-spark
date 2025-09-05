@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, BookOpen, Edit, Trash2, Plus, Save, Loader2, Search } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ArrowLeft, BookOpen, Edit, Trash2, Plus, Save, Loader2, Search, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -14,6 +15,15 @@ import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
 import { Link } from 'react-router-dom';
 import FlashcardEditModal from '@/components/FlashcardEditModal';
 import deckManagementService, { GeneratedCard, DeckInfo } from '@/services/deckManagementService';
+
+const getCardTypeName = (type: string) => {
+  const typeMap: { [key: string]: string } = {
+    flashcard: 'flashcard',
+    quiz: 'quiz',
+    exercise: 'exercise'
+  };
+  return typeMap[type] || 'card';
+};
 
 const DeckManagement = () => {
   const { deckId } = useParams<{ deckId: string }>();
@@ -36,6 +46,10 @@ const DeckManagement = () => {
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [selectedMaterialId, setSelectedMaterialId] = useState<string>('');
   const [editingIndex, setEditingIndex] = useState<number>(-1);
+
+  // Delete confirmation state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [cardToDelete, setCardToDelete] = useState<GeneratedCard | null>(null);
 
   useEffect(() => {
     if (deckId) {
@@ -169,13 +183,10 @@ const DeckManagement = () => {
           session
         );
         if (response.success) {
-          toast({
-            title: "Success",
-            description: "Flashcard created successfully."
-          });
+          // Success message is handled by the modal
           await fetchDeckData(); // Reload data
         } else {
-          throw new Error(response.error || 'Failed to create flashcard');
+          throw new Error(response.error || `Failed to create ${getCardTypeName(cardData.type)}`);
         }
       } else if (editingCard?.realMaterialId && editingCard?.cardIndex !== undefined) {
         // Update existing card using real StudyMaterial ID
@@ -186,22 +197,19 @@ const DeckManagement = () => {
           session
         );
         if (response.success) {
-          toast({
-            title: "Success",
-            description: "Flashcard updated successfully."
-          });
+          // Success message is handled by the modal
           await fetchDeckData(); // Reload data
         } else {
-          throw new Error(response.error || 'Failed to update flashcard');
+          throw new Error(response.error || `Failed to update ${getCardTypeName(cardData.type)}`);
         }
       }
       setEditModalOpen(false);
       setEditingCard(null);
     } catch (error) {
-      console.error('Error saving flashcard:', error);
+      console.error(`Error saving ${getCardTypeName(cardData.type)}:`, error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : `Failed to ${isCreateMode ? 'create' : 'update'} flashcard`,
+        description: error instanceof Error ? error.message : `Failed to ${isCreateMode ? 'create' : 'update'} ${getCardTypeName(cardData.type)}`,
         variant: "destructive"
       });
     }
@@ -215,29 +223,46 @@ const DeckManagement = () => {
         variant: "destructive"
       });
       return;
-    } try {
+    }
+
+    try {
       const response = await deckManagementService.deleteFlashcard(
         card.realMaterialId,
         card.cardIndex,
         session
       );
       if (response.success) {
-        toast({
-          title: "Success",
-          description: "Flashcard deleted successfully."
-        });
+        // Success message is handled by the modal
         await fetchDeckData(); // Reload data
       } else {
-        throw new Error(response.error || 'Failed to delete flashcard');
+        throw new Error(response.error || `Failed to delete ${getCardTypeName(card.type)}`);
       }
     } catch (error) {
-      console.error('Error deleting flashcard:', error);
+      console.error(`Error deleting ${getCardTypeName(card.type)}:`, error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete flashcard",
+        description: error instanceof Error ? error.message : `Failed to delete ${getCardTypeName(card.type)}`,
         variant: "destructive"
       });
     }
+  };
+
+  const handleDeleteConfirmation = (card: GeneratedCard) => {
+    setCardToDelete(card);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (cardToDelete) {
+      await handleDeleteCard(cardToDelete);
+      setDeleteConfirmOpen(false);
+      setCardToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmOpen(false);
+    setCardToDelete(null);
   };
 
   const handleAddCard = () => {
@@ -513,11 +538,7 @@ const DeckManagement = () => {
                                       size="sm"
                                       className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600"
                                       title="Delete card"
-                                      onClick={() => {
-                                        if (window.confirm('Are you sure you want to delete this card?')) {
-                                          handleDeleteCard(card);
-                                        }
-                                      }}
+                                      onClick={() => handleDeleteConfirmation(card)}
                                     >
                                       <Trash2 className="h-3 w-3" />
                                     </Button>
@@ -579,6 +600,29 @@ const DeckManagement = () => {
           onSave={handleSaveCard}
           mode={isCreateMode ? 'create' : 'edit'}
         />
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+                Delete {cardToDelete ? getCardTypeName(cardToDelete.type) : 'Card'}
+              </DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this {cardToDelete ? getCardTypeName(cardToDelete.type) : 'card'}? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={handleCancelDelete}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleConfirmDelete}>
+                Delete {cardToDelete ? getCardTypeName(cardToDelete.type) : 'Card'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </ProtectedRoute>
   );
