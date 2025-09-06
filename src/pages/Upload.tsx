@@ -134,6 +134,7 @@ const Upload = () => {
   const [editingCard, setEditingCard] = useState<GeneratedCard | null>(null);
   const [editingIndex, setEditingIndex] = useState<number>(-1);
   const [deckManagementService] = useState(new DeckManagementService());
+  const [isDragOver, setIsDragOver] = useState(false);
 
   interface Quiz {
     type: string;
@@ -180,6 +181,43 @@ const Upload = () => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragOver(false);
+
+    const files = event.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      // Check file type
+      const allowedTypes = ['.pdf', '.docx', '.txt'];
+      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+
+      if (allowedTypes.includes(fileExtension)) {
+        setSelectedFile(file);
+      } else {
+        toast({
+          title: "Unsupported file type",
+          description: "Please upload a PDF, DOCX, or TXT file",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -726,19 +764,25 @@ const Upload = () => {
             <CardContent>
               {!isUploading && !uploadComplete && (
                 <div
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer"
+                  className={`border-2 border-dashed ${isDragOver
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                      : 'border-gray-300 hover:border-blue-400'
+                    } rounded-lg p-8 text-center transition-colors cursor-pointer`}
                   onClick={() => fileInputRef.current?.click()}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
                 >
                   <input
                     type="file"
                     ref={fileInputRef}
                     className="hidden"
                     onChange={handleFileSelect}
-                    accept=".pdf,.docx"
+                    accept=".pdf,.docx,.txt"
                   />
-                  <UploadIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <UploadIcon className={`h-12 w-12 ${isDragOver ? 'text-blue-500' : 'text-gray-400'} mx-auto mb-4 transition-colors`} />
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    {selectedFile ? selectedFile.name : 'Drop files here or click to browse'}
+                    {selectedFile ? selectedFile.name : isDragOver ? 'Drop your file here' : 'Drop files here or click to browse'}
                   </h3>
                   <p className="text-muted-foreground mb-4">Support for PDF and text files up to 10MB</p>
                   <Button
