@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload as UploadIcon, FileText, Image, File, Cloud, CheckCircle, AlertCircle, Info, UserPlus, Eye, BookOpen, Lock, Edit, Trash2, Plus } from 'lucide-react';
+import { Upload as UploadIcon, FileText, Image, File, Cloud, CheckCircle, AlertCircle, Info, UserPlus, Eye, BookOpen, Lock, Edit, Trash2, Plus, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
@@ -65,6 +65,7 @@ const Upload = () => {
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [processingStatus, setProcessingStatus] = useState<'idle' | 'processing' | 'completed' | 'failed'>('idle');
+  const [processingMessage, setProcessingMessage] = useState<string>('');
   const [showPreview, setShowPreview] = useState(false);
   const [guestLimitExceeded, setGuestLimitExceeded] = useState(false);
   const [deckName, setDeckName] = useState("");
@@ -139,6 +140,12 @@ const Upload = () => {
         : API_ENDPOINTS.DOCUMENTS.GUEST_STATUS
       : API_ENDPOINTS.DOCUMENTS.STATUS(id);
 
+  // Helper to get the correct cancel endpoint
+  const getCancelEndpoint = (id: string) =>
+    isGuest
+      ? API_ENDPOINTS.DOCUMENTS.GUEST_CANCEL(id)
+      : API_ENDPOINTS.DOCUMENTS.CANCEL(id);
+
   const handleFileUpload = async () => {
     if (!selectedFile) {
       toast({
@@ -172,6 +179,7 @@ const Upload = () => {
     setIsUploading(true);
     setUploadProgress(0);
     setProcessingStatus('processing');
+    setProcessingMessage('Uploading file...');
     setGuestLimitExceeded(false);
 
     const formData = new FormData();
@@ -197,6 +205,11 @@ const Upload = () => {
             ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
             : 0;
           setUploadProgress(progress);
+          if (progress < 100) {
+            setProcessingMessage(`Uploading file... ${progress}%`);
+          } else {
+            setProcessingMessage('Upload complete, processing document...');
+          }
         }
       });
 
@@ -213,6 +226,7 @@ const Upload = () => {
       } else if (response.data.document_id) {
         // If not already processed, check status as before
         setDocumentId(response.data.document_id);
+        setProcessingMessage('Document uploaded successfully, starting content analysis...');
         checkProcessingStatus(response.data.document_id);
       } else {
         toast({
@@ -254,6 +268,8 @@ const Upload = () => {
 
   const checkProcessingStatus = async (id: string) => {
     try {
+      setProcessingMessage('Checking document processing status...');
+
       // Build query string for card_types[]
       const params = new URLSearchParams();
       cardTypes.forEach(type => params.append('card_types[]', type));
@@ -263,12 +279,44 @@ const Upload = () => {
           'Authorization': session ? `Bearer ${session.access_token}` : undefined
         }
       });
+
+      // Check if response has status information for better messaging
+      const status = response.data.status;
+      if (status === 'processing') {
+        // Update message based on processing stage
+        if (response.data.metadata?.stage) {
+          const stage = response.data.metadata.stage;
+          switch (stage) {
+            case 'text_extraction':
+              setProcessingMessage('Extracting text from document...');
+              break;
+            case 'content_analysis':
+              setProcessingMessage('Analyzing document content...');
+              break;
+            case 'flashcard_generation':
+              setProcessingMessage('Generating flashcards...');
+              break;
+            case 'quiz_generation':
+              setProcessingMessage('Generating quiz questions...');
+              break;
+            case 'exercise_generation':
+              setProcessingMessage('Generating exercises...');
+              break;
+            default:
+              setProcessingMessage('Processing document...');
+          }
+        } else {
+          setProcessingMessage('Processing document and generating content...');
+        }
+      }
+
       // Use the helper to extract generated content
       const content = extractGeneratedContent(response.data);
       if (content) {
         setProcessingStatus('completed');
         setIsUploading(false);
         setUploadComplete(true);
+        setProcessingMessage('Content generation completed successfully!');
         setGeneratedContent(content);
         generatedContentRef.current = content;
         setGeneratedCards(Array.isArray(content.flashcards) ? content.flashcards : []);
@@ -277,6 +325,7 @@ const Upload = () => {
       } else if (response.data.status === 'failed') {
         setProcessingStatus('failed');
         setIsUploading(false);
+        setProcessingMessage('Document processing failed');
         toast({
           title: "Processing failed",
           description: response.data.metadata?.error || "There was an error processing your file.",
@@ -290,6 +339,58 @@ const Upload = () => {
       console.error('Status check failed:', error);
       setProcessingStatus('failed');
       setIsUploading(false);
+      setProcessingMessage('Status check failed');
+    }
+  };
+
+  const handleCancelProcessing = async () => {
+    if (!documentId) return;
+
+    try {
+      setProcessingMessage('Cancelling document processing...');
+
+      const response = await axios.delete(getCancelEndpoint(documentId), {
+        headers: {
+          'Authorization': session ? `Bearer ${session.access_token}` : undefined,
+          'Content-Type': 'application/json'
+        },
+        data: {
+          is_guest: !user
+        }
+      });
+
+      if (response.status === 200) {
+        // Successfully cancelled on backend
+        setIsUploading(false);
+        setProcessingStatus('idle');
+        setDocumentId(null);
+        setProcessingMessage('');
+        setSelectedFile(null);
+
+        toast({
+          title: "Processing Cancelled",
+          description: "Document processing has been successfully cancelled.",
+        });
+      }
+    } catch (error: unknown) {
+      console.error('Failed to cancel processing:', error);
+
+      // Even if backend cancel fails, reset the frontend state
+      setIsUploading(false);
+      setProcessingStatus('idle');
+      setDocumentId(null);
+      setProcessingMessage('');
+      setSelectedFile(null);
+
+      const errorMessage = isApiError(error)
+        ? error.response.data.error
+        : "Failed to cancel processing on server, but stopped locally.";
+
+      toast({
+        title: "Cancel Request",
+        description: errorMessage,
+        variant: "destructive"
+      });
     }
   };
 
@@ -300,9 +401,11 @@ const Upload = () => {
     if (user && guestLimitExceeded) {
       setGuestLimitExceeded(false);
       setProcessingStatus('idle');
+      setProcessingMessage('');
       setUploadComplete(false);
       setGeneratedCards([]);
       setSelectedFile(null);
+      setDocumentId(null);
     }
   }, [user, guestLimitExceeded]);
 
@@ -566,10 +669,64 @@ const Upload = () => {
               {isUploading && !uploadComplete && (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Processing your document...</h3>
-                  <p className="text-muted-foreground mb-4">Analyzing content and generating flashcards</p>
-                  <Progress value={uploadProgress} className="max-w-xs mx-auto" />
-                  <p className="text-sm text-gray-500 mt-2">{uploadProgress}% complete</p>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    {uploadProgress < 100 ? 'Uploading Document...' : 'Processing Document...'}
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    {processingMessage || 'Analyzing content and generating flashcards'}
+                  </p>
+
+                  {/* Progress bar for upload */}
+                  {uploadProgress < 100 && (
+                    <>
+                      <Progress value={uploadProgress} className="max-w-xs mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">{uploadProgress}% uploaded</p>
+                    </>
+                  )}
+
+                  {/* Processing stages indicator */}
+                  {uploadProgress >= 100 && (
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="animate-pulse w-2 h-2 bg-blue-600 rounded-full"></div>
+                        <div className="animate-pulse w-2 h-2 bg-blue-600 rounded-full" style={{ animationDelay: '0.2s' }}></div>
+                        <div className="animate-pulse w-2 h-2 bg-blue-600 rounded-full" style={{ animationDelay: '0.4s' }}></div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        This may take 1-3 minutes depending on document size
+                      </p>
+
+                      {/* Document ID for reference */}
+                      {documentId && (
+                        <div className="space-y-2">
+                          <p className="text-xs text-gray-400">
+                            Processing ID: {documentId}
+                          </p>
+
+                          {/* Manual refresh and cancel buttons */}
+                          <div className="flex justify-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => checkProcessingStatus(documentId)}
+                              className="text-xs"
+                            >
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Check Status
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleCancelProcessing}
+                              className="text-xs text-red-600"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
