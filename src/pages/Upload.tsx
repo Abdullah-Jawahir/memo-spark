@@ -472,9 +472,9 @@ const Upload = () => {
         {isGuest && !guestLimitExceeded && (
           <Alert className="mb-6 border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
             <Info className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800">
+            <AlertDescription className="text-blue-800 dark:text-blue-100">
               <strong>Try out MemoSpark instantly—no sign-up needed!</strong> Upload a document and generate flashcards to experience our AI-powered learning platform.
-              <Link to="/register" className="ml-2 underline font-medium hover:text-blue-600">
+              <Link to="/register" className="ml-2 underline font-medium hover:text-blue-600 dark:hover:text-blue-300">
                 Create a free account to save your progress →
               </Link>
             </AlertDescription>
