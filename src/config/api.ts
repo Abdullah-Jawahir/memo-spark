@@ -4,8 +4,10 @@ export const API_ENDPOINTS = {
   DOCUMENTS: {
     UPLOAD: `${API_BASE_URL}/api/documents/upload`,
     STATUS: (id: string) => `${API_BASE_URL}/api/documents/${id}/status`,
+    CANCEL: (id: string) => `${API_BASE_URL}/api/documents/${id}/cancel`,
     GUEST_UPLOAD: `${API_BASE_URL}/api/guest/documents/upload`,
     GUEST_STATUS: (id: string) => `${API_BASE_URL}/api/guest/documents/${id}/status`,
+    GUEST_CANCEL: (id: string) => `${API_BASE_URL}/api/guest/documents/${id}/cancel`,
   },
   DASHBOARD: {
     MAIN: `${API_BASE_URL}/api/dashboard`,
