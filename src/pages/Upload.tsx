@@ -550,22 +550,24 @@ const Upload = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-800">
       {/* Navigation Header */}
-      <div className="absolute top-4 left-4 z-50">
-        <Link to="/" className="flex items-center space-x-2 group">
-          <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg group-hover:scale-105 transition-transform">
-            <BookOpen className="h-6 w-6 text-white" />
-          </div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            MemoSpark
-          </span>
-        </Link>
+      <div className="relative w-full">
+        <div className="flex justify-between items-center p-4 md:p-6">
+          <Link to="/" className="flex items-center space-x-2 group">
+            <div className="p-1.5 md:p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg group-hover:scale-105 transition-transform">
+              <BookOpen className="h-4 w-4 md:h-6 md:w-6 text-white" />
+            </div>
+            <span className="text-lg md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              MemoSpark
+            </span>
+          </Link>
+          <ThemeSwitcher />
+        </div>
       </div>
-      <div className="absolute top-4 right-4 z-50"><ThemeSwitcher /></div>
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="max-w-4xl mx-auto px-4 md:px-6 py-4 md:py-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-4">Upload Your Study Materials</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+        <div className="text-center mb-6 md:mb-8 pt-4 md:pt-0">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3 md:mb-4">Upload Your Study Materials</h1>
+          <p className="text-muted-foreground max-w-2xl mx-auto text-sm md:text-base px-4 md:px-0">
             Transform your documents into interactive flashcards automatically.
             Our AI will analyze your content and create personalized learning cards.
           </p>
@@ -573,11 +575,11 @@ const Upload = () => {
 
         {/* Guest User Banner */}
         {isGuest && !guestLimitExceeded && (
-          <Alert className="mb-6 border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
+          <Alert className="mb-4 md:mb-6 border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
             <Info className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800 dark:text-blue-100">
+            <AlertDescription className="text-blue-800 dark:text-blue-100 text-sm md:text-base">
               <strong>Try out MemoSpark instantly—no sign-up needed!</strong> Upload a document and generate flashcards to experience our AI-powered learning platform.
-              <Link to="/register" className="ml-2 underline font-medium hover:text-blue-600 dark:hover:text-blue-300">
+              <Link to="/register" className="ml-2 underline font-medium hover:text-blue-600 dark:hover:text-blue-300 block sm:inline mt-2 sm:mt-0">
                 Create a free account to save your progress →
               </Link>
             </AlertDescription>
@@ -586,11 +588,11 @@ const Upload = () => {
 
         {/* Guest Limit Exceeded Banner */}
         {guestLimitExceeded && (
-          <Alert className="mb-6 border-red-200 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20">
+          <Alert className="mb-4 md:mb-6 border-red-200 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20">
             <Lock className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">
+            <AlertDescription className="text-red-800 text-sm md:text-base">
               <strong>Upload limit reached!</strong> Guest users can only upload one document per session.
-              <Link to="/register" className="ml-2 underline font-medium hover:text-red-600">
+              <Link to="/register" className="ml-2 underline font-medium hover:text-red-600 block sm:inline mt-2 sm:mt-0">
                 Create a free account to upload unlimited documents →
               </Link>
             </AlertDescription>
@@ -598,7 +600,7 @@ const Upload = () => {
         )}
 
         {/* Language Selection */}
-        <Card className="mb-8">
+        <Card className="mb-6 md:mb-8">
           <CardHeader>
             <CardTitle>Select Content Language</CardTitle>
           </CardHeader>
@@ -629,7 +631,7 @@ const Upload = () => {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
           {/* Upload Area */}
           <Card>
             <CardHeader>
@@ -919,7 +921,7 @@ const Upload = () => {
           </Card>
 
           {/* Supported Formats & Options */}
-          <div className="space-y-8">
+          <div className="space-y-4 md:space-y-8">
             <Card>
               <CardHeader>
                 <CardTitle>Supported Formats</CardTitle>
