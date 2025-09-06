@@ -33,22 +33,76 @@ function extractGeneratedContent(response: any): {
   exercises?: any[];
   flashcards?: any[];
 } | null {
-  // Case 1: New upload (nested)
+  console.log('Extracting generated content from response:', response);
+
+  // Case 1: Status response with generated_cards in data
+  if (response?.data?.generated_cards) {
+    console.log('Found generated_cards in response.data:', response.data.generated_cards);
+    return {
+      flashcards: response.data.generated_cards.flashcard || [],
+      quizzes: response.data.generated_cards.quiz || [],
+      exercises: response.data.generated_cards.exercise || []
+    };
+  }
+
+  // Case 2: Status response with nested data.data
+  if (response?.data?.data?.generated_cards) {
+    console.log('Found generated_cards in response.data.data:', response.data.data.generated_cards);
+    return {
+      flashcards: response.data.data.generated_cards.flashcard || [],
+      quizzes: response.data.data.generated_cards.quiz || [],
+      exercises: response.data.data.generated_cards.exercise || []
+    };
+  }
+
+  // Case 3: Status response with generated_content
+  if (response?.data?.generated_content) {
+    console.log('Found generated_content in response.data:', response.data.generated_content);
+    const content = response.data.generated_content;
+    return {
+      flashcards: content.flashcard || content.flashcards || [],
+      quizzes: content.quiz || content.quizzes || [],
+      exercises: content.exercise || content.exercises || []
+    };
+  }
+
+  // Case 4: New upload (nested in metadata)
   if (response?.metadata?.generated_content) {
+    console.log('Found generated_content in metadata:', response.metadata.generated_content);
     let content = response.metadata.generated_content;
     if (content.generated_content) {
       content = content.generated_content;
     }
-    return content;
+    return {
+      flashcards: content.flashcard || content.flashcards || [],
+      quizzes: content.quiz || content.quizzes || [],
+      exercises: content.exercise || content.exercises || []
+    };
   }
-  // Case 2: Already processed (flat)
+
+  // Case 5: Already processed (flat)
   if (response?.result?.generated_content) {
-    return response.result.generated_content;
+    console.log('Found generated_content in result:', response.result.generated_content);
+    const content = response.result.generated_content;
+    return {
+      flashcards: content.flashcard || content.flashcards || [],
+      quizzes: content.quiz || content.quizzes || [],
+      exercises: content.exercise || content.exercises || []
+    };
   }
-  // Fallback: direct
+
+  // Case 6: Direct access
   if (response?.generated_content) {
-    return response.generated_content;
+    console.log('Found generated_content directly:', response.generated_content);
+    const content = response.generated_content;
+    return {
+      flashcards: content.flashcard || content.flashcards || [],
+      quizzes: content.quiz || content.quizzes || [],
+      exercises: content.exercise || content.exercises || []
+    };
   }
+
+  console.log('No generated content found in response');
   return null;
 }
 
@@ -66,6 +120,9 @@ const Upload = () => {
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [processingStatus, setProcessingStatus] = useState<'idle' | 'processing' | 'completed' | 'failed'>('idle');
   const [processingMessage, setProcessingMessage] = useState<string>('');
+  const [processingStage, setProcessingStage] = useState<string>('');
+  const [processingLogs, setProcessingLogs] = useState<any[]>([]);
+  const [showDetailedLogs, setShowDetailedLogs] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [guestLimitExceeded, setGuestLimitExceeded] = useState(false);
   const [deckName, setDeckName] = useState("");
@@ -226,7 +283,18 @@ const Upload = () => {
       } else if (response.data.document_id) {
         // If not already processed, check status as before
         setDocumentId(response.data.document_id);
-        setProcessingMessage('Document uploaded successfully, starting content analysis...');
+
+        // Handle queue information
+        if (response.data.status === 'queued') {
+          setProcessingMessage('Document uploaded and queued for processing...');
+          setProcessingStage('queued');
+          if (response.data.queue_info) {
+            setProcessingMessage(`Document queued for processing (delay: ${response.data.queue_info.delay})`);
+          }
+        } else {
+          setProcessingMessage('Document uploaded successfully, starting content analysis...');
+        }
+
         checkProcessingStatus(response.data.document_id);
       } else {
         toast({
@@ -282,47 +350,56 @@ const Upload = () => {
 
       // Check if response has status information for better messaging
       const status = response.data.status;
-      if (status === 'processing') {
+      const stage = response.data.stage || 'processing';
+      const message = response.data.message || 'Processing document...';
+      const logs = response.data.logs || [];
+
+      // Update processing information
+      setProcessingStage(stage);
+      setProcessingMessage(message);
+      setProcessingLogs(logs);
+
+      if (status === 'processing' || status === 'queued') {
         // Update message based on processing stage
-        if (response.data.metadata?.stage) {
-          const stage = response.data.metadata.stage;
-          switch (stage) {
-            case 'text_extraction':
-              setProcessingMessage('Extracting text from document...');
-              break;
-            case 'content_analysis':
-              setProcessingMessage('Analyzing document content...');
-              break;
-            case 'flashcard_generation':
-              setProcessingMessage('Generating flashcards...');
-              break;
-            case 'quiz_generation':
-              setProcessingMessage('Generating quiz questions...');
-              break;
-            case 'exercise_generation':
-              setProcessingMessage('Generating exercises...');
-              break;
-            default:
-              setProcessingMessage('Processing document...');
-          }
-        } else {
-          setProcessingMessage('Processing document and generating content...');
-        }
+        setProcessingMessage(message);
       }
 
-      // Use the helper to extract generated content
-      const content = extractGeneratedContent(response.data);
-      if (content) {
-        setProcessingStatus('completed');
-        setIsUploading(false);
-        setUploadComplete(true);
-        setProcessingMessage('Content generation completed successfully!');
-        setGeneratedContent(content);
-        generatedContentRef.current = content;
-        setGeneratedCards(Array.isArray(content.flashcards) ? content.flashcards : []);
-        localStorage.setItem('generatedContent', JSON.stringify(content));
-        localStorage.setItem('currentDeckName', deckName); // Store deck name for enrichment
-      } else if (response.data.status === 'failed') {
+      // Check if document processing is completed
+      if (status === 'completed') {
+        console.log('Document processing completed, extracting content...');
+
+        // Use the helper to extract generated content
+        const content = extractGeneratedContent(response.data);
+        console.log('Extracted content:', content);
+
+        if (content && (content.flashcards?.length > 0 || content.quizzes?.length > 0 || content.exercises?.length > 0)) {
+          setProcessingStatus('completed');
+          setIsUploading(false);
+          setUploadComplete(true);
+          setProcessingMessage('Content generation completed successfully!');
+          setGeneratedContent(content);
+          generatedContentRef.current = content;
+          setGeneratedCards(Array.isArray(content.flashcards) ? content.flashcards : []);
+          localStorage.setItem('generatedContent', JSON.stringify(content));
+          localStorage.setItem('currentDeckName', deckName); // Store deck name for enrichment
+
+          toast({
+            title: "Processing Complete!",
+            description: `Generated ${content.flashcards?.length || 0} flashcards, ${content.quizzes?.length || 0} quiz questions, and ${content.exercises?.length || 0} exercises.`,
+            variant: "default"
+          });
+        } else {
+          console.warn('Processing completed but no content found');
+          setProcessingStatus('failed');
+          setIsUploading(false);
+          setProcessingMessage('No content was generated from your document');
+          toast({
+            title: "Processing Completed",
+            description: "Document was processed but no content was generated. The document might be empty or contain unsupported content.",
+            variant: "destructive"
+          });
+        }
+      } else if (status === 'failed') {
         setProcessingStatus('failed');
         setIsUploading(false);
         setProcessingMessage('Document processing failed');
@@ -332,8 +409,8 @@ const Upload = () => {
           variant: "destructive"
         });
       } else {
-        // Still processing, check again after a delay
-        setTimeout(() => checkProcessingStatus(id), 2000);
+        // Still processing, check again after a delay (increased to avoid rate limiting)
+        setTimeout(() => checkProcessingStatus(id), 5000); // Changed from 2000ms to 5000ms
       }
     } catch (error) {
       console.error('Status check failed:', error);
@@ -365,6 +442,9 @@ const Upload = () => {
         setProcessingStatus('idle');
         setDocumentId(null);
         setProcessingMessage('');
+        setProcessingStage('');
+        setProcessingLogs([]);
+        setShowDetailedLogs(false);
         setSelectedFile(null);
 
         toast({
@@ -380,6 +460,9 @@ const Upload = () => {
       setProcessingStatus('idle');
       setDocumentId(null);
       setProcessingMessage('');
+      setProcessingStage('');
+      setProcessingLogs([]);
+      setShowDetailedLogs(false);
       setSelectedFile(null);
 
       const errorMessage = isApiError(error)
@@ -402,6 +485,9 @@ const Upload = () => {
       setGuestLimitExceeded(false);
       setProcessingStatus('idle');
       setProcessingMessage('');
+      setProcessingStage('');
+      setProcessingLogs([]);
+      setShowDetailedLogs(false);
       setUploadComplete(false);
       setGeneratedCards([]);
       setSelectedFile(null);
@@ -688,15 +774,60 @@ const Upload = () => {
 
                   {/* Processing stages indicator */}
                   {uploadProgress >= 100 && (
-                    <div className="mt-4 space-y-2">
+                    <div className="mt-4 space-y-4">
+                      {/* Stage indicator */}
+                      {processingStage && (
+                        <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3">
+                          <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                            Current Stage: {processingStage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Animated dots */}
                       <div className="flex items-center justify-center space-x-2">
                         <div className="animate-pulse w-2 h-2 bg-blue-600 rounded-full"></div>
                         <div className="animate-pulse w-2 h-2 bg-blue-600 rounded-full" style={{ animationDelay: '0.2s' }}></div>
                         <div className="animate-pulse w-2 h-2 bg-blue-600 rounded-full" style={{ animationDelay: '0.4s' }}></div>
                       </div>
+
                       <p className="text-xs text-muted-foreground">
-                        This may take 1-3 minutes depending on document size
+                        This may take 2-3 minutes depending on document size
                       </p>
+
+                      {/* Processing logs */}
+                      {processingLogs.length > 0 && (
+                        <div className="mt-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowDetailedLogs(!showDetailedLogs)}
+                            className="text-xs mb-2"
+                          >
+                            {showDetailedLogs ? 'Hide' : 'Show'} Processing Details
+                          </Button>
+
+                          {showDetailedLogs && (
+                            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 max-h-32 overflow-y-auto">
+                              <div className="space-y-1">
+                                {processingLogs.slice(-5).map((log, index) => (
+                                  <div key={index} className="text-xs">
+                                    <span className="text-gray-500 dark:text-gray-400">
+                                      {log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : ''}
+                                    </span>
+                                    <span className={`ml-2 ${log.type === 'success' ? 'text-green-600 dark:text-green-400' :
+                                      log.type === 'warning' ? 'text-yellow-600 dark:text-yellow-400' :
+                                        'text-blue-600 dark:text-blue-400'
+                                      }`}>
+                                      {log.message}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* Document ID for reference */}
                       {documentId && (
@@ -730,9 +861,7 @@ const Upload = () => {
                     </div>
                   )}
                 </div>
-              )}
-
-              {uploadComplete && (
+              )}              {uploadComplete && (
                 <div className="text-center py-8">
                   <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-foreground mb-2">Upload Complete!</h3>
