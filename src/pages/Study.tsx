@@ -43,7 +43,7 @@ interface Quiz {
 }
 
 interface Exercise {
-  type: 'fill_blank' | 'true_false' | 'short_answer' | 'matching' | 'multiple_choice';
+  type: 'fill_blank' | 'fill_in_the_blank' | 'true_false' | 'short_answer' | 'matching' | 'multiple_choice';
   instruction: string;
   question?: string;
   answer: string | Record<string, string>;
@@ -559,8 +559,14 @@ const Study = () => {
   // Function to process exercises data and extract question text and options
   const processExerciseData = (exercises: any[]): Exercise[] => {
     return exercises.map(exercise => {
+      // Normalize exercise type for consistency
+      let normalizedType = exercise.type;
+      if (normalizedType === 'fill_in_the_blank') {
+        normalizedType = 'fill_blank';
+      }
+
       const processed: Exercise = {
-        type: exercise.type,
+        type: normalizedType,
         instruction: exercise.instruction,
         question: exercise.question,
         answer: exercise.answer,
@@ -571,7 +577,7 @@ const Study = () => {
       };
 
       // For multiple choice exercises, extract options from question if not provided separately
-      if (exercise.type === 'multiple_choice' && !exercise.options && exercise.question) {
+      if (processed.type === 'multiple_choice' && !exercise.options && exercise.question) {
         const questionText = exercise.question;
         // Look for pattern like "a) Option1 b) Option2 c) Option3 d) Option4"
         const optionsMatch = questionText.match(/[a-z]\)\s*[^a-z)]+/g);
