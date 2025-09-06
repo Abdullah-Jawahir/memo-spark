@@ -87,13 +87,14 @@ const Upload = () => {
   }
 
   interface Exercise {
-    type: 'fill_blank' | 'true_false' | 'short_answer' | 'matching';
+    type: 'fill_blank' | 'fill_in_the_blank' | 'true_false' | 'short_answer' | 'matching' | 'multiple_choice';
     instruction: string;
     question?: string;
     answer: string | Record<string, string>;
     difficulty: string;
     concepts?: string[];
     definitions?: string[];
+    options?: string[];
   }
 
   interface GeneratedContent {
@@ -114,9 +115,7 @@ const Upload = () => {
 
   const supportedFormats = [
     { icon: FileText, name: "PDF", description: "Text documents, study materials" },
-    { icon: Image, name: "Images", description: "JPG, PNG - with OCR support" },
     { icon: File, name: "Text Files", description: "TXT, DOCX files" },
-    { icon: Cloud, name: "Cloud Import", description: "Google Drive, Dropbox" }
   ];
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -544,13 +543,13 @@ const Upload = () => {
                     ref={fileInputRef}
                     className="hidden"
                     onChange={handleFileSelect}
-                    accept=".pdf,.docx,.pptx,.jpg,.jpeg,.png"
+                    accept=".pdf,.docx"
                   />
                   <UploadIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-foreground mb-2">
                     {selectedFile ? selectedFile.name : 'Drop files here or click to browse'}
                   </h3>
-                  <p className="text-muted-foreground mb-4">Support for PDF, images, and text files up to 10MB</p>
+                  <p className="text-muted-foreground mb-4">Support for PDF and text files up to 10MB</p>
                   <Button
                     onClick={(e) => {
                       e.stopPropagation();

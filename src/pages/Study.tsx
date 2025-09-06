@@ -43,7 +43,7 @@ interface Quiz {
 }
 
 interface Exercise {
-  type: 'fill_blank' | 'true_false' | 'short_answer' | 'matching' | 'multiple_choice';
+  type: 'fill_blank' | 'fill_in_the_blank' | 'true_false' | 'short_answer' | 'matching' | 'multiple_choice';
   instruction: string;
   question?: string;
   answer: string | Record<string, string>;
@@ -559,8 +559,14 @@ const Study = () => {
   // Function to process exercises data and extract question text and options
   const processExerciseData = (exercises: any[]): Exercise[] => {
     return exercises.map(exercise => {
+      // Normalize exercise type for consistency
+      let normalizedType = exercise.type;
+      if (normalizedType === 'fill_in_the_blank') {
+        normalizedType = 'fill_blank';
+      }
+
       const processed: Exercise = {
-        type: exercise.type,
+        type: normalizedType,
         instruction: exercise.instruction,
         question: exercise.question,
         answer: exercise.answer,
@@ -571,7 +577,7 @@ const Study = () => {
       };
 
       // For multiple choice exercises, extract options from question if not provided separately
-      if (exercise.type === 'multiple_choice' && !exercise.options && exercise.question) {
+      if (processed.type === 'multiple_choice' && !exercise.options && exercise.question) {
         const questionText = exercise.question;
         // Look for pattern like "a) Option1 b) Option2 c) Option3 d) Option4"
         const optionsMatch = questionText.match(/[a-z]\)\s*[^a-z)]+/g);
@@ -825,6 +831,7 @@ const Study = () => {
                 setExerciseStep(0);
                 setExerciseAnswers([]);
                 setExerciseCompleted(false);
+                setUserHasChangedTab(false); // Reset manual tab change tracking
                 // Clear persisted study session and in-memory session to avoid stale session_id
                 try { localStorage.removeItem('memo-spark-current-study-session'); } catch (e) { /* ignore */ }
                 setStudySession(null);
@@ -841,11 +848,41 @@ const Study = () => {
               setExercises(processExerciseData(enrichedMaterials.exercises || []));
               setSessionRatings(Array(enrichedMaterials.flashcards?.length || 0).fill(null));
 
+              // Try to restore study progress if this is the same deck/content
+              let progressRestored = false;
+              if (currentDeckIdentifier === deckIdentifier) {
+                console.log('Attempting to restore study progress for enriched materials');
+                progressRestored = restoreStudyProgress();
+                if (progressRestored) {
+                  console.log('Study progress restored successfully for enriched materials');
+                }
+              }
+
+              // If no progress was restored and this is a fresh load (tab is still at default), 
+              // ensure we start with the first available content tab
+              if (!progressRestored && !userHasChangedTab && !hasInitiallyLoaded) {
+                const firstAvailableTab = enrichedMaterials.flashcards?.length > 0 ? 'flashcards' :
+                  enrichedMaterials.quizzes?.length > 0 ? 'quiz' :
+                    enrichedMaterials.exercises?.length > 0 ? 'exercises' : 'review';
+                setTab(firstAvailableTab);
+              }
+
               if (enrichedMaterials.flashcards?.length) {
                 setIsStudying(true);
-                startStudySession(deckNameFromStorage, session)
-                  .then(sessionData => { if (sessionData) setStudySession(sessionData); })
-                  .catch(console.error);
+
+                // Only start a new session if we didn't restore progress or don't have an existing session
+                const existingSession = getCurrentStudySession();
+                const shouldStartNewSession = !progressRestored || !existingSession;
+
+                if (shouldStartNewSession) {
+                  console.log('Starting new study session for enriched materials');
+                  startStudySession(deckNameFromStorage, session)
+                    .then(sessionData => { if (sessionData) setStudySession(sessionData); })
+                    .catch(console.error);
+                } else {
+                  console.log('Using existing study session from restored progress for enriched materials');
+                  setStudySession(existingSession);
+                }
               }
               setLastUpdated(new Date());
               setIsLoadingFromStorage(false); // Set loading to false after data is loaded
