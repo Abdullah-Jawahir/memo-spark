@@ -37,6 +37,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { API_BASE_URL } from '@/config/api';
 
 interface User {
   id: number;
@@ -157,7 +158,7 @@ const UserManagement = () => {
         params.append('search', search.trim());
       }
 
-      const response = await fetch(`/api/admin/users?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users?${params}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
@@ -241,7 +242,7 @@ const UserManagement = () => {
     try {
       setActionLoading(true);
       const endpoint = confirmAction === 'deactivate' ? 'deactivate' : 'activate';
-      const response = await fetch(`/api/admin/users/${selectedUser.id}/${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users/${selectedUser.id}/${endpoint}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -275,7 +276,7 @@ const UserManagement = () => {
 
     try {
       setActionLoading(true);
-      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users/${selectedUser.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -311,7 +312,7 @@ const UserManagement = () => {
 
     try {
       setActionLoading(true);
-      const response = await fetch('/api/admin/users/role', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users/role`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -393,7 +394,7 @@ const UserManagement = () => {
     setAdminProfileSuccess(null);
 
     try {
-      const response = await fetch('/api/admin/profile', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/profile`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -453,7 +454,7 @@ const UserManagement = () => {
     setAdminProfileSuccess(null);
 
     try {
-      const response = await fetch('/api/admin/profile/password', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/profile/password`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,

@@ -8,6 +8,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Link } from 'react-router-dom';
 import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
 import { useToast } from '@/hooks/use-toast';
+import { API_BASE_URL } from '@/config/api';
 
 interface AdminStats {
   total_users: number;
@@ -84,7 +85,7 @@ const AdminDashboard = () => {
 
       // Fix admin Supabase user ID if needed (call this first)
       try {
-        await fetch('/api/fix-admin-supabase-id', {
+        await fetch(`${API_BASE_URL}/api/fix-admin-supabase-id`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
@@ -97,7 +98,7 @@ const AdminDashboard = () => {
       }
 
       // Fetch admin overview stats
-      const statsResponse = await fetch('/api/admin/overview', {
+      const statsResponse = await fetch(`${API_BASE_URL}/api/admin/overview`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
@@ -105,7 +106,7 @@ const AdminDashboard = () => {
       });
 
       // Fetch recent activity
-      const activityResponse = await fetch('/api/admin/recent-activity', {
+      const activityResponse = await fetch(`${API_BASE_URL}/api/admin/recent-activity`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
