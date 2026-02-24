@@ -1,4 +1,4 @@
-import { API_ENDPOINTS, fetchWithAuth } from '@/config/api';
+import { API_BASE_URL, API_ENDPOINTS, fetchWithAuth } from '@/config/api';
 
 export interface SearchFlashcardRequest {
   topic: string;
@@ -216,7 +216,7 @@ export interface StudyStatsResponse {
 export class SearchFlashcardsService {
   private baseURL: string;
 
-  constructor(baseURL: string = `${import.meta.env.VITE_LARAVEL_API_URL || 'http://localhost:8000'}/api`) {
+  constructor(baseURL: string = `${API_BASE_URL}/api`) {
     this.baseURL = baseURL;
   }
 
