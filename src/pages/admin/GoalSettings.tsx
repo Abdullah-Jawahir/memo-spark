@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { API_BASE_URL } from "@/config/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -173,12 +174,12 @@ const GoalSettings: React.FC = () => {
 
       // Fetch all goal-related data in parallel
       const [overviewRes, statisticsRes, goalTypesRes, userGoalsRes, usersRes, defaultsRes] = await Promise.all([
-        fetch('http://localhost:8000/api/admin/goals/overview', { headers }),
-        fetch('http://localhost:8000/api/admin/goals/statistics', { headers }),
-        fetch('http://localhost:8000/api/admin/goal-types', { headers }),
-        fetch('http://localhost:8000/api/admin/user-goals', { headers }),
-        fetch('http://localhost:8000/api/admin/users', { headers }),
-        fetch('http://localhost:8000/api/admin/goals/defaults', { headers })
+        fetch(`${API_BASE_URL}/api/admin/goals/overview`, { headers }),
+        fetch(`${API_BASE_URL}/api/admin/goals/statistics`, { headers }),
+        fetch(`${API_BASE_URL}/api/admin/goal-types`, { headers }),
+        fetch(`${API_BASE_URL}/api/admin/user-goals`, { headers }),
+        fetch(`${API_BASE_URL}/api/admin/users`, { headers }),
+        fetch(`${API_BASE_URL}/api/admin/goals/defaults`, { headers })
       ]);
 
       if (!overviewRes.ok || !statisticsRes.ok) {
@@ -236,7 +237,7 @@ const GoalSettings: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error('No authentication token');
 
-      const response = await fetch('http://localhost:8000/api/admin/goal-types', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/goal-types`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -272,7 +273,7 @@ const GoalSettings: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error('No authentication token');
 
-      const response = await fetch(`http://localhost:8000/api/admin/goal-types/${editingGoalType.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/goal-types/${editingGoalType.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -298,7 +299,7 @@ const GoalSettings: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error('No authentication token');
 
-      const response = await fetch(`http://localhost:8000/api/admin/goal-types/${goalTypeId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/goal-types/${goalTypeId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -323,7 +324,7 @@ const GoalSettings: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error('No authentication token');
 
-      const response = await fetch(`http://localhost:8000/api/admin/user-goals/${userGoalId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/user-goals/${userGoalId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -360,7 +361,7 @@ const GoalSettings: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error('No authentication token');
 
-      const response = await fetch(`http://localhost:8000/api/admin/user-goals/${editingUserGoal.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/user-goals/${editingUserGoal.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -387,7 +388,7 @@ const GoalSettings: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error('No authentication token');
 
-      const response = await fetch('http://localhost:8000/api/admin/user-goals', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/user-goals`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -417,7 +418,7 @@ const GoalSettings: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error('No authentication token');
 
-      const response = await fetch(`http://localhost:8000/api/admin/user-goals/${userGoalId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/user-goals/${userGoalId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -445,7 +446,7 @@ const GoalSettings: React.FC = () => {
         throw new Error('No authentication token');
       }
 
-      const response = await fetch('http://localhost:8000/api/admin/goals/defaults', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/goals/defaults`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,

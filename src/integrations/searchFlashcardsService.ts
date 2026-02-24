@@ -216,7 +216,7 @@ export interface StudyStatsResponse {
 export class SearchFlashcardsService {
   private baseURL: string;
 
-  constructor(baseURL: string = 'http://localhost:8000/api') {
+  constructor(baseURL: string = `${import.meta.env.VITE_LARAVEL_API_URL || 'http://localhost:8000'}/api`) {
     this.baseURL = baseURL;
   }
 
