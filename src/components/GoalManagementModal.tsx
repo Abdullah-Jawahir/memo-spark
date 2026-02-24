@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Plus, Target, Edit, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/config/api";
 
 interface GoalType {
   id: string;
@@ -115,8 +116,8 @@ const GoalManagementModal: React.FC<GoalManagementModalProps> = ({
       };
 
       const [goalTypesRes, userGoalsRes] = await Promise.all([
-        fetch('http://localhost:8000/api/student-goals/types', { headers }),
-        fetch('http://localhost:8000/api/student-goals', { headers })
+        fetch(`${API_BASE_URL}/api/student-goals/types`, { headers }),
+        fetch(`${API_BASE_URL}/api/student-goals`, { headers })
       ]);
 
       if (goalTypesRes.ok) {
@@ -150,7 +151,7 @@ const GoalManagementModal: React.FC<GoalManagementModalProps> = ({
         throw new Error('No authentication token');
       }
 
-      const response = await fetch('http://localhost:8000/api/student-goals/set', {
+      const response = await fetch(`${API_BASE_URL}/api/student-goals/set`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -191,7 +192,7 @@ const GoalManagementModal: React.FC<GoalManagementModalProps> = ({
         throw new Error('No authentication token');
       }
 
-      const response = await fetch('http://localhost:8000/api/student-goals/custom', {
+      const response = await fetch(`${API_BASE_URL}/api/student-goals/custom`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -223,7 +224,7 @@ const GoalManagementModal: React.FC<GoalManagementModalProps> = ({
         throw new Error('No authentication token');
       }
 
-      const response = await fetch(`http://localhost:8000/api/student-goals/${goalId}/toggle`, {
+      const response = await fetch(`${API_BASE_URL}/api/student-goals/${goalId}/toggle`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -255,7 +256,7 @@ const GoalManagementModal: React.FC<GoalManagementModalProps> = ({
         throw new Error('No authentication token');
       }
 
-      const response = await fetch(`http://localhost:8000/api/student-goals/${goalId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/student-goals/${goalId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
