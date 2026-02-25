@@ -135,6 +135,9 @@ const Upload = () => {
   const [editingIndex, setEditingIndex] = useState<number>(-1);
   const [deckManagementService] = useState(new DeckManagementService());
   const [isDragOver, setIsDragOver] = useState(false);
+  
+  // Ref to prevent duplicate uploads
+  const uploadInProgressRef = useRef(false);
 
   interface Quiz {
     type: string;
@@ -242,6 +245,12 @@ const Upload = () => {
       : API_ENDPOINTS.DOCUMENTS.CANCEL(id);
 
   const handleFileUpload = async () => {
+    // Prevent duplicate uploads
+    if (uploadInProgressRef.current) {
+      console.log('Upload already in progress, ignoring duplicate request');
+      return;
+    }
+    
     if (!selectedFile) {
       toast({
         title: "No file selected",
@@ -271,6 +280,8 @@ const Upload = () => {
       return;
     }
 
+    // Set upload in progress flag
+    uploadInProgressRef.current = true;
     setIsUploading(true);
     setUploadProgress(0);
     setProcessingStatus('processing');
@@ -345,6 +356,9 @@ const Upload = () => {
       }
     } catch (error: unknown) {
       console.error('Upload failed:', error);
+      
+      // Reset upload in progress flag
+      uploadInProgressRef.current = false;
 
       // Handle specific guest limit exceeded error
       if (isApiError(error) && error.response.data.code === 'GUEST_LIMIT_EXCEEDED') {
@@ -411,6 +425,8 @@ const Upload = () => {
         console.log('Extracted content:', content);
 
         if (content && (content.flashcards?.length > 0 || content.quizzes?.length > 0 || content.exercises?.length > 0)) {
+          // Reset upload in progress flag
+          uploadInProgressRef.current = false;
           setProcessingStatus('completed');
           setIsUploading(false);
           setUploadComplete(true);
@@ -428,6 +444,8 @@ const Upload = () => {
           });
         } else {
           console.warn('Processing completed but no content found');
+          // Reset upload in progress flag
+          uploadInProgressRef.current = false;
           setProcessingStatus('failed');
           setIsUploading(false);
           setProcessingMessage('No content was generated from your document');
@@ -438,6 +456,8 @@ const Upload = () => {
           });
         }
       } else if (status === 'failed') {
+        // Reset upload in progress flag
+        uploadInProgressRef.current = false;
         setProcessingStatus('failed');
         setIsUploading(false);
         setProcessingMessage('Document processing failed');
@@ -452,6 +472,8 @@ const Upload = () => {
       }
     } catch (error) {
       console.error('Status check failed:', error);
+      // Reset upload in progress flag
+      uploadInProgressRef.current = false;
       setProcessingStatus('failed');
       setIsUploading(false);
       setProcessingMessage('Status check failed');
@@ -475,7 +497,8 @@ const Upload = () => {
       });
 
       if (response.status === 200) {
-        // Successfully cancelled on backend
+        // Successfully cancelled on backend - reset upload in progress flag
+        uploadInProgressRef.current = false;
         setIsUploading(false);
         setProcessingStatus('idle');
         setDocumentId(null);
@@ -493,7 +516,8 @@ const Upload = () => {
     } catch (error: unknown) {
       console.error('Failed to cancel processing:', error);
 
-      // Even if backend cancel fails, reset the frontend state
+      // Even if backend cancel fails, reset the frontend state and upload flag
+      uploadInProgressRef.current = false;
       setIsUploading(false);
       setProcessingStatus('idle');
       setDocumentId(null);
